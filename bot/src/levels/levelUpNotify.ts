@@ -1,11 +1,15 @@
 import { EmbedBuilder, type GuildMember } from "discord.js";
 
+import { getConfig } from "../config/store";
+
 export async function notifyLevelUp(
   member: GuildMember,
   level: number,
   roleMention?: string,
 ) {
-  const channelId = process.env.LEVEL_UP_CHANNEL_ID;
+  const cfg = getConfig(member.guild.id);
+  // config ma pierwszeństwo, fallback na .env
+  const channelId = cfg?.levelUpChannelId ?? process.env.LEVEL_UP_CHANNEL_ID;
   if (!channelId) return;
 
   const channel = member.guild.channels.cache.get(channelId);
