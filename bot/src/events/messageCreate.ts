@@ -1,9 +1,10 @@
 import type { Message } from "discord.js";
 
+import { XP_COOLDOWN_MS, XP_PER_MESSAGE } from "../config/xp";
 import { getConfig } from "../config/store";
 import { applyAutoRole } from "../levels/autorole";
+import { notifyLevelUp } from "../levels/levelUpNotify";
 import { addXpWithCooldown } from "../levels/store";
-import { isAllowedTextChannel } from "../utils/channels";
 
 export async function onMessageCreate(message: Message) {
   if (!message.guild) return;
@@ -16,38 +17,26 @@ export async function onMessageCreate(message: Message) {
     guildId: message.guild.id,
     userId: message.author.id,
     now: Date.now(),
-    amount: 15,
-    cooldownMs: 5_000,
+    amount: XP_PER_MESSAGE,
+    cooldownMs: XP_COOLDOWN_MS,
   });
 
-  // jeśli nie dostał XP (cooldown) – nic nie rób
   if (res.gained <= 0) return;
 
-  // auto-role odpalamy zawsze po przyznaniu XP
   await applyAutoRole(member, res.newLevel).catch(() => {});
 
-  // ===== LEVEL UP NOTIFY (tylko gdy awansował) =====
   if (res.newLevel > res.oldLevel) {
-    const channelId = process.env.LEVEL_UP_CHANNEL_ID;
-    if (!channelId) return;
-
-    const ch = message.guild.channels.cache.get(channelId);
-    if (!isAllowedTextChannel(ch)) return;
-
-    // znajdź docelową rolę dla nowego levelu (żeby pokazać w wiadomości)
     const cfg = getConfig(message.guild.id);
-    const rewards = cfg?.roleRewards ?? [];
-
-    const target = rewards
-      .slice()
+    const target = cfg?.roleRewards
+      ?.slice()
       .sort((a, b) => a.level - b.level)
       .filter((r) => r.level <= res.newLevel)
       .at(-1);
 
-    const roleLine = target ? `\nNowa ranga: <@&${target.roleId}>` : "";
-
-    await ch
-      .send(`📈 ${member} wbił **level ${res.newLevel}** 🎉` + roleLine)
-      .catch(() => {});
+    await notifyLevelUp(
+      member,
+      res.newLevel,
+      target ? `<@&${target.roleId}>` : undefined,
+    );
   }
 }

@@ -1,6 +1,8 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
+import { XP_PER_LEVEL } from "../config/xp";
+
 type UserState = {
   xp: number;
   lastMsgAt?: number;
@@ -28,7 +30,18 @@ export function loadXp() {
   }
 }
 
-function saveXp() {
+// --- debounce zapisu ---
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleSave() {
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    saveTimer = null;
+    persistXp();
+  }, 2_000);
+}
+
+function persistXp() {
   try {
     if (!existsSync(dataDir)) mkdirSync(dataDir, { recursive: true });
     writeFileSync(xpPath, JSON.stringify(xpData, null, 2), "utf8");
@@ -43,9 +56,14 @@ export function getUser(guildId: string, userId: string): UserState {
   return xpData[guildId][userId];
 }
 
-// Prosty system level: level = floor(xp / 100) + 1
-export function levelFromXp(xp: number) {
-  return Math.floor(xp / 100) + 1;
+export function levelFromXp(xp: number): number {
+  return Math.floor(xp / XP_PER_LEVEL) + 1;
+}
+
+/** XP brakujące do następnego levelu. */
+export function xpToNextLevel(xp: number): number {
+  const level = levelFromXp(xp);
+  return level * XP_PER_LEVEL - xp;
 }
 
 export function addXpWithCooldown(opts: {
@@ -68,7 +86,7 @@ export function addXpWithCooldown(opts: {
   u.lastMsgAt = opts.now;
 
   const newLevel = levelFromXp(u.xp);
-  saveXp();
+  scheduleSave(); // debounce zamiast natychmiastowego zapisu
 
   return { gained: opts.amount, oldLevel, newLevel };
 }
@@ -77,10 +95,6 @@ export function getXp(guildId: string, userId: string) {
   return getUser(guildId, userId).xp;
 }
 
-/**
- * Dodaje XP bez cooldownu (pod testy / komendy administracyjne).
- * Zwraca oldLevel/newLevel żebyś mógł wykryć awans.
- */
 export function addXp(guildId: string, userId: string, amount: number) {
   const u = getUser(guildId, userId);
 
@@ -88,15 +102,11 @@ export function addXp(guildId: string, userId: string, amount: number) {
   u.xp += amount;
 
   const newLevel = levelFromXp(u.xp);
-  saveXp();
+  scheduleSave();
 
   return { oldLevel, newLevel, newXp: u.xp };
 }
 
-/**
- * (Opcjonalne) Ustawia XP na konkretną wartość – turbo wygodne do testów progów.
- * Jeśli nie chcesz, usuń tę funkcję.
- */
 export function setXp(guildId: string, userId: string, xp: number) {
   const u = getUser(guildId, userId);
 
@@ -104,7 +114,7 @@ export function setXp(guildId: string, userId: string, xp: number) {
   u.xp = Math.max(0, xp);
 
   const newLevel = levelFromXp(u.xp);
-  saveXp();
+  scheduleSave();
 
   return { oldLevel, newLevel, newXp: u.xp };
 }

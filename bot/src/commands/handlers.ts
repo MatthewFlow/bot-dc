@@ -5,6 +5,7 @@ import { getConfig, setConfig } from "../config/store";
 import { applyAutoRole } from "../levels/autorole";
 import { addXp, getXp, levelFromXp } from "../levels/store";
 import { isAllowedTextChannel } from "../utils/channels";
+import { notifyLevelUp } from "../levels/levelUpNotify";
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -74,56 +75,46 @@ export async function handleCommand(interaction: ChatInputCommandInteraction) {
 
   // ========= TEST: /test_addxp =========
   if (interaction.commandName === "test_addxp") {
-    const amount = interaction.options.getInteger("amount", true);
-    const targetUser = interaction.options.getUser("user") ?? interaction.user;
-
-    const targetMember = await interaction.guild.members.fetch(targetUser.id);
-
-    const oldXp = getXp(guildId, targetUser.id);
-    const oldLevel = levelFromXp(oldXp);
-
-    addXp(guildId, targetUser.id, amount);
-
-    const newXp = getXp(guildId, targetUser.id);
-    const newLevel = levelFromXp(newXp);
-
-    await applyAutoRole(targetMember, newLevel).catch(() => {});
-
-    // powiadom na kanał leveli tylko jeśli awans
-    if (newLevel > oldLevel) {
-      const channelId = process.env.LEVEL_UP_CHANNEL_ID;
-      if (channelId) {
-        const ch = interaction.guild.channels.cache.get(channelId);
-        if (isAllowedTextChannel(ch)) {
-          const cfg = getConfig(guildId);
-          const rewards = cfg?.roleRewards ?? [];
-
-          const target = rewards
-            .slice()
-            .sort((a, b) => a.level - b.level)
-            .filter((r) => r.level <= newLevel)
-            .at(-1);
-
-          const roleLine = target ? `\nNowa ranga: <@&${target.roleId}>` : "";
-
-          await ch
-            .send(
-              `🧪 ${targetMember} dostał **+${amount} XP** → level **${newLevel}** 🎉${roleLine}`,
-            )
-            .catch(() => {});
-        }
-      }
-    }
-
-    await interaction.reply({
-      ephemeral: true,
-      content:
-        `Dodano **+${amount} XP** dla ${targetUser}\n` +
-        `XP: **${oldXp} → ${newXp}**\n` +
-        `Level: **${oldLevel} → ${newLevel}**`,
-    });
-    return;
+  const amount = interaction.options.getInteger("amount", true);
+  const targetUser = interaction.options.getUser("user") ?? interaction.user;
+ 
+  const targetMember = await interaction.guild.members.fetch(targetUser.id);
+ 
+  const oldXp = getXp(guildId, targetUser.id);
+  const oldLevel = levelFromXp(oldXp);
+ 
+  addXp(guildId, targetUser.id, amount);
+ 
+  const newXp = getXp(guildId, targetUser.id);
+  const newLevel = levelFromXp(newXp);
+ 
+  await applyAutoRole(targetMember, newLevel).catch(() => {});
+ 
+  // level-up notify przez wspólną funkcję zamiast inline
+  if (newLevel > oldLevel) {
+    const cfg = getConfig(guildId);
+    const target = cfg?.roleRewards
+      ?.slice()
+      .sort((a, b) => a.level - b.level)
+      .filter((r) => r.level <= newLevel)
+      .at(-1);
+ 
+    await notifyLevelUp(
+      targetMember,
+      newLevel,
+      target ? `<@&${target.roleId}>` : undefined,
+    );
   }
+ 
+  await interaction.reply({
+    ephemeral: true,
+    content:
+      `Dodano **+${amount} XP** dla ${targetUser}\n` +
+      `XP: **${oldXp} → ${newXp}**\n` +
+      `Level: **${oldLevel} → ${newLevel}**`,
+  });
+  return;
+}
 
   // ========= CFG: AUTO ROLE =========
   if (interaction.commandName === "cfg_addreward") {
