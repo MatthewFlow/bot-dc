@@ -1,7 +1,7 @@
 import type { Message } from "discord.js";
 
-import { XP_COOLDOWN_MS, XP_PER_MESSAGE } from "../config/xp";
 import { getConfig } from "../config/guildConfig";
+import { XP_COOLDOWN_MS, XP_PER_MESSAGE } from "../config/xp";
 import { applyAutoRole } from "../levels/autorole";
 import { notifyLevelUp } from "../levels/levelUpNotify";
 import { addXpWithCooldown } from "../levels/xpStore";
