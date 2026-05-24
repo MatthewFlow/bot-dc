@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-import { XP_PER_LEVEL } from "../config/xp";
+import { XP_PER_LEVEL, XP_SAVE_DEBOUNCE_MS } from "../config/xp";
 
 type UserState = {
   xp: number;
@@ -30,7 +30,6 @@ export function loadXp() {
   }
 }
 
-// --- debounce zapisu ---
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 
 function scheduleSave() {
@@ -38,7 +37,7 @@ function scheduleSave() {
   saveTimer = setTimeout(() => {
     saveTimer = null;
     persistXp();
-  }, 2_000);
+  }, XP_SAVE_DEBOUNCE_MS);
 }
 
 function persistXp() {
@@ -86,7 +85,7 @@ export function addXpWithCooldown(opts: {
   u.lastMsgAt = opts.now;
 
   const newLevel = levelFromXp(u.xp);
-  scheduleSave(); // debounce zamiast natychmiastowego zapisu
+  scheduleSave();
 
   return { gained: opts.amount, oldLevel, newLevel };
 }

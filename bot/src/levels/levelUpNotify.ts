@@ -8,7 +8,6 @@ export async function notifyLevelUp(
   roleMention?: string,
 ) {
   const cfg = getConfig(member.guild.id);
-  // config ma pierwszeństwo, fallback na .env
   const channelId = cfg?.levelUpChannelId ?? process.env.LEVEL_UP_CHANNEL_ID;
   if (!channelId) return;
 
@@ -24,5 +23,12 @@ export async function notifyLevelUp(
     .setThumbnail(member.user.displayAvatarURL({ size: 256 }))
     .setTimestamp();
 
-  await channel.send({ embeds: [embed] }).catch(() => {});
+  try {
+    await channel.send({ embeds: [embed] });
+  } catch (e) {
+    console.error(
+      `[levelUpNotify] Nie udało się wysłać powiadomienia na kanał ${channelId}:`,
+      e,
+    );
+  }
 }

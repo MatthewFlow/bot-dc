@@ -3,14 +3,15 @@ import type { ChatInputCommandInteraction } from "discord.js";
 import {
   handleCfgAddReward,
   handleCfgCheckRole,
-  handleCfgListRewards,
+  handleCfgClear,
+  handleCfgRoleList,
   handleCfgSetGoodbye,
   handleCfgSetWelcome,
   handleCfgSyncAll,
   handleCfgSyncRole,
 } from "./admin";
 import { requireAdminRole } from "./guard";
-import { handleTestAddXp, handleTestGoodbye, handleTestWelcome } from "./test";
+import { handleCfgAddXp, handleTestGoodbye, handleTestWelcome } from "./test";
 import { handleLevel } from "./user";
 
 type Handler = (interaction: ChatInputCommandInteraction) => Promise<void>;
@@ -20,11 +21,12 @@ const handlers: Record<string, Handler> = {
   cfg_setwelcome: handleCfgSetWelcome,
   cfg_setgoodbye: handleCfgSetGoodbye,
   cfg_addreward: handleCfgAddReward,
-  cfg_listrewards: handleCfgListRewards,
+  cfg_rolelist: handleCfgRoleList,
   cfg_syncrole: handleCfgSyncRole,
   cfg_syncall: handleCfgSyncAll,
   cfg_checkrole: handleCfgCheckRole,
-  test_addxp: handleTestAddXp,
+  cfg_clear: handleCfgClear,
+  cfg_addxp: handleCfgAddXp,
   test_welcome: handleTestWelcome,
   test_goodbye: handleTestGoodbye,
 };

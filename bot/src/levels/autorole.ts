@@ -12,9 +12,7 @@ export async function applyAutoRole(member: GuildMember, level: number) {
   const eligible = sorted.filter((r) => r.level <= level);
   if (eligible.length === 0) return;
 
-  // eligible jest niepusta — at(-1) zawsze zwraca wartość
   const target = eligible.at(-1)!;
-
   const rewardRoleIds = new Set(sorted.map((r) => r.roleId));
 
   const rolesToRemove = member.roles.cache
@@ -22,10 +20,24 @@ export async function applyAutoRole(member: GuildMember, level: number) {
     .map((r) => r.id);
 
   if (rolesToRemove.length > 0) {
-    await member.roles.remove(rolesToRemove).catch(() => {});
+    try {
+      await member.roles.remove(rolesToRemove);
+    } catch (e) {
+      console.error(
+        `[autorole] Nie udało się usunąć ról dla ${member.user.username}:`,
+        e,
+      );
+    }
   }
 
   if (!member.roles.cache.has(target.roleId)) {
-    await member.roles.add(target.roleId).catch(() => {});
+    try {
+      await member.roles.add(target.roleId);
+    } catch (e) {
+      console.error(
+        `[autorole] Nie udało się nadać roli ${target.roleId} dla ${member.user.username}:`,
+        e,
+      );
+    }
   }
 }

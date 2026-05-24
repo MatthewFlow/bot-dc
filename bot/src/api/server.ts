@@ -4,9 +4,8 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
+import type { RoleReward } from "../config/guildConfig";
 import { getConfig, setConfig } from "../config/guildConfig";
-
-type RoleReward = { level: number; roleId: string };
 
 type GuildConfigPatch = {
   welcomeChannelId?: string;
@@ -27,17 +26,12 @@ function parseRoleRewards(v: unknown): RoleReward[] | undefined {
   for (const item of v) {
     if (!isRecord(item)) continue;
 
-    const level = item.level;
-    const roleId = item.roleId;
+    const { level, roleId } = item;
 
-    // najpierw zawężenie typu
-    if (typeof level !== "number") continue;
-    if (!Number.isInteger(level)) continue;
-    if (level < 1) continue;
-
+    if (!Number.isInteger(level) || (level as number) < 1) continue;
     if (typeof roleId !== "string" || roleId.length === 0) continue;
 
-    parsed.push({ level, roleId });
+    parsed.push({ level: level as number, roleId: roleId as string });
   }
 
   parsed.sort((a, b) => a.level - b.level);
@@ -47,21 +41,21 @@ function parseRoleRewards(v: unknown): RoleReward[] | undefined {
 function parseConfigPatch(body: unknown): GuildConfigPatch | null {
   if (!isRecord(body)) return null;
 
-  const nextCfg: GuildConfigPatch = {};
+  const patch: GuildConfigPatch = {};
 
-  const welcome = body.welcomeChannelId;
-  if (typeof welcome === "string") nextCfg.welcomeChannelId = welcome;
-
-  const goodbye = body.goodbyeChannelId;
-  if (typeof goodbye === "string") nextCfg.goodbyeChannelId = goodbye;
-
-  const levelUp = body.levelUpChannelId;
-  if (typeof levelUp === "string") nextCfg.levelUpChannelId = levelUp;
+  if (typeof body.welcomeChannelId === "string")
+    patch.welcomeChannelId = body.welcomeChannelId;
+  if (typeof body.goodbyeChannelId === "string")
+    patch.goodbyeChannelId = body.goodbyeChannelId;
+  if (typeof body.levelUpChannelId === "string")
+    patch.levelUpChannelId = body.levelUpChannelId;
 
   const rewards = parseRoleRewards(body.roleRewards);
-  if (rewards) nextCfg.roleRewards = rewards;
+  if (rewards) patch.roleRewards = rewards;
 
-  return nextCfg;
+  if (Object.keys(patch).length === 0) return null;
+
+  return patch;
 }
 
 function requireAuth(c: Context): boolean {
@@ -76,7 +70,6 @@ function isAllowedTextChannel(
   ch: NonThreadGuildBasedChannel | null,
 ): ch is NonThreadGuildBasedChannel {
   if (!ch) return false;
-
   return ch.type === ChannelType.GuildText || ch.type === ChannelType.GuildAnnouncement;
 }
 
@@ -99,11 +92,9 @@ export function startApi(client: Client) {
 
   app.get("/api/health", (c) => c.json({ ok: true }));
 
-  // ===== Config =====
   app.get("/api/guilds/:guildId/config", (c) => {
     const guildId = c.req.param("guildId");
-    const cfg = getConfig(guildId) ?? {};
-    return c.json(cfg);
+    return c.json(getConfig(guildId) ?? {});
   });
 
   app.put("/api/guilds/:guildId/config", async (c) => {
@@ -111,64 +102,59 @@ export function startApi(client: Client) {
 
     const body: unknown = await c.req.json().catch(() => null);
     const patch = parseConfigPatch(body);
-    if (!patch) return c.json({ error: "Invalid JSON body" }, 400);
+    if (!patch) return c.json({ error: "Invalid or empty JSON body" }, 400);
 
     setConfig(guildId, patch);
     return c.json({ ok: true });
   });
 
-  // ===== Channels (from Discord) =====
   app.get("/api/guilds/:guildId/channels", async (c) => {
     const guildId = c.req.param("guildId");
     const guild = client.guilds.cache.get(guildId);
-    if (!guild) {
-      return c.json({ error: "Bot not in guild / unknown guildId" }, 404);
+
+    if (!guild) return c.json({ error: "Bot not in guild / unknown guildId" }, 404);
+
+    try {
+      const channels = await guild.channels.fetch();
+
+      const list = [...channels.values()]
+        .filter((ch): ch is NonThreadGuildBasedChannel => !!ch && !ch.isThread())
+        .filter(isAllowedTextChannel)
+        .map((ch) => ({ id: ch.id, name: ch.name, type: ch.type }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      return c.json(list);
+    } catch (e) {
+      console.error(`[api] Błąd pobierania kanałów dla ${guildId}:`, e);
+      return c.json({ error: "Failed to fetch channels" }, 502);
     }
-
-    const channels = await guild.channels.fetch();
-
-    const list = [...channels.values()]
-      .filter((ch): ch is NonThreadGuildBasedChannel => !!ch && !ch.isThread())
-      .filter(isAllowedTextChannel)
-      .map((ch) => ({
-        id: ch.id,
-        name: ch.name,
-        type: ch.type,
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-
-    return c.json(list);
   });
 
-  // ===== Roles (from Discord) =====
   app.get("/api/guilds/:guildId/roles", async (c) => {
     const guildId = c.req.param("guildId");
     const guild = client.guilds.cache.get(guildId);
-    if (!guild) {
-      return c.json({ error: "Bot not in guild / unknown guildId" }, 404);
+
+    if (!guild) return c.json({ error: "Bot not in guild / unknown guildId" }, 404);
+
+    try {
+      const roles = await guild.roles.fetch();
+
+      const list = [...roles.values()]
+        .filter((r): r is Role => !!r)
+        .filter((r) => !r.managed)
+        .map((r) => ({ id: r.id, name: r.name, position: r.position }))
+        .sort((a, b) => b.position - a.position);
+
+      return c.json(list);
+    } catch (e) {
+      console.error(`[api] Błąd pobierania ról dla ${guildId}:`, e);
+      return c.json({ error: "Failed to fetch roles" }, 502);
     }
-
-    const roles = await guild.roles.fetch();
-
-    const list = [...roles.values()]
-      .filter((r): r is Role => !!r)
-      .filter((r) => !r.managed)
-      .map((r) => ({
-        id: r.id,
-        name: r.name,
-        position: r.position,
-      }))
-      .sort((a, b) => b.position - a.position);
-
-    return c.json(list);
   });
 
   const port = Number(process.env.API_PORT ?? 3001);
 
-  Bun.serve({
-    port,
-    fetch: app.fetch,
-  });
+  Bun.serve({ port, fetch: app.fetch });
 
   console.log(`API działa na http://localhost:${port}`);
 }
