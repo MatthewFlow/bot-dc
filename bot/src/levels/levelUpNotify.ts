@@ -1,13 +1,13 @@
 import { EmbedBuilder, type GuildMember } from "discord.js";
 
-import { getConfig } from "../config/guildConfig";
+import { guildConfigRepository } from "../db/providers/mongoose/providers";
 
 export async function notifyLevelUp(
   member: GuildMember,
   level: number,
   roleMention?: string,
 ) {
-  const cfg = getConfig(member.guild.id);
+  const cfg = await guildConfigRepository.get(member.guild.id);
   const channelId = cfg?.levelUpChannelId ?? process.env.LEVEL_UP_CHANNEL_ID;
   if (!channelId) return;
 

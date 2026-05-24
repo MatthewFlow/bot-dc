@@ -1,10 +1,9 @@
 import type { Message } from "discord.js";
 
-import { getConfig } from "../config/guildConfig";
 import { XP_COOLDOWN_MS, XP_PER_MESSAGE } from "../config/xp";
+import { guildConfigRepository, xpRepository } from "../db/providers/mongoose/providers";
 import { applyAutoRole } from "../levels/autorole";
 import { notifyLevelUp } from "../levels/levelUpNotify";
-import { addXpWithCooldown } from "../levels/xpStore";
 
 export async function onMessageCreate(message: Message) {
   if (!message.guild) return;
@@ -13,7 +12,7 @@ export async function onMessageCreate(message: Message) {
   const member = message.member;
   if (!member) return;
 
-  const res = addXpWithCooldown({
+  const res = await xpRepository.addXpWithCooldown({
     guildId: message.guild.id,
     userId: message.author.id,
     now: Date.now(),
@@ -26,7 +25,7 @@ export async function onMessageCreate(message: Message) {
   await applyAutoRole(member, res.newLevel).catch(() => {});
 
   if (res.newLevel > res.oldLevel) {
-    const cfg = getConfig(message.guild.id);
+    const cfg = await guildConfigRepository.get(message.guild.id);
     const target = cfg?.roleRewards
       ?.slice()
       .sort((a, b) => a.level - b.level)

@@ -1,14 +1,13 @@
 import type { GuildMember } from "discord.js";
 
-import { getConfig } from "../config/guildConfig";
+import { guildConfigRepository } from "../db/providers/mongoose/providers";
 
 export async function applyAutoRole(member: GuildMember, level: number) {
-  const cfg = getConfig(member.guild.id);
+  const cfg = await guildConfigRepository.get(member.guild.id);
   const rewards = cfg?.roleRewards ?? [];
   if (rewards.length === 0) return;
 
   const sorted = [...rewards].sort((a, b) => a.level - b.level);
-
   const eligible = sorted.filter((r) => r.level <= level);
   if (eligible.length === 0) return;
 

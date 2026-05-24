@@ -1,18 +1,17 @@
 import { EmbedBuilder, type GuildMember, type PartialGuildMember } from "discord.js";
 
 import { envGoodbyeChannelId } from "../config/env";
-import { getConfig } from "../config/guildConfig";
+import { guildConfigRepository } from "../db/providers/mongoose/providers";
 import { isAllowedTextChannel } from "../utils/channels";
 
 export async function onMemberRemove(member: GuildMember | PartialGuildMember) {
-  const cfg = getConfig(member.guild.id);
+  const cfg = await guildConfigRepository.get(member.guild.id);
   const channelId = cfg?.goodbyeChannelId ?? envGoodbyeChannelId;
   if (!channelId) return;
 
   const ch = member.guild.channels.cache.get(channelId);
   if (!isAllowedTextChannel(ch)) return;
 
-  // .tag jest deprecated w Discord.js v14 — używamy .username
   const name = member.user?.username ?? "Użytkownik";
 
   const embed = new EmbedBuilder()

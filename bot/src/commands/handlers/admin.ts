@@ -1,9 +1,12 @@
 import { ChannelType, type ChatInputCommandInteraction } from "discord.js";
 
-import { getConfig, setConfig } from "../../config/guildConfig";
 import { XP_SYNCALL_DELAY_MS } from "../../config/xp";
+import { levelFromXp } from "../../config/xpHelpers";
+import {
+  guildConfigRepository,
+  xpRepository,
+} from "../../db/providers/mongoose/providers";
 import { applyAutoRole } from "../../levels/autorole";
-import { getXp, levelFromXp } from "../../levels/xpStore";
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
@@ -25,7 +28,7 @@ export async function handleCfgSetWelcome(interaction: ChatInputCommandInteracti
     return;
   }
 
-  setConfig(guildId, { welcomeChannelId: channel.id });
+  await guildConfigRepository.set(guildId, { welcomeChannelId: channel.id });
   await interaction.reply({
     content: `Ustawiono kanał powitań na ${channel}`,
     ephemeral: true,
@@ -44,7 +47,7 @@ export async function handleCfgSetGoodbye(interaction: ChatInputCommandInteracti
     return;
   }
 
-  setConfig(guildId, { goodbyeChannelId: channel.id });
+  await guildConfigRepository.set(guildId, { goodbyeChannelId: channel.id });
   await interaction.reply({
     content: `Ustawiono kanał pożegnań na ${channel}`,
     ephemeral: true,
@@ -56,15 +59,14 @@ export async function handleCfgAddReward(interaction: ChatInputCommandInteractio
   const level = interaction.options.getInteger("level", true);
   const role = interaction.options.getRole("role", true);
 
-  const cfg = getConfig(guildId) ?? {};
-  const rewards = cfg.roleRewards ?? [];
+  const cfg = await guildConfigRepository.get(guildId);
+  const rewards = cfg?.roleRewards ?? [];
 
   const filtered = rewards.filter((r) => r.level !== level);
   filtered.push({ level, roleId: role.id });
   filtered.sort((a, b) => a.level - b.level);
 
-  setConfig(guildId, { roleRewards: filtered });
-
+  await guildConfigRepository.set(guildId, { roleRewards: filtered });
   await interaction.reply({
     ephemeral: true,
     content: `Dodano próg: level **${level}** → ${role}`,
@@ -73,7 +75,7 @@ export async function handleCfgAddReward(interaction: ChatInputCommandInteractio
 
 export async function handleCfgRoleList(interaction: ChatInputCommandInteraction) {
   const guildId = interaction.guildId!;
-  const cfg = getConfig(guildId);
+  const cfg = await guildConfigRepository.get(guildId);
   const rewards = cfg?.roleRewards ?? [];
 
   if (rewards.length === 0) {
@@ -100,7 +102,7 @@ export async function handleCfgSyncRole(interaction: ChatInputCommandInteraction
   const targetUser = interaction.options.getUser("user") ?? interaction.user;
   const member = await guild.members.fetch(targetUser.id);
 
-  const xp = getXp(guildId, targetUser.id);
+  const xp = await xpRepository.getXp(guildId, targetUser.id);
   const level = levelFromXp(xp);
 
   try {
@@ -139,7 +141,7 @@ export async function handleCfgSyncAll(interaction: ChatInputCommandInteraction)
 
       processed++;
 
-      const xp = getXp(guildId, m.id);
+      const xp = await xpRepository.getXp(guildId, m.id);
       const level = levelFromXp(xp);
 
       try {
@@ -169,10 +171,10 @@ export async function handleCfgCheckRole(interaction: ChatInputCommandInteractio
   const targetUser = interaction.options.getUser("user") ?? interaction.user;
   const member = await guild.members.fetch(targetUser.id);
 
-  const xp = getXp(guildId, targetUser.id);
+  const xp = await xpRepository.getXp(guildId, targetUser.id);
   const level = levelFromXp(xp);
 
-  const cfg = getConfig(guildId);
+  const cfg = await guildConfigRepository.get(guildId);
   const rewards = cfg?.roleRewards ?? [];
 
   const rewardRoleIds = new Set(rewards.map((r) => r.roleId));
@@ -206,7 +208,6 @@ export async function handleCfgClear(interaction: ChatInputCommandInteraction) {
 
   try {
     const deleted = await channel.bulkDelete(amount, true);
-
     const skipped = amount - deleted.size;
     const skippedNote =
       skipped > 0 ? `\n${skipped} wiadomości pominięto (starsze niż 14 dni).` : "";
