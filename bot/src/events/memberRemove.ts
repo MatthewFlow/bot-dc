@@ -1,7 +1,7 @@
 import { EmbedBuilder, type GuildMember, type PartialGuildMember } from "discord.js";
  
 import { envGoodbyeChannelId } from "../config/env";
-import { getConfig } from "../config/store";
+import { getConfig } from "../config/guildConfig";
 import { isAllowedTextChannel } from "../utils/channels";
  
 export async function onMemberRemove(member: GuildMember | PartialGuildMember) {

@@ -1,9 +1,9 @@
 import { EmbedBuilder, type GuildMember } from "discord.js";
 
 import { envWelcomeChannelId } from "../config/env";
-import { getConfig } from "../config/store";
+import { getConfig } from "../config/guildConfig";
 import { applyAutoRole } from "../levels/autorole";
-import { getXp, levelFromXp } from "../levels/store";
+import { getXp, levelFromXp } from "../levels/xpStore";
 import { isAllowedTextChannel } from "../utils/channels";
 
 export async function onMemberAdd(member: GuildMember) {

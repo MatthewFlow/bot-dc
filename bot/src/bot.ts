@@ -23,8 +23,6 @@ export function createBot() {
     console.log(`Zalogowano jako ${client.user.tag}`);
 
     try {
-      // Jednorazowo do naprawy duplikatów komend
-      // w .env ustaw RESET_COMMANDS=true
       if (process.env.RESET_COMMANDS === "true") {
         await clearGuildCommands(client);
       }
