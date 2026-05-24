@@ -1,6 +1,7 @@
 import { ChannelType, type ChatInputCommandInteraction } from "discord.js";
 
 import { getConfig, setConfig } from "../../config/guildConfig";
+import { XP_SYNCALL_DELAY_MS } from "../../config/xp";
 import { applyAutoRole } from "../../levels/autorole";
 import { getXp, levelFromXp } from "../../levels/xpStore";
 
@@ -70,7 +71,7 @@ export async function handleCfgAddReward(interaction: ChatInputCommandInteractio
   });
 }
 
-export async function handleCfgListRewards(interaction: ChatInputCommandInteraction) {
+export async function handleCfgRoleList(interaction: ChatInputCommandInteraction) {
   const guildId = interaction.guildId!;
   const cfg = getConfig(guildId);
   const rewards = cfg?.roleRewards ?? [];
@@ -148,7 +149,7 @@ export async function handleCfgSyncAll(interaction: ChatInputCommandInteraction)
       }
 
       // throttle — avoids Discord rate limits on role assignment
-      await sleep(350);
+      await sleep(XP_SYNCALL_DELAY_MS);
     }
 
     await interaction.editReply(
@@ -174,61 +175,49 @@ export async function handleCfgCheckRole(interaction: ChatInputCommandInteractio
   const cfg = getConfig(guildId);
   const rewards = cfg?.roleRewards ?? [];
 
-  if (rewards.length === 0) {
-    await interaction.reply({
-      ephemeral: true,
-      content: "Brak skonfigurowanych progów ról.",
-    });
-    return;
-  }
-
-  const sortedRewards = rewards.slice().sort((a, b) => a.level - b.level);
-  const eligible = sortedRewards.filter((r) => r.level <= level);
-  const target = eligible.at(-1);
-
-  const rewardRoleIds = new Set(sortedRewards.map((r) => r.roleId));
+  const rewardRoleIds = new Set(rewards.map((r) => r.roleId));
   const userRewardRoles = member.roles.cache.filter((r) => rewardRoleIds.has(r.id));
-
-  const botMember = await guild.members.fetch(interaction.client.user!.id);
-
-  let canAssign = "nie dotyczy";
-  let targetRoleExists = "nie dotyczy";
-  let hierarchyInfo = "nie dotyczy";
-
-  if (target) {
-    const role = guild.roles.cache.get(target.roleId);
-    if (!role) {
-      targetRoleExists = "❌ nie (brak w cache / nie istnieje)";
-      canAssign = "❌ nie";
-    } else {
-      targetRoleExists = "✅ tak";
-      const botHigher = botMember.roles.highest.position > role.position;
-      hierarchyInfo = `BotHighest=${botMember.roles.highest.position}, Target=${role.position}`;
-      canAssign = botHigher ? "✅ tak" : "❌ bot ma za niską rolę";
-    }
-  }
 
   const lines: string[] = [
     `Użytkownik: ${targetUser}`,
     `Level: **${level}**`,
     `XP: **${xp}**`,
     "",
-    "Progi (level → rola):",
-    ...sortedRewards.map((r) => `• ${r.level} → <@&${r.roleId}>`),
-    "",
-    `Eligible dla level ${level}:`,
-    ...(eligible.length === 0
-      ? ["• brak"]
-      : eligible.map((r) => `• ${r.level} → <@&${r.roleId}>`)),
-    "",
-    `Docelowa rola: ${target ? `<@&${target.roleId}> (od level ${target.level})` : "brak"}`,
-    `Docelowa rola istnieje: ${targetRoleExists}`,
-    `Bot może nadać: ${canAssign}`,
-    ...(hierarchyInfo !== "nie dotyczy" ? [`Hierarchia: ${hierarchyInfo}`] : []),
-    "",
     "Role progresji użytkownika:",
     ...(userRewardRoles.size ? userRewardRoles.map((r) => `• ${r}`) : ["• brak"]),
   ];
 
   await interaction.reply({ ephemeral: true, content: lines.join("\n") });
+}
+
+export async function handleCfgClear(interaction: ChatInputCommandInteraction) {
+  const amount = interaction.options.getInteger("amount", true);
+  const channel = interaction.channel;
+
+  if (!channel || !channel.isTextBased() || channel.isDMBased()) {
+    await interaction.reply({
+      content: "Tej komendy można użyć tylko na kanale tekstowym.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  await interaction.deferReply({ ephemeral: true });
+
+  try {
+    const deleted = await channel.bulkDelete(amount, true);
+
+    const skipped = amount - deleted.size;
+    const skippedNote =
+      skipped > 0 ? `\n${skipped} wiadomości pominięto (starsze niż 14 dni).` : "";
+
+    await interaction.editReply(
+      `Usunięto **${deleted.size}** wiadomości. ✅${skippedNote}`,
+    );
+  } catch (e) {
+    console.error("[cfg_clear] Błąd usuwania wiadomości:", e);
+    await interaction.editReply(
+      "Nie udało się usunąć wiadomości. Sprawdź uprawnienia bota.",
+    );
+  }
 }

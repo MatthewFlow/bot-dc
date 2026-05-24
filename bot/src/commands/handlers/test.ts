@@ -6,7 +6,7 @@ import { applyAutoRole } from "../../levels/autorole";
 import { notifyLevelUp } from "../../levels/levelUpNotify";
 import { addXp, getXp, levelFromXp } from "../../levels/xpStore";
 
-export async function handleTestAddXp(interaction: ChatInputCommandInteraction) {
+export async function handleCfgAddXp(interaction: ChatInputCommandInteraction) {
   const guildId = interaction.guildId!;
   const guild = interaction.guild!;
 
