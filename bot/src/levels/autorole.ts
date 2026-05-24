@@ -1,6 +1,6 @@
 import type { GuildMember } from "discord.js";
 
-import { getConfig } from "../config/store";
+import { getConfig } from "../config/guildConfig";
 
 export async function applyAutoRole(member: GuildMember, level: number) {
   const cfg = getConfig(member.guild.id);

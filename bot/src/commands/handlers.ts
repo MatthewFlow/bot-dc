@@ -1,9 +1,9 @@
 import { ChannelType, type ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
 
 import { envGoodbyeChannelId, envWelcomeChannelId } from "../config/env";
-import { getConfig, setConfig } from "../config/store";
+import { getConfig, setConfig } from "../config/guildConfig";
 import { applyAutoRole } from "../levels/autorole";
-import { addXp, getXp, levelFromXp } from "../levels/store";
+import { addXp, getXp, levelFromXp } from "../levels/xpStore";
 import { isAllowedTextChannel } from "../utils/channels";
 import { notifyLevelUp } from "../levels/levelUpNotify";
 

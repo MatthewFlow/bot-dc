@@ -1,7 +1,7 @@
 import { createBot } from "./bot";
 import { token } from "./config/env";
-import { loadConfigs } from "./config/store";
-import { loadXp } from "./levels/store";
+import { loadConfigs } from "./config/guildConfig";
+import { loadXp } from "./levels/xpStore";
 
 // ===== INIT DATA =====
 loadConfigs();

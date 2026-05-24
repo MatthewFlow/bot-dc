@@ -1,10 +1,10 @@
 import type { Message } from "discord.js";
 
 import { XP_COOLDOWN_MS, XP_PER_MESSAGE } from "../config/xp";
-import { getConfig } from "../config/store";
+import { getConfig } from "../config/guildConfig";
 import { applyAutoRole } from "../levels/autorole";
 import { notifyLevelUp } from "../levels/levelUpNotify";
-import { addXpWithCooldown } from "../levels/store";
+import { addXpWithCooldown } from "../levels/xpStore";
 
 export async function onMessageCreate(message: Message) {
   if (!message.guild) return;

@@ -1,6 +1,6 @@
 import { EmbedBuilder, type GuildMember } from "discord.js";
 
-import { getConfig } from "../config/store";
+import { getConfig } from "../config/guildConfig";
 
 export async function notifyLevelUp(
   member: GuildMember,

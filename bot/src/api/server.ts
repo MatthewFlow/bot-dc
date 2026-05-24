@@ -7,7 +7,7 @@ import type {
   Role,
 } from "discord.js";
 import { ChannelType } from "discord.js";
-import { getConfig, setConfig } from "../config/store";
+import { getConfig, setConfig } from "../config/guildConfig";
 
 type RoleReward = { level: number; roleId: string };
 
