@@ -1,7 +1,7 @@
 import { Client, GatewayIntentBits } from "discord.js";
 
 import { startApi } from "./api/server";
-import { handleCommand } from "./commands/handlers";
+import { handleCommand } from "./commands/handlers/handler";
 import { clearGuildCommands, registerCommands } from "./commands/register";
 import { onMemberAdd } from "./events/memberAdd";
 import { onMemberRemove } from "./events/memberRemove";
