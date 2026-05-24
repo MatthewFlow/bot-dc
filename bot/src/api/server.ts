@@ -1,12 +1,9 @@
+import type { Client, NonThreadGuildBasedChannel, Role } from "discord.js";
+import { ChannelType } from "discord.js";
+import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import type { Context } from "hono";
-import type {
-  Client,
-  NonThreadGuildBasedChannel,
-  Role,
-} from "discord.js";
-import { ChannelType } from "discord.js";
+
 import { getConfig, setConfig } from "../config/guildConfig";
 
 type RoleReward = { level: number; roleId: string };
@@ -80,10 +77,7 @@ function isAllowedTextChannel(
 ): ch is NonThreadGuildBasedChannel {
   if (!ch) return false;
 
-  return (
-    ch.type === ChannelType.GuildText ||
-    ch.type === ChannelType.GuildAnnouncement
-  );
+  return ch.type === ChannelType.GuildText || ch.type === ChannelType.GuildAnnouncement;
 }
 
 export function startApi(client: Client) {
