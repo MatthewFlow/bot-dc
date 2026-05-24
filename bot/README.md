@@ -185,7 +185,12 @@ src/
 ├── api/
 │   └── server.ts          # Hono REST API
 ├── commands/
-│   ├── handlers.ts        # slash command logic
+│   ├── handlers/
+│   │   ├── handler.ts     # dispatcher — routes commands to handlers
+│   │   ├── guard.ts       # admin role check
+│   │   ├── user.ts        # /level
+│   │   ├── admin.ts       # /cfg_*
+│   │   └── test.ts        # /test_*
 │   └── register.ts        # command registration with Discord
 ├── events/
 │   ├── memberAdd.ts       # handles member join
