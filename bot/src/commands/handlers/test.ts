@@ -1,10 +1,13 @@
 import { ChannelType, type ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
 
 import { envGoodbyeChannelId, envWelcomeChannelId } from "../../config/env";
-import { getConfig } from "../../config/guildConfig";
+import { levelFromXp } from "../../config/xpHelpers";
+import {
+  guildConfigRepository,
+  xpRepository,
+} from "../../db/providers/mongoose/providers";
 import { applyAutoRole } from "../../levels/autorole";
 import { notifyLevelUp } from "../../levels/levelUpNotify";
-import { addXp, getXp, levelFromXp } from "../../levels/xpStore";
 
 export async function handleCfgAddXp(interaction: ChatInputCommandInteraction) {
   const guildId = interaction.guildId!;
@@ -14,37 +17,36 @@ export async function handleCfgAddXp(interaction: ChatInputCommandInteraction) {
   const targetUser = interaction.options.getUser("user") ?? interaction.user;
   const targetMember = await guild.members.fetch(targetUser.id);
 
-  const oldXp = getXp(guildId, targetUser.id);
+  const oldXp = await xpRepository.getXp(guildId, targetUser.id);
   const oldLevel = levelFromXp(oldXp);
 
-  addXp(guildId, targetUser.id, amount);
+  const result = await xpRepository.addXp(guildId, targetUser.id, amount);
 
-  const newXp = getXp(guildId, targetUser.id);
-  const newLevel = levelFromXp(newXp);
+  await applyAutoRole(targetMember, result.newLevel).catch(() => {});
 
-  await applyAutoRole(targetMember, newLevel).catch(() => {});
-
-  if (newLevel > oldLevel) {
-    const cfg = getConfig(guildId);
+  if (result.newLevel > oldLevel) {
+    const cfg = await guildConfigRepository.get(guildId);
     const target = cfg?.roleRewards
       ?.slice()
       .sort((a, b) => a.level - b.level)
-      .filter((r) => r.level <= newLevel)
+      .filter((r) => r.level <= result.newLevel)
       .at(-1);
 
     await notifyLevelUp(
       targetMember,
-      newLevel,
+      result.newLevel,
       target ? `<@&${target.roleId}>` : undefined,
     );
   }
+
+  const newXp = await xpRepository.getXp(guildId, targetUser.id);
 
   await interaction.reply({
     ephemeral: true,
     content:
       `Dodano **+${amount} XP** dla ${targetUser}\n` +
       `XP: **${oldXp} → ${newXp}**\n` +
-      `Level: **${oldLevel} → ${newLevel}**`,
+      `Level: **${oldLevel} → ${result.newLevel}**`,
   });
 }
 
@@ -52,7 +54,7 @@ export async function handleTestWelcome(interaction: ChatInputCommandInteraction
   const guildId = interaction.guildId!;
   const guild = interaction.guild!;
 
-  const cfg = getConfig(guildId);
+  const cfg = await guildConfigRepository.get(guildId);
   const channelId = cfg?.welcomeChannelId ?? envWelcomeChannelId;
 
   if (!channelId) {
@@ -89,7 +91,7 @@ export async function handleTestGoodbye(interaction: ChatInputCommandInteraction
   const guildId = interaction.guildId!;
   const guild = interaction.guild!;
 
-  const cfg = getConfig(guildId);
+  const cfg = await guildConfigRepository.get(guildId);
   const channelId = cfg?.goodbyeChannelId ?? envGoodbyeChannelId;
 
   if (!channelId) {

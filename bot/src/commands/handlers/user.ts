@@ -1,10 +1,11 @@
 import type { ChatInputCommandInteraction } from "discord.js";
 
-import { getXp, levelFromXp, xpToNextLevel } from "../../levels/xpStore";
+import { levelFromXp, xpToNextLevel } from "../../config/xpHelpers";
+import { xpRepository } from "../../db/providers/mongoose/providers";
 
 export async function handleLevel(interaction: ChatInputCommandInteraction) {
   const guildId = interaction.guildId!;
-  const xp = getXp(guildId, interaction.user.id);
+  const xp = await xpRepository.getXp(guildId, interaction.user.id);
   const level = levelFromXp(xp);
   const missing = xpToNextLevel(xp);
 

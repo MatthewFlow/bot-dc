@@ -1,20 +1,18 @@
 import { EmbedBuilder, type GuildMember } from "discord.js";
 
 import { envWelcomeChannelId } from "../config/env";
-import { getConfig } from "../config/guildConfig";
+import { levelFromXp } from "../config/xpHelpers";
+import { guildConfigRepository, xpRepository } from "../db/providers/mongoose/providers";
 import { applyAutoRole } from "../levels/autorole";
-import { getXp, levelFromXp } from "../levels/xpStore";
 import { isAllowedTextChannel } from "../utils/channels";
 
 export async function onMemberAdd(member: GuildMember) {
-  // 1) Nadaj rolę startową od razu (na bazie XP=0 jeśli nie ma wpisu)
-  const xp = getXp(member.guild.id, member.id); // jeśli nie ma, powinno zwrócić 0
+  const xp = await xpRepository.getXp(member.guild.id, member.id);
   const level = levelFromXp(xp);
 
   await applyAutoRole(member, level).catch(() => {});
 
-  // 2) Powitanie (jak było)
-  const cfg = getConfig(member.guild.id);
+  const cfg = await guildConfigRepository.get(member.guild.id);
   const channelId = cfg?.welcomeChannelId ?? envWelcomeChannelId;
   if (!channelId) return;
 

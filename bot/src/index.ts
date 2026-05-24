@@ -1,12 +1,15 @@
 import { createBot } from "./bot";
 import { token } from "./config/env";
-import { loadConfigs } from "./config/guildConfig";
-import { loadXp } from "./levels/xpStore";
+import { connectDb } from "./db/client";
 
-// ===== INIT DATA =====
-loadConfigs();
-loadXp();
+async function main() {
+  await connectDb();
 
-// ===== START BOT =====
-const client = createBot();
-client.login(token);
+  const client = createBot();
+  await client.login(token);
+}
+
+main().catch((e) => {
+  console.error("Błąd startowy:", e);
+  process.exit(1);
+});

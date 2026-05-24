@@ -26,24 +26,18 @@ export function createBot() {
       if (process.env.RESET_COMMANDS === "true") {
         await clearGuildCommands(client);
       }
-
       await registerCommands(client);
     } catch (e) {
       console.error("Rejestracja komend nie wyszła:", e);
     }
 
-    // ===== START API (po READY) =====
     startApi(client);
   });
 
-  // ===== EVENTS =====
   client.on("guildMemberAdd", onMemberAdd);
   client.on("guildMemberRemove", onMemberRemove);
-
-  // XP / levelowanie
   client.on("messageCreate", onMessageCreate);
 
-  // Slash commands
   client.on("interactionCreate", async (interaction) => {
     if (!interaction.isChatInputCommand()) return;
     await handleCommand(interaction);

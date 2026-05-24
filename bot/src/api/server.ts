@@ -4,8 +4,8 @@ import type { Context } from "hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
-import type { RoleReward } from "../config/guildConfig";
-import { getConfig, setConfig } from "../config/guildConfig";
+import type { RoleReward } from "../db/providers/mongoose/schemas/guildConfig.schema";
+import { guildConfigRepository } from "../db/providers/mongoose/providers";
 
 type GuildConfigPatch = {
   welcomeChannelId?: string;
@@ -43,12 +43,9 @@ function parseConfigPatch(body: unknown): GuildConfigPatch | null {
 
   const patch: GuildConfigPatch = {};
 
-  if (typeof body.welcomeChannelId === "string")
-    patch.welcomeChannelId = body.welcomeChannelId;
-  if (typeof body.goodbyeChannelId === "string")
-    patch.goodbyeChannelId = body.goodbyeChannelId;
-  if (typeof body.levelUpChannelId === "string")
-    patch.levelUpChannelId = body.levelUpChannelId;
+  if (typeof body.welcomeChannelId === "string") patch.welcomeChannelId = body.welcomeChannelId;
+  if (typeof body.goodbyeChannelId === "string") patch.goodbyeChannelId = body.goodbyeChannelId;
+  if (typeof body.levelUpChannelId === "string") patch.levelUpChannelId = body.levelUpChannelId;
 
   const rewards = parseRoleRewards(body.roleRewards);
   if (rewards) patch.roleRewards = rewards;
@@ -92,9 +89,10 @@ export function startApi(client: Client) {
 
   app.get("/api/health", (c) => c.json({ ok: true }));
 
-  app.get("/api/guilds/:guildId/config", (c) => {
+  app.get("/api/guilds/:guildId/config", async (c) => {
     const guildId = c.req.param("guildId");
-    return c.json(getConfig(guildId) ?? {});
+    const cfg = await guildConfigRepository.get(guildId);
+    return c.json(cfg ?? {});
   });
 
   app.put("/api/guilds/:guildId/config", async (c) => {
@@ -104,7 +102,7 @@ export function startApi(client: Client) {
     const patch = parseConfigPatch(body);
     if (!patch) return c.json({ error: "Invalid or empty JSON body" }, 400);
 
-    setConfig(guildId, patch);
+    await guildConfigRepository.set(guildId, patch);
     return c.json({ ok: true });
   });
 
