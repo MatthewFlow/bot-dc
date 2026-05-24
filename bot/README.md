@@ -8,11 +8,13 @@ A Discord bot for the Jurassic Haven server. Features an XP leveling system, aut
 - **Language:** TypeScript
 - **Discord:** discord.js v14
 - **API:** Hono
+- **Database:** MongoDB + Mongoose
 - **Linting:** ESLint + Prettier
 
 ## Requirements
 
 - Bun v1.2 or newer
+- MongoDB instance (local or remote)
 - A Discord account and bot application ([Discord Developer Portal](https://discord.com/developers/applications))
 
 ## Installation
@@ -48,6 +50,10 @@ API_TOKEN=
 # ── DISCORD ────────────────────────────────────────────────────────
 # Bot token from Discord Developer Portal → Bot → Reset Token
 DISCORD_TOKEN=
+
+# ── DATABASE ───────────────────────────────────────────────────────
+# MongoDB connection string
+MONGODB_URI=mongodb://localhost:27017/jurassic-haven
 
 # ── SERVER ─────────────────────────────────────────────────────────
 # ID of your Discord server (right-click server icon → Copy ID)
@@ -88,13 +94,16 @@ And the following bot permissions:
 - `Send Messages`
 - `View Channels`
 - `Read Message History`
+- `Manage Messages`
 
 Open the generated URL in your browser and select your server.
 
 ## Running
 
+Make sure MongoDB is running, then:
+
 ```bash
-bun run index.ts
+bun run src/index.ts
 ```
 
 Slash commands are registered automatically on first launch.
@@ -118,18 +127,19 @@ If commands are duplicated or you want to re-register them from scratch, set `RE
 | `/cfg_setwelcome #channel`      | Sets the welcome message channel                           |
 | `/cfg_setgoodbye #channel`      | Sets the farewell message channel                          |
 | `/cfg_addreward <level> <role>` | Adds a threshold: role granted from the given level onward |
-| `/cfg_listrewards`              | Lists all configured role thresholds                       |
-| `/cfg_checkrole [user]`         | Debugs progression role status for a user                  |
+| `/cfg_rolelist`                 | Lists all configured role thresholds                       |
+| `/cfg_checkrole [user]`         | Shows progression role status for a user                   |
 | `/cfg_syncrole [user]`          | Forces a role sync for a single user                       |
 | `/cfg_syncall [limit]`          | Syncs roles for multiple users (default max: 50)           |
+| `/cfg_addxp <amount> [user]`    | Adds XP to a user without cooldown                         |
+| `/cfg_clear <amount>`           | Deletes the last N messages from the current channel       |
 
 ### Testing (requires admin role)
 
-| Command                       | Description                                             |
-| ----------------------------- | ------------------------------------------------------- |
-| `/test_welcome`               | Sends a test welcome message to the configured channel  |
-| `/test_goodbye`               | Sends a test farewell message to the configured channel |
-| `/test_addxp <amount> [user]` | Adds XP without cooldown (for testing level thresholds) |
+| Command         | Description                                             |
+| --------------- | ------------------------------------------------------- |
+| `/test_welcome` | Sends a test welcome message to the configured channel  |
+| `/test_goodbye` | Sends a test farewell message to the configured channel |
 
 ## XP and Leveling System
 
@@ -179,44 +189,44 @@ curl -X PUT http://localhost:3001/api/guilds/123456789/config \
 ```
 src/
 ├── config/
-│   ├── env.ts             # environment variables
-│   ├── guildConfig.ts     # per-guild configuration (persisted to JSON)
-│   └── xp.ts              # XP system constants
+│   ├── env.ts               # environment variables
+│   ├── xp.ts                # XP system constants
+│   └── xpHelpers.ts         # levelFromXp, xpToNextLevel helpers
+├── db/
+│   ├── client.ts            # MongoDB connection
+│   ├── repositories/
+│   │   ├── guildConfigRepository.ts  # IGuildConfigRepository interface
+│   │   └── xpRepository.ts           # IXpRepository interface
+│   └── providers/
+│       └── mongoose/
+│           ├── guildConfigProvider.ts # MongoDB implementation
+│           ├── xpProvider.ts          # MongoDB implementation
+│           ├── providers.ts           # exports active provider instances
+│           └── schemas/
+│               ├── guildConfig.schema.ts
+│               └── xp.schema.ts
 ├── api/
-│   └── server.ts          # Hono REST API
+│   └── server.ts            # Hono REST API
 ├── commands/
 │   ├── handlers/
-│   │   ├── handler.ts     # dispatcher — routes commands to handlers
-│   │   ├── guard.ts       # admin role check
-│   │   ├── user.ts        # /level
-│   │   ├── admin.ts       # /cfg_*
-│   │   └── test.ts        # /test_*
-│   └── register.ts        # command registration with Discord
+│   │   ├── handler.ts       # dispatcher — routes commands to handlers
+│   │   ├── guard.ts         # admin role check
+│   │   ├── user.ts          # /level
+│   │   ├── admin.ts         # /cfg_*
+│   │   └── test.ts          # /test_*
+│   └── register.ts          # command registration with Discord
 ├── events/
-│   ├── memberAdd.ts       # handles member join
-│   ├── memberRemove.ts    # handles member leave
-│   └── messageCreate.ts   # XP on message
+│   ├── memberAdd.ts         # handles member join
+│   ├── memberRemove.ts      # handles member leave
+│   └── messageCreate.ts     # XP on message
 ├── levels/
-│   ├── autorole.ts        # assigning and removing progression roles
-│   ├── levelUpNotify.ts   # level-up notifications
-│   └── xpStore.ts         # XP data (persisted to JSON)
+│   ├── autorole.ts          # assigning and removing progression roles
+│   └── levelUpNotify.ts     # level-up notifications
 ├── utils/
-│   └── channels.ts        # channel type validation helper
-├── bot.ts                 # Discord client setup
-└── index.ts               # entry point
+│   └── channels.ts          # channel type validation helper
+├── bot.ts                   # Discord client setup
+└── index.ts                 # entry point
 ```
-
-## Data Persistence
-
-XP and server configuration are stored locally as JSON files:
-
-```
-src/data/
-├── xp.json      # per-guild user XP
-└── config.json  # per-guild channel and role threshold config
-```
-
-Both files are created automatically on first run. Make sure `src/data/` is in your `.gitignore`.
 
 ## Linting and Formatting
 
