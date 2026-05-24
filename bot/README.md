@@ -37,24 +37,35 @@ cp .env.example .env
 Edit `.env`:
 
 ```env
-# Required
-DISCORD_TOKEN=        # bot token from the Discord Developer Portal
-GUILD_ID=             # server ID (right-click the server → Copy ID)
+# ── API ────────────────────────────────────────────────────────────
+# Port on which the Hono REST API will listen
+API_PORT=3001
 
-# API
-API_TOKEN=            # secret for REST API authorization; if empty — API is open
-API_PORT=3001         # HTTP port (default: 3001)
+# Secret token for API authorization via "Authorization: Bearer <token>"
+# Leave empty to disable auth and make the API publicly accessible
+API_TOKEN=
 
-# Admin role
-CFG_ADMIN_ROLE_ID=    # ID of the role required to use /cfg_* and /test_* commands
+# ── DISCORD ────────────────────────────────────────────────────────
+# Bot token from Discord Developer Portal → Bot → Reset Token
+DISCORD_TOKEN=
 
-# Channels (fallback — can also be set via /cfg_* commands)
+# ── SERVER ─────────────────────────────────────────────────────────
+# ID of your Discord server (right-click server icon → Copy ID)
+GUILD_ID=
+
+# ID of the role required to use /cfg_* and /test_* commands
+CFG_ADMIN_ROLE_ID=
+
+# ── CHANNELS ───────────────────────────────────────────────────────
+# Fallback channel IDs — used if not set via /cfg_* commands
 WELCOME_CHANNEL_ID=
 GOODBYE_CHANNEL_ID=
 LEVEL_UP_CHANNEL_ID=
 
-# Debug
-RESET_COMMANDS=false  # set to true to clear and re-register slash commands
+# ── DEBUG ──────────────────────────────────────────────────────────
+# Set to true to clear and re-register slash commands on next startup
+# Set back to false after the bot starts
+RESET_COMMANDS=false
 ```
 
 ### Getting a bot token
@@ -90,13 +101,7 @@ Slash commands are registered automatically on first launch.
 
 ### Resetting slash commands
 
-If commands are duplicated or you want to re-register them from scratch:
-
-```bash
-RESET_COMMANDS=true bun run index.ts
-```
-
-Turn the flag off (or remove it from `.env`) after the bot starts.
+If commands are duplicated or you want to re-register them from scratch, set `RESET_COMMANDS=true` in `.env` and restart the bot. Once the bot starts and logs `Komendy zarejestrowane na serwerze ✅`, set it back to `false`.
 
 ## Commands
 
@@ -174,26 +179,26 @@ curl -X PUT http://localhost:3001/api/guilds/123456789/config \
 ```
 src/
 ├── config/
-│   ├── env.ts           # environment variables
-│   ├── store.ts         # per-guild configuration (persisted to JSON)
-│   └── xp.ts            # XP system constants
+│   ├── env.ts             # environment variables
+│   ├── guildConfig.ts     # per-guild configuration (persisted to JSON)
+│   └── xp.ts              # XP system constants
 ├── api/
-│   └── server.ts        # Hono REST API
+│   └── server.ts          # Hono REST API
 ├── commands/
-│   ├── handlers.ts      # slash command logic
-│   └── register.ts      # command registration with Discord
+│   ├── handlers.ts        # slash command logic
+│   └── register.ts        # command registration with Discord
 ├── events/
-│   ├── memberAdd.ts     # handles member join
-│   ├── memberRemove.ts  # handles member leave
-│   └── messageCreate.ts # XP on message
+│   ├── memberAdd.ts       # handles member join
+│   ├── memberRemove.ts    # handles member leave
+│   └── messageCreate.ts   # XP on message
 ├── levels/
-│   ├── autorole.ts      # assigning and removing progression roles
-│   ├── levelUpNotify.ts # level-up notifications
-│   └── store.ts         # XP data (persisted to JSON)
+│   ├── autorole.ts        # assigning and removing progression roles
+│   ├── levelUpNotify.ts   # level-up notifications
+│   └── xpStore.ts         # XP data (persisted to JSON)
 ├── utils/
-│   └── channels.ts      # channel type validation helper
-├── bot.ts               # Discord client setup
-└── index.ts             # entry point
+│   └── channels.ts        # channel type validation helper
+├── bot.ts                 # Discord client setup
+└── index.ts               # entry point
 ```
 
 ## Data Persistence
@@ -206,7 +211,7 @@ src/data/
 └── config.json  # per-guild channel and role threshold config
 ```
 
-Both files are created automatically on first run. Make sure to add `src/data/` to your `.gitignore`.
+Both files are created automatically on first run. Make sure `src/data/` is in your `.gitignore`.
 
 ## Linting and Formatting
 
