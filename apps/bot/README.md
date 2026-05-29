@@ -1,14 +1,13 @@
 # Jurassic Haven — Discord Bot
 
-A Discord bot for the Jurassic Haven server. Features an XP leveling system, automatic role rewards, welcome and farewell messages, and a REST API for managing server configuration.
+A Discord bot for the Jurassic Haven server. Features an XP leveling system, automatic role rewards, welcome and farewell messages.
 
 ## Tech Stack
 
 - **Runtime:** [Bun](https://bun.sh) v1.2+
 - **Language:** TypeScript
 - **Discord:** discord.js v14
-- **API:** Hono
-- **Database:** MongoDB + Mongoose
+- **Database:** MongoDB + Mongoose (via @jurassic-haven/db)
 - **Linting:** ESLint + Prettier
 
 ## Requirements
@@ -20,11 +19,7 @@ A Discord bot for the Jurassic Haven server. Features an XP leveling system, aut
 ## Installation
 
 ```bash
-# Clone the repository
-git clone <repo-url>
-cd <folder-name>
-
-# Install dependencies
+# From monorepo root
 bun install
 ```
 
@@ -40,37 +35,26 @@ Edit `.env`:
 
 ```env
 # ── API ────────────────────────────────────────────────────────────
-# Port on which the Hono REST API will listen
 API_PORT=3001
-
-# Secret token for API authorization via "Authorization: Bearer <token>"
-# Leave empty to disable auth and make the API publicly accessible
 API_TOKEN=
 
-# ── DISCORD ────────────────────────────────────────────────────────
-# Bot token from Discord Developer Portal → Bot → Reset Token
-DISCORD_TOKEN=
-
 # ── DATABASE ───────────────────────────────────────────────────────
-# MongoDB connection string
 MONGODB_URI=mongodb://localhost:27017/jurassic-haven
 
-# ── SERVER ─────────────────────────────────────────────────────────
-# ID of your Discord server (right-click server icon → Copy ID)
-GUILD_ID=
+# ── DISCORD ────────────────────────────────────────────────────────
+DISCORD_TOKEN=
+DISCORD_CLIENT_ID=
 
-# ID of the role required to use /cfg_* and /test_* commands
+# ── SERVER ─────────────────────────────────────────────────────────
+GUILD_ID=
 CFG_ADMIN_ROLE_ID=
 
 # ── CHANNELS ───────────────────────────────────────────────────────
-# Fallback channel IDs — used if not set via /cfg_* commands
 WELCOME_CHANNEL_ID=
 GOODBYE_CHANNEL_ID=
 LEVEL_UP_CHANNEL_ID=
 
 # ── DEBUG ──────────────────────────────────────────────────────────
-# Set to true to clear and re-register slash commands on next startup
-# Set back to false after the bot starts
 RESET_COMMANDS=false
 ```
 
@@ -96,21 +80,16 @@ And the following bot permissions:
 - `Read Message History`
 - `Manage Messages`
 
-Open the generated URL in your browser and select your server.
-
 ## Running
 
-Make sure MongoDB is running, then:
-
 ```bash
-bun run src/index.ts
+cd apps/bot
+bun run start
 ```
-
-Slash commands are registered automatically on first launch.
 
 ### Resetting slash commands
 
-If commands are duplicated or you want to re-register them from scratch, set `RESET_COMMANDS=true` in `.env` and restart the bot. Once the bot starts and logs `Komendy zarejestrowane na serwerze ✅`, set it back to `false`.
+Set `RESET_COMMANDS=true` in `.env` and restart the bot. Set it back to `false` after startup.
 
 ## Commands
 
@@ -145,101 +124,32 @@ If commands are duplicated or you want to re-register them from scratch, set `RE
 
 - Every message grants **15 XP** (5-second cooldown per user)
 - Level formula: `level = floor(xp / 100) + 1`
-- On level-up, the bot sends a notification to the channel set via `LEVEL_UP_CHANNEL_ID` or `/cfg_*`
-- Role thresholds are configured with `/cfg_addreward` — the bot assigns the highest role the user qualifies for and removes any lower progression roles
-
-## REST API
-
-The API starts automatically alongside the bot.
-
-If `API_TOKEN` is set, all endpoints require the following header:
-
-```
-Authorization: Bearer <API_TOKEN>
-```
-
-### Endpoints
-
-| Method | Path                            | Description                               |
-| ------ | ------------------------------- | ----------------------------------------- |
-| `GET`  | `/api/health`                   | Health check                              |
-| `GET`  | `/api/guilds/:guildId/config`   | Get server configuration                  |
-| `PUT`  | `/api/guilds/:guildId/config`   | Update server configuration               |
-| `GET`  | `/api/guilds/:guildId/channels` | List text channels (fetched from Discord) |
-| `GET`  | `/api/guilds/:guildId/roles`    | List server roles (fetched from Discord)  |
-
-### Example — updating configuration
-
-```bash
-curl -X PUT http://localhost:3001/api/guilds/123456789/config \
-  -H "Authorization: Bearer your-token" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "welcomeChannelId": "111222333",
-    "levelUpChannelId": "444555666",
-    "roleRewards": [
-      { "level": 5, "roleId": "777888999" },
-      { "level": 10, "roleId": "000111222" }
-    ]
-  }'
-```
+- On level-up, the bot sends a notification to the configured channel
+- Role thresholds are configured with `/cfg_addreward`
 
 ## Project Structure
 
 ```
 src/
-├── config/
-│   ├── env.ts               # environment variables
-│   ├── xp.ts                # XP system constants
-│   └── xpHelpers.ts         # levelFromXp, xpToNextLevel helpers
-├── db/
-│   ├── client.ts            # MongoDB connection
-│   ├── repositories/
-│   │   ├── guildConfigRepository.ts  # IGuildConfigRepository interface
-│   │   └── xpRepository.ts           # IXpRepository interface
-│   └── providers/
-│       └── mongoose/
-│           ├── guildConfigProvider.ts # MongoDB implementation
-│           ├── xpProvider.ts          # MongoDB implementation
-│           ├── providers.ts           # exports active provider instances
-│           └── schemas/
-│               ├── guildConfig.schema.ts
-│               └── xp.schema.ts
-├── api/
-│   └── server.ts            # Hono REST API
 ├── commands/
 │   ├── handlers/
-│   │   ├── handler.ts       # dispatcher — routes commands to handlers
-│   │   ├── guard.ts         # admin role check
-│   │   ├── user.ts          # /level
-│   │   ├── admin.ts         # /cfg_*
-│   │   └── test.ts          # /test_*
-│   └── register.ts          # command registration with Discord
+│   │   ├── handler.ts     # dispatcher
+│   │   ├── guard.ts       # admin role check
+│   │   ├── user.ts        # /level
+│   │   ├── admin.ts       # /cfg_*
+│   │   └── test.ts        # /test_*
+│   └── register.ts        # command registration
+├── config/
+│   └── env.ts             # environment variables
 ├── events/
-│   ├── memberAdd.ts         # handles member join
-│   ├── memberRemove.ts      # handles member leave
-│   └── messageCreate.ts     # XP on message
+│   ├── memberAdd.ts       # handles member join
+│   ├── memberRemove.ts    # handles member leave
+│   └── messageCreate.ts   # XP on message
 ├── levels/
-│   ├── autorole.ts          # assigning and removing progression roles
-│   └── levelUpNotify.ts     # level-up notifications
+│   ├── autorole.ts        # progression role assignment
+│   └── levelUpNotify.ts   # level-up notifications
 ├── utils/
-│   └── channels.ts          # channel type validation helper
-├── bot.ts                   # Discord client setup
-└── index.ts                 # entry point
-```
-
-## Linting and Formatting
-
-```bash
-# Check for lint errors
-bun run lint
-
-# Auto-fix lint errors
-bun run lint:fix
-
-# Format all files
-bun run format
-
-# Check formatting without making changes
-bun run format:check
+│   └── channels.ts        # channel type helper
+├── bot.ts                 # Discord client setup
+└── index.ts               # entry point
 ```
