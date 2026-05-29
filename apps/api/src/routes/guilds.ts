@@ -22,7 +22,20 @@ guildRoutes.get("/", async (c) => {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 
-  if (!res.ok) return c.json({ error: "Failed to fetch guilds" }, 502);
+  if (res.status === 429) {
+    const data = (await res.json()) as { retry_after: number };
+    console.warn(`[guilds] Rate limited, retry after ${data.retry_after}s`);
+    return c.json(
+      { error: "Rate limited by Discord", retry_after: data.retry_after },
+      429,
+    );
+  }
+
+  if (!res.ok) {
+    const body = await res.text();
+    console.error(`[guilds] Discord error ${res.status}:`, body);
+    return c.json({ error: "Failed to fetch guilds" }, 502);
+  }
 
   const guilds = (await res.json()) as Array<{
     id: string;
@@ -63,7 +76,19 @@ guildRoutes.get("/:guildId/channels", async (c) => {
       headers: { Authorization: `Bot ${botToken}` },
     });
 
-    if (!res.ok) return c.json({ error: "Failed to fetch channels" }, 502);
+    if (res.status === 429) {
+      const data = (await res.json()) as { retry_after: number };
+      return c.json(
+        { error: "Rate limited by Discord", retry_after: data.retry_after },
+        429,
+      );
+    }
+
+    if (!res.ok) {
+      const body = await res.text();
+      console.error(`[guilds] Discord channels error ${res.status}:`, body);
+      return c.json({ error: "Failed to fetch channels" }, 502);
+    }
 
     const channels = (await res.json()) as Array<{
       id: string;
@@ -81,7 +106,7 @@ guildRoutes.get("/:guildId/channels", async (c) => {
 
     return c.json(textChannels);
   } catch (e) {
-    console.error(`[api] Błąd pobierania kanałów dla ${guildId}:`, e);
+    console.error(`[guilds] Błąd pobierania kanałów dla ${guildId}:`, e);
     return c.json({ error: "Failed to fetch channels" }, 502);
   }
 });
@@ -96,7 +121,19 @@ guildRoutes.get("/:guildId/roles", async (c) => {
       headers: { Authorization: `Bot ${botToken}` },
     });
 
-    if (!res.ok) return c.json({ error: "Failed to fetch roles" }, 502);
+    if (res.status === 429) {
+      const data = (await res.json()) as { retry_after: number };
+      return c.json(
+        { error: "Rate limited by Discord", retry_after: data.retry_after },
+        429,
+      );
+    }
+
+    if (!res.ok) {
+      const body = await res.text();
+      console.error(`[guilds] Discord roles error ${res.status}:`, body);
+      return c.json({ error: "Failed to fetch roles" }, 502);
+    }
 
     const roles = (await res.json()) as Array<{
       id: string;
@@ -110,8 +147,7 @@ guildRoutes.get("/:guildId/roles", async (c) => {
       .sort((a, b) => b.position - a.position);
 
     return c.json(filtered);
-  } catch (e) {
-    console.error(`[api] Błąd pobierania ról dla ${guildId}:`, e);
+  } catch {
     return c.json({ error: "Failed to fetch roles" }, 502);
   }
 });

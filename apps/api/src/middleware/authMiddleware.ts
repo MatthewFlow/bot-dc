@@ -26,7 +26,8 @@ export async function authMiddleware(
     c.set("accessToken", payload.accessToken as string);
 
     await next();
-  } catch {
+  } catch (e) {
+    console.error("[auth] JWT error:", e);
     return c.json({ error: "Invalid or expired token" }, 401);
   }
 }
