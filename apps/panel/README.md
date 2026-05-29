@@ -1,36 +1,88 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Jurassic Haven — Panel
 
-## Getting Started
+Web dashboard for configuring the Jurassic Haven Discord bot. Built with Next.js and Discord OAuth2.
 
-First, run the development server:
+## Tech Stack
+
+- **Framework:** [Next.js](https://nextjs.org) 16+
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS 4
+- **Auth:** Discord OAuth2 (via Jurassic Haven API)
+
+## Requirements
+
+- Bun v1.2 or newer
+- [apps/api](../api/README.md) running on port 3002
+
+## Installation
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# From monorepo root
+bun install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Configuration
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Create `.env` in `apps/panel/`:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```env
+NEXT_PUBLIC_API_URL=http://localhost:3002
+```
 
-## Learn More
+## Running
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+cd apps/panel
+bun run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Pages
 
-## Deploy on Vercel
+| Route                           | Description                                      |
+| ------------------------------- | ------------------------------------------------ |
+| `/`                             | Landing page with Login with Discord button      |
+| `/auth/success`                 | Handles OAuth2 callback, saves JWT token         |
+| `/dashboard`                    | List of servers where user has admin permissions |
+| `/dashboard/[guildId]`          | Server overview                                  |
+| `/dashboard/[guildId]/welcome`  | Welcome & Goodbye channel configuration          |
+| `/dashboard/[guildId]/autorole` | Auto-role on member join configuration           |
+| `/dashboard/[guildId]/levels`   | XP level → role reward tiers                     |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Project Structure
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+src/
+├── app/
+│   ├── page.tsx                          # Landing page
+│   ├── layout.tsx                        # Root layout
+│   ├── globals.css                       # Global styles
+│   ├── auth/
+│   │   └── success/
+│   │       └── page.tsx                  # OAuth2 token handler
+│   └── dashboard/
+│       ├── page.tsx                      # Server list
+│       └── [guildId]/
+│           ├── layout.tsx                # Sidebar layout
+│           ├── page.tsx                  # Server overview
+│           ├── welcome/
+│           │   └── page.tsx              # Welcome/Goodbye config
+│           ├── autorole/
+│           │   └── page.tsx              # Auto-role config
+│           └── levels/
+│               └── page.tsx              # Level → role tiers
+├── components/
+│   └── sidebar.tsx                       # Navigation sidebar
+└── lib/
+    └── api.ts                            # API client functions
+```
+
+## Authentication Flow
+
+1. User clicks **Login with Discord** on the landing page
+2. Redirected to `http://localhost:3002/auth/discord`
+3. Discord OAuth2 authorization
+4. API exchanges code for access token, generates JWT
+5. JWT stored in `localStorage` as `jh_token`
+6. All API requests use `Authorization: Bearer <token>`
