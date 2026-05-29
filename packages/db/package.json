@@ -1,0 +1,14 @@
+{
+  "name": "@jurassic-haven/db",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "dependencies": {
+    "mongoose": "^9.6.2"
+  },
+  "devDependencies": {
+    "@types/node": "^25.9.1"
+  }
+}
