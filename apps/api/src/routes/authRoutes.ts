@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { setCookie } from "hono/cookie";
 import { jwtVerify, SignJWT } from "jose";
 
 const DISCORD_API = "https://discord.com/api/v10";
@@ -49,6 +50,8 @@ authRoutes.get("/callback", async (c) => {
   });
 
   if (!tokenRes.ok) {
+    const err = await tokenRes.text();
+    console.error("[auth] Token exchange failed:", err);
     return c.json({ error: "Failed to exchange code" }, 400);
   }
 
@@ -78,7 +81,15 @@ authRoutes.get("/callback", async (c) => {
     .setExpirationTime("7d")
     .sign(new TextEncoder().encode(jwtSecret));
 
-  return c.redirect(`http://localhost:3000/auth/success?token=${jwt}`);
+  // Zapisz token w cookie zamiast URL
+  setCookie(c, "jh_token", jwt, {
+    httpOnly: false,
+    path: "/",
+    maxAge: 60 * 60 * 24 * 7,
+    sameSite: "Lax",
+  });
+
+  return c.redirect("http://localhost:3000/auth/success");
 });
 
 authRoutes.get("/me", async (c) => {

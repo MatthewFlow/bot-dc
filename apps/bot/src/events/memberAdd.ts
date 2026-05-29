@@ -7,12 +7,20 @@ import { applyAutoRole } from "../levels/autorole";
 import { isAllowedTextChannel } from "../utils/channels";
 
 export async function onMemberAdd(member: GuildMember) {
+  const cfg = await guildConfigRepository.get(member.guild.id);
+
+  // Nadaj rolę przy dołączeniu (np. @Niezweryfikowany)
+  if (cfg?.joinRoleId) {
+    await member.roles.add(cfg.joinRoleId).catch((e) => {
+      console.error(`[memberAdd] Nie udało się nadać joinRole dla ${member.user.username}:`, e);
+    });
+  }
+
   const xp = await xpRepository.getXp(member.guild.id, member.id);
   const level = levelFromXp(xp);
 
   await applyAutoRole(member, level).catch(() => {});
 
-  const cfg = await guildConfigRepository.get(member.guild.id);
   const channelId = cfg?.welcomeChannelId ?? envWelcomeChannelId;
   if (!channelId) return;
 
