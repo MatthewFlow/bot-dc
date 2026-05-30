@@ -6,6 +6,10 @@
     "packages/*"
   ],
   "scripts": {
+    "dev": "bun run --filter './apps/*' dev",
+    "bot": "cd apps/bot && bun run start",
+    "api": "cd apps/api && bun run start",
+    "panel": "cd apps/panel && bun run dev",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write",

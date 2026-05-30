@@ -1,11 +1,29 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getGuildConfig, getChannels, updateGuildConfig } from "@/lib/api";
 import type { GuildConfig, Channel } from "@/lib/api";
 
 type Tab = "welcome" | "goodbye";
+
+const VARIABLES = [
+  { label: "{user}", desc: "Oznaczenie użytkownika" },
+  { label: "{username}", desc: "Nazwa użytkownika" },
+  { label: "{server}", desc: "Nazwa serwera" },
+  { label: "{member_count}", desc: "Liczba członków" },
+];
+
+const DEFAULT_WELCOME = "Siema {user}, miło że jesteś 😄";
+const DEFAULT_GOODBYE = "{username} wyszedł z serwera.";
+
+function resolvePreview(template: string): string {
+  return template
+    .replace(/{user}/g, "@nowy_użytkownik")
+    .replace(/{username}/g, "nowy_użytkownik")
+    .replace(/{server}/g, "Jurassic Haven")
+    .replace(/{member_count}/g, "1,337");
+}
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -18,6 +36,7 @@ export default function WelcomePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("jh_token");
@@ -41,7 +60,12 @@ export default function WelcomePage() {
 
     setSaving(true);
     try {
-      await updateGuildConfig(token, guildId, config);
+      await updateGuildConfig(token, guildId, {
+        welcomeChannelId: config.welcomeChannelId,
+        goodbyeChannelId: config.goodbyeChannelId,
+        welcomeMessage: config.welcomeMessage,
+        goodbyeMessage: config.goodbyeMessage,
+      });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch {
@@ -51,8 +75,29 @@ export default function WelcomePage() {
     }
   }
 
+  function insertVariable(variable: string) {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const field = tab === "welcome" ? "welcomeMessage" : "goodbyeMessage";
+    const current = (tab === "welcome" ? config.welcomeMessage : config.goodbyeMessage) ?? "";
+    const newValue = current.slice(0, start) + variable + current.slice(end);
+
+    setConfig((c) => ({ ...c, [field]: newValue }));
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.setSelectionRange(start + variable.length, start + variable.length);
+    }, 0);
+  }
+
   const channelId = tab === "welcome" ? config.welcomeChannelId : config.goodbyeChannelId;
-  const selectedChannel = channels.find((ch) => ch.id === channelId);
+  const message = tab === "welcome"
+    ? (config.welcomeMessage ?? DEFAULT_WELCOME)
+    : (config.goodbyeMessage ?? DEFAULT_GOODBYE);
+  const field = tab === "welcome" ? "welcomeMessage" : "goodbyeMessage";
 
   if (loading) {
     return (
@@ -77,9 +122,9 @@ export default function WelcomePage() {
         </p>
       </div>
 
-      <div className="flex flex-1 gap-6 overflow-hidden p-8">
+      <div className="flex flex-1 gap-6 overflow-auto p-8">
         {/* Left panel */}
-        <div className="flex w-full max-w-lg flex-col gap-6">
+        <div className="flex w-full max-w-lg flex-col gap-4">
           {/* Tabs */}
           <div className="flex gap-1 rounded-lg bg-[#1a1f2e] p-1">
             {(["welcome", "goodbye"] as Tab[]).map((t) => (
@@ -87,9 +132,7 @@ export default function WelcomePage() {
                 key={t}
                 onClick={() => setTab(t)}
                 className={`flex-1 rounded-md py-2 text-sm font-medium transition ${
-                  tab === t
-                    ? "bg-[#d4a843] text-black"
-                    : "text-gray-400 hover:text-white"
+                  tab === t ? "bg-[#d4a843] text-black" : "text-gray-400 hover:text-white"
                 }`}
               >
                 {t === "welcome" ? "👋 Welcome" : "👋 Goodbye"}
@@ -98,8 +141,8 @@ export default function WelcomePage() {
           </div>
 
           {/* Channel select */}
-          <div className="rounded-xl bg-[#1a1f2e] p-6">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-500">
+          <div className="rounded-xl bg-[#1a1f2e] p-5">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
               Kanał
             </p>
             <select
@@ -112,7 +155,7 @@ export default function WelcomePage() {
                     : { ...c, goodbyeChannelId: val },
                 );
               }}
-              className="mt-2 w-full rounded-lg bg-[#0f1117] px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]"
+              className="w-full rounded-lg bg-[#0f1117] px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]"
             >
               <option value="">— Nie ustawiono —</option>
               {channels.map((ch) => (
@@ -121,6 +164,37 @@ export default function WelcomePage() {
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Message editor */}
+          <div className="rounded-xl bg-[#1a1f2e] p-5">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+              Treść (Markdown + zmienne)
+            </p>
+            <textarea
+              ref={textareaRef}
+              value={message}
+              onChange={(e) => setConfig((c) => ({ ...c, [field]: e.target.value }))}
+              rows={4}
+              className="w-full resize-none rounded-lg bg-[#0f1117] px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]"
+            />
+
+            {/* Variables */}
+            <div className="mt-3">
+              <p className="mb-2 text-xs text-gray-500">Kliknij zmienną aby wstawić:</p>
+              <div className="flex flex-wrap gap-2">
+                {VARIABLES.map((v) => (
+                  <button
+                    key={v.label}
+                    onClick={() => insertVariable(v.label)}
+                    title={v.desc}
+                    className="rounded bg-[#0f1117] px-2.5 py-1 text-xs font-mono text-[#d4a843] transition hover:bg-[#d4a843] hover:text-black"
+                  >
+                    {v.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Save */}
@@ -144,7 +218,7 @@ export default function WelcomePage() {
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#d4a843] text-sm font-bold text-black">
                 JH
               </div>
-              <div>
+              <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-white">Jurassic Haven</span>
                   <span className="rounded bg-[#5865F2] px-1 py-0.5 text-xs text-white">APP</span>
@@ -154,18 +228,26 @@ export default function WelcomePage() {
                   <p className="text-sm font-semibold text-white">
                     {tab === "welcome" ? "🎉 Witamy na serwerze!" : "👋 Do zobaczenia!"}
                   </p>
-                  <p className="mt-1 text-sm text-gray-300">
-                    {tab === "welcome"
-                      ? "Nowy członek dołączył do serwera."
-                      : "Członek opuścił serwer."}
+                  <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-300">
+                    {resolvePreview(message)}
                   </p>
-                  {selectedChannel && (
-                    <p className="mt-2 text-xs text-gray-500">
-                      Kanał: #{selectedChannel.name}
-                    </p>
-                  )}
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Variables reference */}
+          <div className="mt-6">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+              Dostępne zmienne
+            </p>
+            <div className="flex flex-col gap-2">
+              {VARIABLES.map((v) => (
+                <div key={v.label} className="flex items-center gap-3">
+                  <span className="w-32 font-mono text-xs text-[#d4a843]">{v.label}</span>
+                  <span className="text-xs text-gray-400">{v.desc}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>

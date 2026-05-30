@@ -6,6 +6,7 @@ const navItems = [
   { label: "Dashboard", href: "", icon: "⊞" },
   { label: "Welcome / Goodbye", href: "/welcome", icon: "👋" },
   { label: "Auto-role", href: "/autorole", icon: "🎭" },
+  { label: "Reaction Roles", href: "/reaction-roles", icon: "⚡" },
   { label: "Levelowanie", href: "/levels", icon: "📈" },
 ];
 
@@ -17,7 +18,6 @@ export function Sidebar({ guildName }: { guildName: string }) {
 
   return (
     <aside className="flex h-screen w-56 flex-col border-r border-white/5 bg-[#0d1117]">
-      {/* Logo */}
       <div className="flex items-center gap-3 border-b border-white/5 px-4 py-4">
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#1a1f2e] text-sm font-bold text-[#d4a843]">
           JH
@@ -28,7 +28,6 @@ export function Sidebar({ guildName }: { guildName: string }) {
         </div>
       </div>
 
-      {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-2 py-4">
         <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-gray-600">
           Zarządzanie
@@ -56,7 +55,6 @@ export function Sidebar({ guildName }: { guildName: string }) {
         })}
       </nav>
 
-      {/* Footer */}
       <div className="border-t border-white/5 px-4 py-3">
         <button
           onClick={() => router.push("/dashboard")}

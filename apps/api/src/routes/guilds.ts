@@ -1,4 +1,4 @@
-import { guildConfigRepository } from "@jurassic-haven/db";
+import { guildConfigRepository, levelFromXp, xpRepository } from "@jurassic-haven/db";
 import { Hono } from "hono";
 
 import { authMiddleware } from "../middleware/authMiddleware";
@@ -149,5 +149,59 @@ guildRoutes.get("/:guildId/roles", async (c) => {
     return c.json(filtered);
   } catch {
     return c.json({ error: "Failed to fetch roles" }, 502);
+  }
+});
+
+guildRoutes.get("/:guildId/leaderboard", async (c) => {
+  const guildId = c.req.param("guildId");
+  const botToken = process.env.DISCORD_TOKEN;
+  if (!botToken) return c.json({ error: "Missing bot token" }, 500);
+
+  const limit = Number(c.req.query("limit") ?? 10);
+
+  try {
+    const entries = await xpRepository.getLeaderboard(guildId, limit);
+
+    // Pobierz nazwy użytkowników z Discord API
+    const enriched = await Promise.all(
+      entries.map(async (entry, idx) => {
+        const res = await fetch(
+          `${DISCORD_API}/guilds/${guildId}/members/${entry.userId}`,
+          {
+            headers: { Authorization: `Bot ${botToken}` },
+          },
+        );
+
+        let username = entry.userId;
+        let avatar: string | null = null;
+
+        if (res.ok) {
+          const member = (await res.json()) as {
+            nick?: string;
+            user: { username: string; avatar: string | null; id: string };
+            avatar: string | null;
+          };
+          username = member.nick ?? member.user.username;
+          const avatarHash = member.avatar ?? member.user.avatar;
+          if (avatarHash) {
+            avatar = `https://cdn.discordapp.com/avatars/${entry.userId}/${avatarHash}.png`;
+          }
+        }
+
+        return {
+          position: idx + 1,
+          userId: entry.userId,
+          username,
+          avatar,
+          xp: entry.xp,
+          level: levelFromXp(entry.xp),
+        };
+      }),
+    );
+
+    return c.json(enriched);
+  } catch (e) {
+    console.error(`[guilds] Błąd pobierania leaderboard dla ${guildId}:`, e);
+    return c.json({ error: "Failed to fetch leaderboard" }, 502);
   }
 });

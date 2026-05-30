@@ -12,12 +12,13 @@ import {
 } from "./admin";
 import { requireAdminRole } from "./guard";
 import { handleCfgAddXp, handleTestGoodbye, handleTestWelcome } from "./test";
-import { handleLevel } from "./user";
+import { handleLeaderboard, handleLevel } from "./user";
 
 type Handler = (interaction: ChatInputCommandInteraction) => Promise<void>;
 
 const handlers: Record<string, Handler> = {
   level: handleLevel,
+  leaderboard: handleLeaderboard,
   cfg_setwelcome: handleCfgSetWelcome,
   cfg_setgoodbye: handleCfgSetGoodbye,
   cfg_addreward: handleCfgAddReward,

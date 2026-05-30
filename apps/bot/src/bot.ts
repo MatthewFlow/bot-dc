@@ -1,10 +1,12 @@
-import { Client, GatewayIntentBits } from "discord.js";
+import { Client, GatewayIntentBits, Partials } from "discord.js";
 
 import { handleCommand } from "./commands/handlers/handler";
 import { clearGuildCommands, registerCommands } from "./commands/register";
 import { onMemberAdd } from "./events/memberAdd";
 import { onMemberRemove } from "./events/memberRemove";
 import { onMessageCreate } from "./events/messageCreate";
+import { onMessageReactionAdd } from "./events/messageReactionAdd";
+import { onMessageReactionRemove } from "./events/messageReactionRemove";
 
 export function createBot() {
   const client = new Client({
@@ -13,7 +15,9 @@ export function createBot() {
       GatewayIntentBits.GuildMembers,
       GatewayIntentBits.GuildMessages,
       GatewayIntentBits.MessageContent,
+      GatewayIntentBits.GuildMessageReactions,
     ],
+    partials: [Partials.Message, Partials.Reaction, Partials.User],
   });
 
   client.once("clientReady", async () => {
@@ -34,6 +38,8 @@ export function createBot() {
   client.on("guildMemberAdd", onMemberAdd);
   client.on("guildMemberRemove", onMemberRemove);
   client.on("messageCreate", onMessageCreate);
+  client.on("messageReactionAdd", onMessageReactionAdd);
+  client.on("messageReactionRemove", onMessageReactionRemove);
 
   client.on("interactionCreate", async (interaction) => {
     if (!interaction.isChatInputCommand()) return;

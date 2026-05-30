@@ -6,6 +6,17 @@ import { envGoodbyeChannelId, envWelcomeChannelId } from "../../config/env";
 import { applyAutoRole } from "../../levels/autorole";
 import { notifyLevelUp } from "../../levels/levelUpNotify";
 
+const DEFAULT_WELCOME = "Siema {user}, miło że jesteś 😄";
+const DEFAULT_GOODBYE = "{username} wyszedł z serwera.";
+
+function resolveMessage(template: string, interaction: ChatInputCommandInteraction): string {
+  return template
+    .replace(/{user}/g, `<@${interaction.user.id}>`)
+    .replace(/{username}/g, interaction.user.username)
+    .replace(/{server}/g, interaction.guild?.name ?? "serwer")
+    .replace(/{member_count}/g, String(interaction.guild?.memberCount ?? 0));
+}
+
 export async function handleCfgAddXp(interaction: ChatInputCommandInteraction) {
   const guildId = interaction.guildId!;
   const guild = interaction.guild!;
@@ -75,9 +86,11 @@ export async function handleTestWelcome(interaction: ChatInputCommandInteraction
     return;
   }
 
+  const message = resolveMessage(cfg?.welcomeMessage ?? DEFAULT_WELCOME, interaction);
+
   const embed = new EmbedBuilder()
     .setTitle("Witamy! (TEST)")
-    .setDescription(`To jest testowe powitanie, ${interaction.user} 😄`)
+    .setDescription(message)
     .setTimestamp();
 
   await ch.send({ embeds: [embed] });
@@ -112,9 +125,11 @@ export async function handleTestGoodbye(interaction: ChatInputCommandInteraction
     return;
   }
 
+  const message = resolveMessage(cfg?.goodbyeMessage ?? DEFAULT_GOODBYE, interaction);
+
   const embed = new EmbedBuilder()
     .setTitle("Żegnamy! (TEST)")
-    .setDescription(`To jest testowe pożegnanie, ${interaction.user.username}`)
+    .setDescription(message)
     .setTimestamp();
 
   await ch.send({ embeds: [embed] });
