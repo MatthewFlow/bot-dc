@@ -6,16 +6,10 @@ export const metadata: Metadata = {
   description: "Discord bot dashboard",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="bg-[#0f1117] text-white min-h-screen antialiased">
-        {children}
-      </body>
+      <body className="bg-[#0f1117] text-white min-h-screen antialiased">{children}</body>
     </html>
   );
 }

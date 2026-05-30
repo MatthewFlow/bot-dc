@@ -50,7 +50,11 @@ async function getReactionRoles(token: string, guildId: string): Promise<Reactio
   return res.json();
 }
 
-async function publishReactionRole(token: string, guildId: string, data: FormState): Promise<void> {
+async function publishReactionRole(
+  token: string,
+  guildId: string,
+  data: FormState,
+): Promise<void> {
   const res = await fetch(`${API_URL}/guilds/${guildId}/reaction-roles`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
@@ -59,7 +63,11 @@ async function publishReactionRole(token: string, guildId: string, data: FormSta
   if (!res.ok) throw new Error("Failed to publish");
 }
 
-async function deleteReactionRole(token: string, guildId: string, messageId: string): Promise<void> {
+async function deleteReactionRole(
+  token: string,
+  guildId: string,
+  messageId: string,
+): Promise<void> {
   const res = await fetch(`${API_URL}/guilds/${guildId}/reaction-roles/${messageId}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
@@ -83,14 +91,21 @@ export default function ReactionRolesPage() {
 
   useEffect(() => {
     const token = localStorage.getItem("jh_token");
-    if (!token) { router.replace("/"); return; }
+    if (!token) {
+      router.replace("/");
+      return;
+    }
 
     Promise.all([
       getReactionRoles(token, guildId),
       getChannels(token, guildId),
       getRoles(token, guildId),
     ])
-      .then(([rr, ch, r]) => { setList(rr); setChannels(ch); setRoles(r); })
+      .then(([rr, ch, r]) => {
+        setList(rr);
+        setChannels(ch);
+        setRoles(r);
+      })
       .catch(() => router.replace("/dashboard"))
       .finally(() => setLoading(false));
   }, [guildId, router]);
@@ -98,7 +113,7 @@ export default function ReactionRolesPage() {
   function updateEntry(idx: number, field: keyof ReactionRoleEntry, value: string) {
     setForm((f) => ({
       ...f,
-      entries: f.entries.map((e, i) => i === idx ? { ...e, [field]: value } : e),
+      entries: f.entries.map((e, i) => (i === idx ? { ...e, [field]: value } : e)),
     }));
   }
 
@@ -111,15 +126,15 @@ export default function ReactionRolesPage() {
   }
 
   function startEdit(rr: ReactionRole) {
-  setEditingMessageId(rr.messageId);
-  setForm({
-    channelId: rr.channelId,
-    title: rr.title ?? "",  // ← dodaj ?? ""
-    content: rr.content ?? "",
-    color: rr.color ?? "#d4a843",
-    entries: rr.entries,
-  });
-}
+    setEditingMessageId(rr.messageId);
+    setForm({
+      channelId: rr.channelId,
+      title: rr.title ?? "", // ← dodaj ?? ""
+      content: rr.content ?? "",
+      color: rr.color ?? "#d4a843",
+      entries: rr.entries,
+    });
+  }
 
   function cancelEdit() {
     setEditingMessageId(null);
@@ -191,7 +206,9 @@ export default function ReactionRolesPage() {
   return (
     <div className="flex flex-col p-8">
       <div className="mb-8">
-        <p className="text-xs font-semibold uppercase tracking-wider text-gray-600">Assignment Grid</p>
+        <p className="text-xs font-semibold uppercase tracking-wider text-gray-600">
+          Assignment Grid
+        </p>
         <h1 className="mt-1 text-2xl font-bold text-white">
           Reaction <span className="italic text-[#d4a843]">Roles</span>
         </h1>
@@ -209,7 +226,10 @@ export default function ReactionRolesPage() {
                 {editingMessageId ? "Edytuj wiadomość" : "Nowa wiadomość"}
               </p>
               {editingMessageId && (
-                <button onClick={cancelEdit} className="text-xs text-gray-500 hover:text-gray-300">
+                <button
+                  onClick={cancelEdit}
+                  className="text-xs text-gray-500 hover:text-gray-300"
+                >
                   Anuluj
                 </button>
               )}
@@ -226,7 +246,9 @@ export default function ReactionRolesPage() {
                 >
                   <option value="">— Wybierz kanał —</option>
                   {channels.map((ch) => (
-                    <option key={ch.id} value={ch.id}># {ch.name}</option>
+                    <option key={ch.id} value={ch.id}>
+                      # {ch.name}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -279,7 +301,9 @@ export default function ReactionRolesPage() {
 
               {/* Entries */}
               <div>
-                <label className="mb-2 block text-xs text-gray-500">Pary emoji → rola</label>
+                <label className="mb-2 block text-xs text-gray-500">
+                  Pary emoji → rola
+                </label>
                 <div className="flex flex-col gap-2">
                   {form.entries.map((entry, idx) => (
                     <div key={idx} className="flex items-center gap-2">
@@ -296,18 +320,26 @@ export default function ReactionRolesPage() {
                       >
                         <option value="">— Rola —</option>
                         {roles.map((r) => (
-                          <option key={r.id} value={r.id}>{r.name}</option>
+                          <option key={r.id} value={r.id}>
+                            {r.name}
+                          </option>
                         ))}
                       </select>
                       {form.entries.length > 1 && (
-                        <button onClick={() => removeEntry(idx)} className="text-gray-600 hover:text-red-400">
+                        <button
+                          onClick={() => removeEntry(idx)}
+                          className="text-gray-600 hover:text-red-400"
+                        >
                           ✕
                         </button>
                       )}
                     </div>
                   ))}
                 </div>
-                <button onClick={addEntry} className="mt-2 text-xs text-[#d4a843] hover:text-[#c49b3a]">
+                <button
+                  onClick={addEntry}
+                  className="mt-2 text-xs text-[#d4a843] hover:text-[#c49b3a]"
+                >
                   + Dodaj kolejną parę
                 </button>
               </div>
@@ -319,8 +351,12 @@ export default function ReactionRolesPage() {
                   className="rounded border-l-4 bg-[#1a1f2e] p-3"
                   style={{ borderColor: form.color }}
                 >
-                  <p className="text-sm font-semibold text-white">{form.title || "Tytuł embeda"}</p>
-                  <p className="mt-1 text-sm text-gray-300">{form.content || "Treść wiadomości..."}</p>
+                  <p className="text-sm font-semibold text-white">
+                    {form.title || "Tytuł embeda"}
+                  </p>
+                  <p className="mt-1 text-sm text-gray-300">
+                    {form.content || "Treść wiadomości..."}
+                  </p>
                 </div>
               </div>
 
@@ -329,7 +365,11 @@ export default function ReactionRolesPage() {
                 disabled={publishing || !isFormValid}
                 className="mt-2 rounded-lg bg-[#d4a843] py-2.5 text-sm font-semibold text-black transition hover:bg-[#c49b3a] disabled:opacity-40"
               >
-                {publishing ? "Publikowanie..." : editingMessageId ? "Zapisz zmiany" : "Opublikuj"}
+                {publishing
+                  ? "Publikowanie..."
+                  : editingMessageId
+                    ? "Zapisz zmiany"
+                    : "Opublikuj"}
               </button>
             </div>
           </div>
@@ -359,9 +399,14 @@ export default function ReactionRolesPage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
                         {rr.color && (
-                          <span className="h-3 w-3 rounded-full" style={{ backgroundColor: rr.color }} />
+                          <span
+                            className="h-3 w-3 rounded-full"
+                            style={{ backgroundColor: rr.color }}
+                          />
                         )}
-                        <p className="text-xs text-gray-500"># {channelName(rr.channelId)}</p>
+                        <p className="text-xs text-gray-500">
+                          # {channelName(rr.channelId)}
+                        </p>
                       </div>
                       <p className="mt-1 text-sm font-semibold text-white">{rr.title}</p>
                       <p className="truncate text-xs text-gray-400">{rr.content}</p>

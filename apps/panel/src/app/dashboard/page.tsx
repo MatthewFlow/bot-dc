@@ -89,9 +89,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Server list */}
-        <h2 className="mb-4 text-lg font-semibold text-gray-200">
-          Select a server
-        </h2>
+        <h2 className="mb-4 text-lg font-semibold text-gray-200">Select a server</h2>
 
         {guilds.length === 0 ? (
           <p className="text-gray-500">

@@ -9,7 +9,10 @@ import { notifyLevelUp } from "../../levels/levelUpNotify";
 const DEFAULT_WELCOME = "Siema {user}, miło że jesteś 😄";
 const DEFAULT_GOODBYE = "{username} wyszedł z serwera.";
 
-function resolveMessage(template: string, interaction: ChatInputCommandInteraction): string {
+function resolveMessage(
+  template: string,
+  interaction: ChatInputCommandInteraction,
+): string {
   return template
     .replace(/{user}/g, `<@${interaction.user.id}>`)
     .replace(/{username}/g, interaction.user.username)

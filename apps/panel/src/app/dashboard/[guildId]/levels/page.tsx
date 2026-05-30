@@ -36,10 +36,16 @@ export default function LevelsPage() {
 
   useEffect(() => {
     const token = localStorage.getItem("jh_token");
-    if (!token) { router.replace("/"); return; }
+    if (!token) {
+      router.replace("/");
+      return;
+    }
 
     Promise.all([getGuildConfig(token, guildId), getRoles(token, guildId)])
-      .then(([cfg, r]) => { setConfig(cfg); setRoles(r); })
+      .then(([cfg, r]) => {
+        setConfig(cfg);
+        setRoles(r);
+      })
       .catch(() => router.replace("/dashboard"))
       .finally(() => setLoading(false));
 
@@ -56,7 +62,7 @@ export default function LevelsPage() {
         headers: { Authorization: `Bearer ${t}` },
       });
       if (res.ok) {
-        const data = await res.json() as LeaderboardEntry[];
+        const data = (await res.json()) as LeaderboardEntry[];
         setLeaderboard(data);
       }
     } catch {
@@ -152,9 +158,15 @@ export default function LevelsPage() {
           </div>
 
           <div className="grid grid-cols-3 border-b border-white/5 px-6 py-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-gray-600">Lv.</span>
-            <span className="text-xs font-semibold uppercase tracking-wider text-gray-600">Tier</span>
-            <span className="text-xs font-semibold uppercase tracking-wider text-gray-600">Discord rola</span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-600">
+              Lv.
+            </span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-600">
+              Tier
+            </span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-gray-600">
+              Discord rola
+            </span>
           </div>
 
           {rewards.length === 0 ? (
@@ -178,7 +190,10 @@ export default function LevelsPage() {
                     <span className="h-2 w-2 rounded-full bg-[#5865F2]" />
                     {roleName(r.roleId)}
                   </span>
-                  <button onClick={() => removeReward(r.level)} className="text-gray-600 hover:text-red-400">
+                  <button
+                    onClick={() => removeReward(r.level)}
+                    className="text-gray-600 hover:text-red-400"
+                  >
                     ✕
                   </button>
                 </div>
@@ -211,7 +226,9 @@ export default function LevelsPage() {
                 >
                   <option value="">— Wybierz rolę —</option>
                   {roles.map((r) => (
-                    <option key={r.id} value={r.id}>{r.name}</option>
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -246,10 +263,18 @@ export default function LevelsPage() {
         </div>
 
         <div className="grid grid-cols-[2rem_1fr_6rem_6rem] gap-4 border-b border-white/5 px-6 py-2">
-          <span className="text-xs font-semibold uppercase tracking-wider text-gray-600">#</span>
-          <span className="text-xs font-semibold uppercase tracking-wider text-gray-600">Gracz</span>
-          <span className="text-right text-xs font-semibold uppercase tracking-wider text-gray-600">Level</span>
-          <span className="text-right text-xs font-semibold uppercase tracking-wider text-gray-600">XP</span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-gray-600">
+            #
+          </span>
+          <span className="text-xs font-semibold uppercase tracking-wider text-gray-600">
+            Gracz
+          </span>
+          <span className="text-right text-xs font-semibold uppercase tracking-wider text-gray-600">
+            Level
+          </span>
+          <span className="text-right text-xs font-semibold uppercase tracking-wider text-gray-600">
+            XP
+          </span>
         </div>
 
         {leaderboardLoading ? (
@@ -271,13 +296,19 @@ export default function LevelsPage() {
               </span>
               <div className="flex min-w-0 items-center gap-3">
                 {entry.avatar ? (
-                  <img src={entry.avatar} alt={entry.username} className="h-8 w-8 rounded-full" />
+                  <img
+                    src={entry.avatar}
+                    alt={entry.username}
+                    className="h-8 w-8 rounded-full"
+                  />
                 ) : (
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2a2f3e] text-xs font-bold text-gray-300">
                     {entry.username[0]?.toUpperCase()}
                   </div>
                 )}
-                <span className="truncate text-sm font-medium text-white">{entry.username}</span>
+                <span className="truncate text-sm font-medium text-white">
+                  {entry.username}
+                </span>
               </div>
               <div className="text-right">
                 <span className="rounded bg-[#d4a843]/20 px-2 py-0.5 text-xs font-semibold text-[#d4a843]">

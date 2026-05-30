@@ -1,4 +1,4 @@
-import { levelFromXp, guildConfigRepository, xpRepository } from "@jurassic-haven/db";
+import { guildConfigRepository, levelFromXp, xpRepository } from "@jurassic-haven/db";
 import { EmbedBuilder, type GuildMember } from "discord.js";
 
 import { envWelcomeChannelId } from "../config/env";
@@ -20,7 +20,10 @@ export async function onMemberAdd(member: GuildMember) {
 
   if (cfg?.joinRoleId) {
     await member.roles.add(cfg.joinRoleId).catch((e) => {
-      console.error(`[memberAdd] Nie udało się nadać joinRole dla ${member.user.username}:`, e);
+      console.error(
+        `[memberAdd] Nie udało się nadać joinRole dla ${member.user.username}:`,
+        e,
+      );
     });
   }
 

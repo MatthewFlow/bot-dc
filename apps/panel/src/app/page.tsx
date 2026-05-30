@@ -15,8 +15,8 @@ export default function HomePage() {
         </div>
 
         <p className="max-w-sm text-gray-400">
-          Configure your Discord server — welcome channels, farewell messages,
-          XP roles and more.
+          Configure your Discord server — welcome channels, farewell messages, XP roles
+          and more.
         </p>
 
         <a

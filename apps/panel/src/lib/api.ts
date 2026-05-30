@@ -57,7 +57,11 @@ function handleUnauthorized(res: Response): void {
   }
 }
 
-async function fetchWithRetry(url: string, options: RequestInit, retries = 2): Promise<Response> {
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  retries = 2,
+): Promise<Response> {
   const res = await fetch(url, options);
 
   if (res.status === 401) {
@@ -65,7 +69,7 @@ async function fetchWithRetry(url: string, options: RequestInit, retries = 2): P
   }
 
   if (res.status === 429 && retries > 0) {
-    const data = await res.clone().json() as { retry_after?: number };
+    const data = (await res.clone().json()) as { retry_after?: number };
     const delay = (data.retry_after ?? 1) * 1000;
     await new Promise((r) => setTimeout(r, delay));
     return fetchWithRetry(url, options, retries - 1);
@@ -84,15 +88,15 @@ export async function getMe(token: string): Promise<User> {
 }
 
 export async function getGuilds(token: string): Promise<Guild[]> {
-  const res = await fetchWithRetry(
-    `${API_URL}/guilds`,
-    { headers: authHeaders(token) },
-  );
+  const res = await fetchWithRetry(`${API_URL}/guilds`, { headers: authHeaders(token) });
   if (!res.ok) throw new Error("Failed to fetch guilds");
   return res.json();
 }
 
-export async function getGuildConfig(token: string, guildId: string): Promise<GuildConfig> {
+export async function getGuildConfig(
+  token: string,
+  guildId: string,
+): Promise<GuildConfig> {
   const res = await fetch(`${API_URL}/guilds/${guildId}/config`, {
     headers: authHeaders(token),
   });
@@ -116,19 +120,17 @@ export async function updateGuildConfig(
 }
 
 export async function getChannels(token: string, guildId: string): Promise<Channel[]> {
-  const res = await fetchWithRetry(
-    `${API_URL}/guilds/${guildId}/channels`,
-    { headers: authHeaders(token) },
-  );
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/channels`, {
+    headers: authHeaders(token),
+  });
   if (!res.ok) throw new Error("Failed to fetch channels");
   return res.json();
 }
 
 export async function getRoles(token: string, guildId: string): Promise<Role[]> {
-  const res = await fetchWithRetry(
-    `${API_URL}/guilds/${guildId}/roles`,
-    { headers: authHeaders(token) },
-  );
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/roles`, {
+    headers: authHeaders(token),
+  });
   if (!res.ok) throw new Error("Failed to fetch roles");
   return res.json();
 }

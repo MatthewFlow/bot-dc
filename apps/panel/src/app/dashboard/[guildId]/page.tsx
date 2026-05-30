@@ -24,9 +24,24 @@ export default function GuildOverviewPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {[
-          { label: "Welcome / Goodbye", desc: "Ustaw kanały powitalne i pożegnalne", href: `/dashboard/${guildId}/welcome`, icon: "👋" },
-          { label: "Auto-role", desc: "Konfiguruj progi ról za XP", href: `/dashboard/${guildId}/autorole`, icon: "🎭" },
-          { label: "Levelowanie", desc: "System XP i poziomów", href: `/dashboard/${guildId}/levels`, icon: "📈" },
+          {
+            label: "Welcome / Goodbye",
+            desc: "Ustaw kanały powitalne i pożegnalne",
+            href: `/dashboard/${guildId}/welcome`,
+            icon: "👋",
+          },
+          {
+            label: "Auto-role",
+            desc: "Konfiguruj progi ról za XP",
+            href: `/dashboard/${guildId}/autorole`,
+            icon: "🎭",
+          },
+          {
+            label: "Levelowanie",
+            desc: "System XP i poziomów",
+            href: `/dashboard/${guildId}/levels`,
+            icon: "📈",
+          },
         ].map((item) => (
           <button
             key={item.href}

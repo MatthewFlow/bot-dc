@@ -1,5 +1,10 @@
 import { reactionRoleRepository } from "@jurassic-haven/db";
-import type { MessageReaction, PartialMessageReaction, PartialUser, User } from "discord.js";
+import type {
+  MessageReaction,
+  PartialMessageReaction,
+  PartialUser,
+  User,
+} from "discord.js";
 
 export async function onMessageReactionAdd(
   reaction: MessageReaction | PartialMessageReaction,
