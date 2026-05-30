@@ -15,6 +15,9 @@ export class GuildConfigProvider implements IGuildConfigRepository {
       welcomeChannelId: doc.welcomeChannelId,
       goodbyeChannelId: doc.goodbyeChannelId,
       levelUpChannelId: doc.levelUpChannelId,
+      joinRoleId: doc.joinRoleId,
+      welcomeMessage: doc.welcomeMessage,
+      goodbyeMessage: doc.goodbyeMessage,
       roleRewards: doc.roleRewards ?? [],
     };
   }

@@ -8,6 +8,10 @@ export const commands = [
     .setName("level")
     .setDescription("Pokaż swój aktualny level i XP"),
 
+  new SlashCommandBuilder()
+    .setName("leaderboard")
+    .setDescription("Pokaż top 10 graczy na serwerze"),
+
   // ===== CONFIG: WELCOME / GOODBYE =====
   new SlashCommandBuilder()
     .setName("cfg_setwelcome")

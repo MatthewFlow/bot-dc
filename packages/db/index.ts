@@ -1,6 +1,14 @@
 export { connectDb } from "./client";
-export { guildConfigRepository, xpRepository } from "./providers/mongoose/providers";
+export {
+  guildConfigRepository,
+  reactionRoleRepository,
+  xpRepository,
+} from "./providers/mongoose/providers";
 export type { GuildConfig, GuildConfigPatch } from "./repositories/guildConfigRepository";
+export type {
+  ReactionRole,
+  ReactionRoleEntry,
+} from "./repositories/reactionRoleRepository";
 export type {
   AddXpResult,
   AddXpWithCooldownOpts,

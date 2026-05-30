@@ -4,6 +4,7 @@ import { cors } from "hono/cors";
 
 import { authRoutes } from "./routes/authRoutes";
 import { guildRoutes } from "./routes/guilds";
+import { reactionRoleRoutes } from "./routes/reactionRoles";
 import type { AppVariables } from "./types";
 
 const app = new Hono<{ Variables: AppVariables }>();
@@ -20,6 +21,7 @@ app.use(
 
 app.route("/auth", authRoutes);
 app.route("/guilds", guildRoutes);
+app.route("/guilds", reactionRoleRoutes);
 
 app.get("/health", (c) => c.json({ ok: true }));
 

@@ -12,6 +12,8 @@ export type GuildConfig = {
   goodbyeChannelId?: string;
   levelUpChannelId?: string;
   joinRoleId?: string;
+  welcomeMessage?: string;
+  goodbyeMessage?: string;
   roleRewards?: Array<{ level: number; roleId: string }>;
 };
 
@@ -33,6 +35,13 @@ export type User = {
   avatar: string | null;
 };
 
+export class TokenExpiredError extends Error {
+  constructor() {
+    super("Token expired");
+    this.name = "TokenExpiredError";
+  }
+}
+
 function authHeaders(token: string) {
   return {
     Authorization: `Bearer ${token}`,
@@ -40,8 +49,20 @@ function authHeaders(token: string) {
   };
 }
 
+function handleUnauthorized(res: Response): void {
+  if (res.status === 401) {
+    localStorage.removeItem("jh_token");
+    window.location.href = "/";
+    throw new TokenExpiredError();
+  }
+}
+
 async function fetchWithRetry(url: string, options: RequestInit, retries = 2): Promise<Response> {
   const res = await fetch(url, options);
+
+  if (res.status === 401) {
+    handleUnauthorized(res);
+  }
 
   if (res.status === 429 && retries > 0) {
     const data = await res.clone().json() as { retry_after?: number };
@@ -57,6 +78,7 @@ export async function getMe(token: string): Promise<User> {
   const res = await fetch(`${API_URL}/auth/me`, {
     headers: authHeaders(token),
   });
+  handleUnauthorized(res);
   if (!res.ok) throw new Error("Failed to fetch user");
   return res.json();
 }
@@ -74,6 +96,7 @@ export async function getGuildConfig(token: string, guildId: string): Promise<Gu
   const res = await fetch(`${API_URL}/guilds/${guildId}/config`, {
     headers: authHeaders(token),
   });
+  handleUnauthorized(res);
   if (!res.ok) throw new Error("Failed to fetch config");
   return res.json();
 }
@@ -88,6 +111,7 @@ export async function updateGuildConfig(
     headers: authHeaders(token),
     body: JSON.stringify(patch),
   });
+  handleUnauthorized(res);
   if (!res.ok) throw new Error("Failed to update config");
 }
 
