@@ -1,6 +1,6 @@
 # Jurassic Haven — Discord Bot
 
-A Discord bot for the Jurassic Haven server. Features an XP leveling system, automatic role rewards, welcome and farewell messages.
+A Discord bot for the Jurassic Haven server. Features an XP leveling system, automatic role rewards, reaction roles, welcome and farewell messages.
 
 ## Tech Stack
 
@@ -63,7 +63,7 @@ RESET_COMMANDS=false
 1. Go to the [Discord Developer Portal](https://discord.com/developers/applications)
 2. Create a new application → open the **Bot** tab
 3. Click **Reset Token**, copy it into `DISCORD_TOKEN`
-4. Enable **Privileged Gateway Intents**: `Server Members Intent` and `Message Content Intent`
+4. Enable **Privileged Gateway Intents**: `Server Members Intent`, `Message Content Intent` and `Guild Message Reactions Intent`
 
 ### Inviting the bot to your server
 
@@ -79,6 +79,7 @@ And the following bot permissions:
 - `View Channels`
 - `Read Message History`
 - `Manage Messages`
+- `Add Reactions`
 
 ## Running
 
@@ -95,9 +96,10 @@ Set `RESET_COMMANDS=true` in `.env` and restart the bot. Set it back to `false` 
 
 ### User
 
-| Command  | Description                                                    |
-| -------- | -------------------------------------------------------------- |
-| `/level` | Shows your current level, XP, and XP needed for the next level |
+| Command        | Description                                                    |
+| -------------- | -------------------------------------------------------------- |
+| `/level`       | Shows your current level, XP, and XP needed for the next level |
+| `/leaderboard` | Shows top 10 players by XP on the server                       |
 
 ### Configuration (requires admin role)
 
@@ -127,29 +129,50 @@ Set `RESET_COMMANDS=true` in `.env` and restart the bot. Set it back to `false` 
 - On level-up, the bot sends a notification to the configured channel
 - Role thresholds are configured with `/cfg_addreward`
 
+## Welcome & Goodbye Messages
+
+- Welcome and goodbye message content is configurable via the web dashboard
+- Supported variables: `{user}`, `{username}`, `{server}`, `{member_count}`
+- Falls back to default message if not configured
+
+## Auto-role
+
+- A configurable role is automatically assigned to new members on join (e.g. `@Unverified`)
+- Configured via the web dashboard
+
+## Reaction Roles
+
+- Bot publishes an embed with emoji reactions to a configured channel
+- Users react with emoji to receive the associated role
+- Removing a reaction removes the role
+- Multiple emoji → role pairs supported per message
+- Configured via the web dashboard
+
 ## Project Structure
 
 ```
 src/
 ├── commands/
 │   ├── handlers/
-│   │   ├── handler.ts     # dispatcher
-│   │   ├── guard.ts       # admin role check
-│   │   ├── user.ts        # /level
-│   │   ├── admin.ts       # /cfg_*
-│   │   └── test.ts        # /test_*
-│   └── register.ts        # command registration
+│   │   ├── handler.ts              # dispatcher
+│   │   ├── guard.ts                # admin role check
+│   │   ├── user.ts                 # /level, /leaderboard
+│   │   ├── admin.ts                # /cfg_*
+│   │   └── test.ts                 # /test_*
+│   └── register.ts                 # command registration
 ├── config/
-│   └── env.ts             # environment variables
+│   └── env.ts                      # environment variables
 ├── events/
-│   ├── memberAdd.ts       # handles member join
-│   ├── memberRemove.ts    # handles member leave
-│   └── messageCreate.ts   # XP on message
+│   ├── memberAdd.ts                # handles member join + auto-role
+│   ├── memberRemove.ts             # handles member leave
+│   ├── messageCreate.ts            # XP on message
+│   ├── messageReactionAdd.ts       # reaction role assignment
+│   └── messageReactionRemove.ts    # reaction role removal
 ├── levels/
-│   ├── autorole.ts        # progression role assignment
-│   └── levelUpNotify.ts   # level-up notifications
+│   ├── autorole.ts                 # progression role assignment
+│   └── levelUpNotify.ts            # level-up notifications
 ├── utils/
-│   └── channels.ts        # channel type helper
-├── bot.ts                 # Discord client setup
-└── index.ts               # entry point
+│   └── channels.ts                 # channel type helper
+├── bot.ts                          # Discord client setup
+└── index.ts                        # entry point
 ```
