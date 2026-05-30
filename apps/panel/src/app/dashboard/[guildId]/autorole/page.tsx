@@ -105,7 +105,8 @@ export default function AutoRolePage() {
           <div className="p-6">
             <p className="mb-3 text-sm text-gray-400">
               Wybierz rolę która będzie nadawana każdemu nowemu członkowi przy dołączeniu.
-              Zazwyczaj jest to rola <span className="text-white">@Niezweryfikowany</span> lub podobna.
+              Zazwyczaj jest to rola <span className="text-white">@Niezweryfikowany</span>{" "}
+              lub podobna.
             </p>
 
             <select
@@ -128,15 +129,15 @@ export default function AutoRolePage() {
               <div className="mt-4 flex items-center gap-3 rounded-lg bg-[#0f1117] px-4 py-3">
                 <span className="h-2.5 w-2.5 rounded-full bg-[#5865F2]" />
                 <span className="text-sm text-white">@{activeRole.name}</span>
-                <span className="ml-auto text-xs text-gray-500">Aktywna rola przy dołączeniu</span>
+                <span className="ml-auto text-xs text-gray-500">
+                  Aktywna rola przy dołączeniu
+                </span>
               </div>
             )}
 
             {/* Niezapisane zmiany */}
             {hasChanges && (
-              <p className="mt-3 text-xs text-[#d4a843]">
-                ● Masz niezapisane zmiany
-              </p>
+              <p className="mt-3 text-xs text-[#d4a843]">● Masz niezapisane zmiany</p>
             )}
           </div>
 

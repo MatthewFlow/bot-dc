@@ -82,7 +82,8 @@ export default function WelcomePage() {
     const start = textarea.selectionStart;
     const end = textarea.selectionEnd;
     const field = tab === "welcome" ? "welcomeMessage" : "goodbyeMessage";
-    const current = (tab === "welcome" ? config.welcomeMessage : config.goodbyeMessage) ?? "";
+    const current =
+      (tab === "welcome" ? config.welcomeMessage : config.goodbyeMessage) ?? "";
     const newValue = current.slice(0, start) + variable + current.slice(end);
 
     setConfig((c) => ({ ...c, [field]: newValue }));
@@ -94,9 +95,10 @@ export default function WelcomePage() {
   }
 
   const channelId = tab === "welcome" ? config.welcomeChannelId : config.goodbyeChannelId;
-  const message = tab === "welcome"
-    ? (config.welcomeMessage ?? DEFAULT_WELCOME)
-    : (config.goodbyeMessage ?? DEFAULT_GOODBYE);
+  const message =
+    tab === "welcome"
+      ? (config.welcomeMessage ?? DEFAULT_WELCOME)
+      : (config.goodbyeMessage ?? DEFAULT_GOODBYE);
   const field = tab === "welcome" ? "welcomeMessage" : "goodbyeMessage";
 
   if (loading) {
@@ -221,7 +223,9 @@ export default function WelcomePage() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-semibold text-white">Jurassic Haven</span>
-                  <span className="rounded bg-[#5865F2] px-1 py-0.5 text-xs text-white">APP</span>
+                  <span className="rounded bg-[#5865F2] px-1 py-0.5 text-xs text-white">
+                    APP
+                  </span>
                   <span className="text-xs text-gray-500">— dziś</span>
                 </div>
                 <div className="mt-2 rounded-lg border-l-4 border-[#d4a843] bg-[#1a1f2e] p-3">

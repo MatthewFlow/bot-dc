@@ -1,5 +1,5 @@
 import { levelFromXp, xpRepository, xpToNextLevel } from "@jurassic-haven/db";
-import { EmbedBuilder, type ChatInputCommandInteraction } from "discord.js";
+import { type ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
 
 export async function handleLevel(interaction: ChatInputCommandInteraction) {
   const guildId = interaction.guildId!;

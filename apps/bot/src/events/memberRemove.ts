@@ -6,7 +6,10 @@ import { isAllowedTextChannel } from "../utils/channels";
 
 const DEFAULT_GOODBYE = "{username} wyszedł z serwera.";
 
-function resolveMessage(template: string, member: GuildMember | PartialGuildMember): string {
+function resolveMessage(
+  template: string,
+  member: GuildMember | PartialGuildMember,
+): string {
   const username = member.user?.username ?? "Użytkownik";
   return template
     .replace(/{user}/g, `<@${member.id}>`)

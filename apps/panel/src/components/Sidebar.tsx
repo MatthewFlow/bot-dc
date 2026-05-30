@@ -34,9 +34,10 @@ export function Sidebar({ guildName }: { guildName: string }) {
         </p>
         {navItems.map((item) => {
           const href = `/dashboard/${guildId}${item.href}`;
-          const isActive = item.href === ""
-            ? pathname === `/dashboard/${guildId}`
-            : pathname.startsWith(href);
+          const isActive =
+            item.href === ""
+              ? pathname === `/dashboard/${guildId}`
+              : pathname.startsWith(href);
 
           return (
             <button
