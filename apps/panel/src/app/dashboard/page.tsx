@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getGuilds, getMe } from "@/lib/api";
+import { Skeleton } from "@/components/Skeleton";
 import type { Guild, User } from "@/lib/api";
 
 function guildIconUrl(guild: Guild) {
@@ -13,6 +14,15 @@ function guildIconUrl(guild: Guild) {
 function avatarUrl(user: User) {
   if (!user.avatar) return null;
   return `https://cdn.discordapp.com/avatars/${user.userId}/${user.avatar}.png`;
+}
+
+function GuildSkeleton() {
+  return (
+    <div className="flex items-center gap-4 rounded-xl bg-[#1a1f2e] p-4">
+      <Skeleton className="h-12 w-12 rounded-full" />
+      <Skeleton className="h-4 w-32" />
+    </div>
+  );
 }
 
 export default function DashboardPage() {
@@ -41,14 +51,6 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, [router]);
 
-  if (loading) {
-    return (
-      <main className="flex min-h-screen items-center justify-center">
-        <p className="text-gray-400">Loading...</p>
-      </main>
-    );
-  }
-
   return (
     <main className="min-h-screen p-8">
       <div className="mx-auto max-w-4xl">
@@ -61,14 +63,15 @@ export default function DashboardPage() {
             <h1 className="text-xl font-bold text-white">Jurassic Haven</h1>
           </div>
 
-          {user && (
+          {loading ? (
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+          ) : user && (
             <div className="flex items-center gap-3">
               {avatarUrl(user) ? (
-                <img
-                  src={avatarUrl(user)!}
-                  alt={user.username}
-                  className="h-8 w-8 rounded-full"
-                />
+                <img src={avatarUrl(user)!} alt={user.username} className="h-8 w-8 rounded-full" />
               ) : (
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1a1f2e] text-sm font-bold">
                   {user.username[0]?.toUpperCase()}
@@ -88,12 +91,19 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Server list */}
-        <h2 className="mb-4 text-lg font-semibold text-gray-200">Select a server</h2>
+        <h2 className="mb-4 text-lg font-semibold text-gray-200">
+          Wybierz serwer
+        </h2>
 
-        {guilds.length === 0 ? (
+        {loading ? (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <GuildSkeleton key={i} />
+            ))}
+          </div>
+        ) : guilds.length === 0 ? (
           <p className="text-gray-500">
-            No servers found where you have admin permissions.
+            Nie znaleziono serwerów gdzie masz uprawnienia admina.
           </p>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
@@ -104,11 +114,7 @@ export default function DashboardPage() {
                 className="flex items-center gap-4 rounded-xl bg-[#1a1f2e] p-4 text-left transition hover:bg-[#222838]"
               >
                 {guildIconUrl(guild) ? (
-                  <img
-                    src={guildIconUrl(guild)!}
-                    alt={guild.name}
-                    className="h-12 w-12 rounded-full"
-                  />
+                  <img src={guildIconUrl(guild)!} alt={guild.name} className="h-12 w-12 rounded-full" />
                 ) : (
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#2a2f3e] text-lg font-bold text-gray-300">
                     {guild.name[0]?.toUpperCase()}
