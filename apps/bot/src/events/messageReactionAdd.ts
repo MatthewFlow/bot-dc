@@ -43,7 +43,10 @@ export async function onMessageReactionAdd(
   const cfg = await guildConfigRepository.get(guild.id);
   if (cfg?.verifiedRoleId && entry.roleId === cfg.verifiedRoleId && cfg.joinRoleId) {
     await member.roles.remove(cfg.joinRoleId).catch((e) => {
-      console.error(`[reactionAdd] Nie udało się odebrać roli niezweryfikowanego ${cfg.joinRoleId}:`, e);
+      console.error(
+        `[reactionAdd] Nie udało się odebrać roli niezweryfikowanego ${cfg.joinRoleId}:`,
+        e,
+      );
     });
   }
 }

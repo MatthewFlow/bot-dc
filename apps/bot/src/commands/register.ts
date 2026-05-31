@@ -77,7 +77,9 @@ export const commands = [
 
   new SlashCommandBuilder()
     .setName("cfg_syncverify")
-    .setDescription("Nadaj rolę niezweryfikowanego wszystkim członkom bez roli weryfikacji"),
+    .setDescription(
+      "Nadaj rolę niezweryfikowanego wszystkim członkom bez roli weryfikacji",
+    ),
 
   // ===== CONFIG: XP =====
   new SlashCommandBuilder()
