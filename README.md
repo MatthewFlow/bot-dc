@@ -31,6 +31,7 @@ See individual README files for setup instructions:
 - [Bot](./apps/bot/README.md)
 - [API](./apps/api/README.md)
 - [Panel](./apps/panel/README.md)
+- [DB](./packages/db/README.md)
 
 ## Development
 
