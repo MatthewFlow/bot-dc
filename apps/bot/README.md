@@ -109,11 +109,11 @@ Set `RESET_COMMANDS=true` in `.env` and restart the bot. Set it back to `false` 
 | `/cfg_setgoodbye #channel`      | Sets the farewell message channel                          |
 | `/cfg_addreward <level> <role>` | Adds a threshold: role granted from the given level onward |
 | `/cfg_rolelist`                 | Lists all configured role thresholds                       |
-| `/cfg_checkrole [user]`         | Shows progression role status for a user                   |
-| `/cfg_syncrole [user]`          | Forces a role sync for a single user                       |
-| `/cfg_syncall [limit]`          | Syncs roles for multiple users (default max: 50)           |
-| `/cfg_addxp <amount> [user]`    | Adds XP to a user without cooldown                         |
-| `/cfg_clear <amount>`           | Deletes the last N messages from the current channel       |
+| `/cfg_checkrole [user]`              | Shows progression role status for a user                              |
+| `/cfg_syncxp [user] [limit]`         | Sync XP roles — single user if `user` given, otherwise all (max 50)  |
+| `/cfg_syncverify`                    | Assign unverified role to all members who have no verification role   |
+| `/cfg_addxp <amount> [user]`         | Adds XP to a user without cooldown                                    |
+| `/cfg_clear <amount>`                | Deletes the last N messages from the current channel                  |
 
 ### Testing (requires admin role)
 
@@ -135,10 +135,12 @@ Set `RESET_COMMANDS=true` in `.env` and restart the bot. Set it back to `false` 
 - Supported variables: `{user}`, `{username}`, `{server}`, `{member_count}`
 - Falls back to default message if not configured
 
-## Auto-role
+## Auto-role & Verification
 
-- A configurable role is automatically assigned to new members on join (e.g. `@Unverified`)
-- Configured via the web dashboard
+- **Unverified role** (`joinRoleId`) — automatically assigned to every new member on join
+- **Verified role** (`verifiedRoleId`) — when a user receives this role via Reaction Roles, the bot automatically removes the unverified role
+- Both roles are configured via the web dashboard (Auto-role page)
+- Use `/cfg_syncverify` to retroactively assign the unverified role to existing members who have neither role
 
 ## Reaction Roles
 
