@@ -54,10 +54,10 @@ await xpRepository.addXpWithCooldown({ guildId, userId, amount: 15 });
 
 Stores per-guild bot configuration.
 
-| Method | Description |
-| ------ | ----------- |
-| `get(guildId)` | Returns config or `null` if not set |
-| `set(guildId, patch)` | Upserts a partial config update |
+| Method                | Description                         |
+| --------------------- | ----------------------------------- |
+| `get(guildId)`        | Returns config or `null` if not set |
+| `set(guildId, patch)` | Upserts a partial config update     |
 
 **Schema fields:** `welcomeChannelId`, `goodbyeChannelId`, `levelUpChannelId`, `joinRoleId`, `welcomeMessage`, `goodbyeMessage`, `roleRewards[]` (`{ level, roleId }`)
 
@@ -65,37 +65,37 @@ Stores per-guild bot configuration.
 
 Stores per-user XP across guilds.
 
-| Method | Description |
-| ------ | ----------- |
-| `get(guildId, userId)` | Returns XP entry or `null` |
-| `addXpWithCooldown(opts)` | Adds XP respecting the 5s cooldown, returns result with level info |
-| `addXp(guildId, userId, amount)` | Adds XP without cooldown check |
-| `getLeaderboard(guildId, limit)` | Returns top N users sorted by XP |
+| Method                           | Description                                                        |
+| -------------------------------- | ------------------------------------------------------------------ |
+| `get(guildId, userId)`           | Returns XP entry or `null`                                         |
+| `addXpWithCooldown(opts)`        | Adds XP respecting the 5s cooldown, returns result with level info |
+| `addXp(guildId, userId, amount)` | Adds XP without cooldown check                                     |
+| `getLeaderboard(guildId, limit)` | Returns top N users sorted by XP                                   |
 
 ### `reactionRoleRepository`
 
 Stores reaction role message configurations.
 
-| Method | Description |
-| ------ | ----------- |
-| `getByGuildId(guildId)` | Lists all reaction role messages for a guild |
+| Method                      | Description                                   |
+| --------------------------- | --------------------------------------------- |
+| `getByGuildId(guildId)`     | Lists all reaction role messages for a guild  |
 | `getByMessageId(messageId)` | Returns config for a specific Discord message |
-| `create(data)` | Creates a new reaction role configuration |
-| `delete(messageId)` | Removes a reaction role configuration |
+| `create(data)`              | Creates a new reaction role configuration     |
+| `delete(messageId)`         | Removes a reaction role configuration         |
 
 ## XP Helpers
 
 Constants and pure functions exported from `xpHelpers.ts`:
 
-| Export | Value / Description |
-| ------ | ------------------- |
-| `XP_PER_MESSAGE` | `15` — XP granted per message |
-| `XP_COOLDOWN_MS` | `5000` — Cooldown between XP grants (ms) |
-| `XP_PER_LEVEL` | `100` — XP required per level |
-| `XP_SAVE_DEBOUNCE_MS` | `2000` — Debounce before flushing XP to DB (ms) |
+| Export                | Value / Description                                      |
+| --------------------- | -------------------------------------------------------- |
+| `XP_PER_MESSAGE`      | `15` — XP granted per message                            |
+| `XP_COOLDOWN_MS`      | `5000` — Cooldown between XP grants (ms)                 |
+| `XP_PER_LEVEL`        | `100` — XP required per level                            |
+| `XP_SAVE_DEBOUNCE_MS` | `2000` — Debounce before flushing XP to DB (ms)          |
 | `XP_SYNCALL_DELAY_MS` | `350` — Delay between members during bulk role sync (ms) |
-| `levelFromXp(xp)` | `floor(xp / 100) + 1` |
-| `xpToNextLevel(xp)` | XP remaining until next level |
+| `levelFromXp(xp)`     | `floor(xp / 100) + 1`                                    |
+| `xpToNextLevel(xp)`   | XP remaining until next level                            |
 
 ## Environment
 

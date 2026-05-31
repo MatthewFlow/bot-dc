@@ -103,17 +103,17 @@ Set `RESET_COMMANDS=true` in `.env` and restart the bot. Set it back to `false` 
 
 ### Configuration (requires admin role)
 
-| Command                         | Description                                                |
-| ------------------------------- | ---------------------------------------------------------- |
-| `/cfg_setwelcome #channel`      | Sets the welcome message channel                           |
-| `/cfg_setgoodbye #channel`      | Sets the farewell message channel                          |
-| `/cfg_addreward <level> <role>` | Adds a threshold: role granted from the given level onward |
-| `/cfg_rolelist`                 | Lists all configured role thresholds                       |
-| `/cfg_checkrole [user]`              | Shows progression role status for a user                              |
-| `/cfg_syncxp [user] [limit]`         | Sync XP roles — single user if `user` given, otherwise all (max 50)  |
-| `/cfg_syncverify`                    | Assign unverified role to all members who have no verification role   |
-| `/cfg_addxp <amount> [user]`         | Adds XP to a user without cooldown                                    |
-| `/cfg_clear <amount>`                | Deletes the last N messages from the current channel                  |
+| Command                         | Description                                                         |
+| ------------------------------- | ------------------------------------------------------------------- |
+| `/cfg_setwelcome #channel`      | Sets the welcome message channel                                    |
+| `/cfg_setgoodbye #channel`      | Sets the farewell message channel                                   |
+| `/cfg_addreward <level> <role>` | Adds a threshold: role granted from the given level onward          |
+| `/cfg_rolelist`                 | Lists all configured role thresholds                                |
+| `/cfg_checkrole [user]`         | Shows progression role status for a user                            |
+| `/cfg_syncxp [user] [limit]`    | Sync XP roles — single user if `user` given, otherwise all (max 50) |
+| `/cfg_syncverify`               | Assign unverified role to all members who have no verification role |
+| `/cfg_addxp <amount> [user]`    | Adds XP to a user without cooldown                                  |
+| `/cfg_clear <amount>`           | Deletes the last N messages from the current channel                |
 
 ### Testing (requires admin role)
 
