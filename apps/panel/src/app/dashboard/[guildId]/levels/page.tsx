@@ -3,7 +3,9 @@
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { ConfirmModal } from "@/components/confirmModal";
 import { Skeleton, SkeletonRow } from "@/components/Skeleton";
+import { useToast } from "@/components/toast";
 import type { GuildConfig, LeaderboardEntry, Role } from "@/lib/api";
 import { getGuildConfig, getLeaderboard, getRoles, updateGuildConfig } from "@/lib/api";
 
@@ -57,6 +59,7 @@ export default function LevelsPage() {
   const router = useRouter();
   const params = useParams();
   const guildId = params.guildId as string;
+  const toast = useToast();
 
   const [config, setConfig] = useState<GuildConfig>({});
   const [roles, setRoles] = useState<Role[]>([]);
@@ -64,10 +67,9 @@ export default function LevelsPage() {
   const [loading, setLoading] = useState(true);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [newLevel, setNewLevel] = useState("");
   const [newRoleId, setNewRoleId] = useState("");
+  const [pendingDelete, setPendingDelete] = useState<number | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("jh_token");
@@ -122,6 +124,7 @@ export default function LevelsPage() {
       ...c,
       roleRewards: (c.roleRewards ?? []).filter((r) => r.level !== level),
     }));
+    setPendingDelete(null);
   }
 
   async function handleSave() {
@@ -130,11 +133,9 @@ export default function LevelsPage() {
     setSaving(true);
     try {
       await updateGuildConfig(token, guildId, { roleRewards: config.roleRewards });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+      toast("Zapisano zmiany.", "success");
     } catch {
-      setError("Nie udało się zapisać.");
-      setTimeout(() => setError(null), 4000);
+      toast("Nie udało się zapisać.", "error");
     } finally {
       setSaving(false);
     }
@@ -168,13 +169,12 @@ export default function LevelsPage() {
               <p className="text-base font-semibold text-white">Tiery → Role</p>
             </div>
             <div className="flex items-center gap-3">
-              {error && <p className="text-xs text-red-400">{error}</p>}
               <button
                 onClick={handleSave}
                 disabled={saving}
                 className="rounded-lg bg-[#d4a843] px-4 py-2 text-sm font-semibold text-black transition hover:bg-[#c49b3a] disabled:opacity-50"
               >
-                {saving ? "Zapisywanie..." : saved ? "Zapisano ✓" : "Zapisz zmiany"}
+                {saving ? "Zapisywanie..." : "Zapisz zmiany"}
               </button>
             </div>
           </div>
@@ -212,7 +212,7 @@ export default function LevelsPage() {
                     {roleName(r.roleId)}
                   </span>
                   <button
-                    onClick={() => removeReward(r.level)}
+                    onClick={() => setPendingDelete(r.level)}
                     className="text-gray-600 hover:text-red-400"
                   >
                     ✕
@@ -341,6 +341,14 @@ export default function LevelsPage() {
           ))
         )}
       </div>
+
+      {pendingDelete !== null && (
+        <ConfirmModal
+          message={`Czy na pewno chcesz usunąć próg dla poziomu ${pendingDelete}?`}
+          onConfirm={() => removeReward(pendingDelete)}
+          onCancel={() => setPendingDelete(null)}
+        />
+      )}
     </div>
   );
 }

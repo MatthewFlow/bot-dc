@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { Skeleton } from "@/components/Skeleton";
+import { useToast } from "@/components/toast";
 import type { Channel, GuildConfig } from "@/lib/api";
 import { getChannels, getGuildConfig, updateGuildConfig } from "@/lib/api";
 
@@ -63,14 +64,13 @@ export default function WelcomePage() {
   const router = useRouter();
   const params = useParams();
   const guildId = params.guildId as string;
+  const toast = useToast();
 
   const [tab, setTab] = useState<Tab>("welcome");
   const [config, setConfig] = useState<GuildConfig>({});
   const [channels, setChannels] = useState<Channel[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -100,11 +100,9 @@ export default function WelcomePage() {
         welcomeMessage: config.welcomeMessage,
         goodbyeMessage: config.goodbyeMessage,
       });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 3000);
+      toast("Zapisano zmiany.", "success");
     } catch {
-      setError("Nie udało się zapisać.");
-      setTimeout(() => setError(null), 4000);
+      toast("Nie udało się zapisać.", "error");
     } finally {
       setSaving(false);
     }
@@ -222,9 +220,8 @@ export default function WelcomePage() {
               disabled={saving}
               className="rounded-lg bg-[#d4a843] px-6 py-3 font-semibold text-black transition hover:bg-[#c49b3a] disabled:opacity-50"
             >
-              {saving ? "Zapisywanie..." : saved ? "Zapisano ✓" : "Zapisz zmiany"}
+              {saving ? "Zapisywanie..." : "Zapisz zmiany"}
             </button>
-            {error && <p className="text-xs text-red-400">{error}</p>}
           </div>
         </div>
 

@@ -3,6 +3,8 @@
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { ConfirmModal } from "@/components/confirmModal";
+import { useToast } from "@/components/toast";
 import type { Channel, ReactionRole, ReactionRoleEntry, Role } from "@/lib/api";
 import {
   deleteReactionRole,
@@ -40,16 +42,17 @@ export default function ReactionRolesPage() {
   const router = useRouter();
   const params = useParams();
   const guildId = params.guildId as string;
+  const toast = useToast();
 
   const [list, setList] = useState<ReactionRole[]>([]);
   const [channels, setChannels] = useState<Channel[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("jh_token");
@@ -130,8 +133,7 @@ export default function ReactionRolesPage() {
       setForm(EMPTY_FORM);
       setEditingMessageId(null);
     } catch {
-      setError("Nie udało się opublikować.");
-      setTimeout(() => setError(null), 4000);
+      toast("Nie udało się opublikować.", "error");
     } finally {
       setPublishing(false);
     }
@@ -141,13 +143,14 @@ export default function ReactionRolesPage() {
     const token = localStorage.getItem("jh_token");
     if (!token) return;
 
+    setPendingDelete(null);
     try {
       await deleteReactionRole(token, guildId, messageId);
       setList((l) => l.filter((r) => r.messageId !== messageId));
       if (editingMessageId === messageId) cancelEdit();
+      toast("Wiadomość usunięta.", "success");
     } catch {
-      setError("Nie udało się usunąć.");
-      setTimeout(() => setError(null), 4000);
+      toast("Nie udało się usunąć.", "error");
     }
   }
 
@@ -335,7 +338,6 @@ export default function ReactionRolesPage() {
                     ? "Zapisz zmiany"
                     : "Opublikuj"}
               </button>
-              {error && <p className="text-xs text-red-400">{error}</p>}
             </div>
           </div>
         </div>
@@ -395,7 +397,7 @@ export default function ReactionRolesPage() {
                         Edytuj
                       </button>
                       <button
-                        onClick={() => handleDelete(rr.messageId)}
+                        onClick={() => setPendingDelete(rr.messageId)}
                         className="rounded-lg bg-[#0f1117] px-3 py-1.5 text-xs text-red-400 hover:bg-red-400/10"
                       >
                         Usuń
@@ -408,6 +410,14 @@ export default function ReactionRolesPage() {
           </div>
         </div>
       </div>
+
+      {pendingDelete !== null && (
+        <ConfirmModal
+          message="Czy na pewno chcesz usunąć tę wiadomość reaction role? Zostanie usunięta także z Discorda."
+          onConfirm={() => handleDelete(pendingDelete)}
+          onCancel={() => setPendingDelete(null)}
+        />
+      )}
     </div>
   );
 }

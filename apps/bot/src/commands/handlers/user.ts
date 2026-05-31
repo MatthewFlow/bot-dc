@@ -49,3 +49,40 @@ export async function handleLeaderboard(interaction: ChatInputCommandInteraction
 
   await interaction.editReply({ embeds: [embed] });
 }
+
+export async function handleProfile(interaction: ChatInputCommandInteraction) {
+  const guildId = interaction.guildId!;
+  const guild = interaction.guild!;
+
+  const targetUser = interaction.options.getUser("user") ?? interaction.user;
+
+  await interaction.deferReply();
+
+  const member = await guild.members.fetch(targetUser.id).catch(() => null);
+
+  const xp = await xpRepository.getXp(guildId, targetUser.id);
+  const level = levelFromXp(xp);
+  const missing = xpToNextLevel(xp);
+
+  const leaderboard = await xpRepository.getLeaderboard(guildId, 100);
+  const idx = leaderboard.findIndex((e) => e.userId === targetUser.id);
+  const position = idx >= 0 ? `#${idx + 1}` : "poza top 100";
+
+  const displayName = member?.displayName ?? targetUser.username;
+  const avatarUrl =
+    member?.displayAvatarURL({ size: 256 }) ?? targetUser.displayAvatarURL({ size: 256 });
+
+  const embed = new EmbedBuilder()
+    .setTitle(`Profil — ${displayName}`)
+    .setThumbnail(avatarUrl)
+    .setColor(0xd4a843)
+    .addFields(
+      { name: "Level", value: `**${level}**`, inline: true },
+      { name: "XP", value: `**${xp}**`, inline: true },
+      { name: "Pozycja", value: `**${position}**`, inline: true },
+      { name: "Do następnego levelu", value: `**${missing} XP**`, inline: false },
+    )
+    .setTimestamp();
+
+  await interaction.editReply({ embeds: [embed] });
+}
