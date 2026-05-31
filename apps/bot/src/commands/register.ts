@@ -12,6 +12,16 @@ export const commands = [
     .setName("leaderboard")
     .setDescription("Pokaż top 10 graczy na serwerze"),
 
+  new SlashCommandBuilder()
+    .setName("profile")
+    .setDescription("Pokaż profil XP użytkownika")
+    .addUserOption((opt) =>
+      opt
+        .setName("user")
+        .setDescription("Użytkownik do sprawdzenia (domyślnie Ty)")
+        .setRequired(false),
+    ),
+
   // ===== CONFIG: WELCOME / GOODBYE =====
   new SlashCommandBuilder()
     .setName("cfg_setwelcome")
