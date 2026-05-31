@@ -44,6 +44,7 @@ export default function AutoRolePage() {
 
   const [config, setConfig] = useState<GuildConfig>({});
   const [savedRoleId, setSavedRoleId] = useState<string | undefined>(undefined);
+  const [savedVerifiedRoleId, setSavedVerifiedRoleId] = useState<string | undefined>(undefined);
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -55,7 +56,7 @@ export default function AutoRolePage() {
     if (!token) { router.replace("/"); return; }
 
     Promise.all([getGuildConfig(token, guildId), getRoles(token, guildId)])
-      .then(([cfg, r]) => { setConfig(cfg); setSavedRoleId(cfg.joinRoleId); setRoles(r); })
+      .then(([cfg, r]) => { setConfig(cfg); setSavedRoleId(cfg.joinRoleId); setSavedVerifiedRoleId(cfg.verifiedRoleId); setRoles(r); })
       .catch(() => router.replace("/dashboard"))
       .finally(() => setLoading(false));
   }, [guildId, router]);
@@ -65,8 +66,12 @@ export default function AutoRolePage() {
     if (!token) return;
     setSaving(true);
     try {
-      await updateGuildConfig(token, guildId, { joinRoleId: config.joinRoleId });
+      await updateGuildConfig(token, guildId, {
+        joinRoleId: config.joinRoleId,
+        verifiedRoleId: config.verifiedRoleId,
+      });
       setSavedRoleId(config.joinRoleId);
+      setSavedVerifiedRoleId(config.verifiedRoleId);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch {
@@ -75,8 +80,9 @@ export default function AutoRolePage() {
     } finally { setSaving(false); }
   }
 
-  const hasChanges = config.joinRoleId !== savedRoleId;
+  const hasChanges = config.joinRoleId !== savedRoleId || config.verifiedRoleId !== savedVerifiedRoleId;
   const activeRole = roles.find((r) => r.id === savedRoleId);
+  const activeVerifiedRole = roles.find((r) => r.id === savedVerifiedRoleId);
 
   if (loading) return <AutoRoleSkeleton />;
 
@@ -105,10 +111,10 @@ export default function AutoRolePage() {
             </label>
           </div>
 
-          <div className="p-6">
+          <div className="p-6 border-b border-white/5">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-500">Rola niezweryfikowanego</p>
             <p className="mb-3 text-sm text-gray-400">
-              Wybierz rolę która będzie nadawana każdemu nowemu członkowi przy dołączeniu.
-              Zazwyczaj jest to rola <span className="text-white">@Niezweryfikowany</span> lub podobna.
+              Nadawana każdemu nowemu członkowi przy dołączeniu. Zazwyczaj <span className="text-white">@Niezweryfikowany</span>.
             </p>
             <select value={config.joinRoleId ?? ""}
               onChange={(e) => setConfig((c) => ({ ...c, joinRoleId: e.target.value || undefined }))}
@@ -122,6 +128,27 @@ export default function AutoRolePage() {
                 <span className="h-2.5 w-2.5 rounded-full bg-[#5865F2]" />
                 <span className="text-sm text-white">@{activeRole.name}</span>
                 <span className="ml-auto text-xs text-gray-500">Aktywna rola przy dołączeniu</span>
+              </div>
+            )}
+          </div>
+
+          <div className="p-6">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-500">Rola zweryfikowanego</p>
+            <p className="mb-3 text-sm text-gray-400">
+              Gdy użytkownik zareaguje emoji w systemie Reaction Roles i ta rola zostanie mu nadana — bot automatycznie odbierze rolę niezweryfikowanego.
+            </p>
+            <select value={config.verifiedRoleId ?? ""}
+              onChange={(e) => setConfig((c) => ({ ...c, verifiedRoleId: e.target.value || undefined }))}
+              className="w-full max-w-sm rounded-lg bg-[#0f1117] px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]">
+              <option value="">— Nie ustawiono —</option>
+              {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+            </select>
+
+            {activeVerifiedRole && (
+              <div className="mt-4 flex items-center gap-3 rounded-lg bg-[#0f1117] px-4 py-3">
+                <span className="h-2.5 w-2.5 rounded-full bg-[#57F287]" />
+                <span className="text-sm text-white">@{activeVerifiedRole.name}</span>
+                <span className="ml-auto text-xs text-gray-500">Aktywna rola zweryfikowanego</span>
               </div>
             )}
 

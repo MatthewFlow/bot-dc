@@ -58,23 +58,26 @@ export const commands = [
 
   // ===== CONFIG: ROLE SYNC =====
   new SlashCommandBuilder()
-    .setName("cfg_syncrole")
-    .setDescription("Wymuś synchronizację roli progresji (1 użytkownik)")
+    .setName("cfg_syncxp")
+    .setDescription("Synchronizuj role XP — jeden użytkownik lub wszyscy")
     .addUserOption((opt) =>
-      opt.setName("user").setDescription("Użytkownik (domyślnie Ty)").setRequired(false),
-    ),
-
-  new SlashCommandBuilder()
-    .setName("cfg_syncall")
-    .setDescription("Synchronizuj role progresji dla wielu użytkowników")
+      opt
+        .setName("user")
+        .setDescription("Konkretny użytkownik — bez opcji synchronizuje wszystkich")
+        .setRequired(false),
+    )
     .addIntegerOption((opt) =>
       opt
         .setName("limit")
-        .setDescription("Ilu użytkowników max zsynchronizować (domyślnie 50)")
+        .setDescription("Maks. liczba użytkowników w trybie masowym (domyślnie 50)")
         .setRequired(false)
         .setMinValue(1)
         .setMaxValue(500),
     ),
+
+  new SlashCommandBuilder()
+    .setName("cfg_syncverify")
+    .setDescription("Nadaj rolę niezweryfikowanego wszystkim członkom bez roli weryfikacji"),
 
   // ===== CONFIG: XP =====
   new SlashCommandBuilder()

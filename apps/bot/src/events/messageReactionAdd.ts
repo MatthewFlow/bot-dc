@@ -1,4 +1,4 @@
-import { reactionRoleRepository } from "@jurassic-haven/db";
+import { guildConfigRepository, reactionRoleRepository } from "@jurassic-haven/db";
 import type {
   MessageReaction,
   PartialMessageReaction,
@@ -39,4 +39,11 @@ export async function onMessageReactionAdd(
   await member.roles.add(entry.roleId).catch((e) => {
     console.error(`[reactionAdd] Nie udało się nadać roli ${entry.roleId}:`, e);
   });
+
+  const cfg = await guildConfigRepository.get(guild.id);
+  if (cfg?.verifiedRoleId && entry.roleId === cfg.verifiedRoleId && cfg.joinRoleId) {
+    await member.roles.remove(cfg.joinRoleId).catch((e) => {
+      console.error(`[reactionAdd] Nie udało się odebrać roli niezweryfikowanego ${cfg.joinRoleId}:`, e);
+    });
+  }
 }
