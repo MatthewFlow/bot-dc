@@ -47,8 +47,9 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | `/dashboard`                    | List of servers where user has admin permissions |
 | `/dashboard/[guildId]`          | Server overview                                  |
 | `/dashboard/[guildId]/welcome`  | Welcome & Goodbye channel configuration          |
-| `/dashboard/[guildId]/autorole` | Auto-role on member join configuration           |
-| `/dashboard/[guildId]/levels`   | XP level → role reward tiers                     |
+| `/dashboard/[guildId]/autorole`         | Auto-role on member join configuration           |
+| `/dashboard/[guildId]/levels`           | XP level → role reward tiers                     |
+| `/dashboard/[guildId]/reaction-roles`   | Reaction role embeds with emoji → role pairs     |
 
 ## Project Structure
 
@@ -70,12 +71,15 @@ src/
 │           │   └── page.tsx              # Welcome/Goodbye config
 │           ├── autorole/
 │           │   └── page.tsx              # Auto-role config
-│           └── levels/
-│               └── page.tsx              # Level → role tiers
+│           ├── levels/
+│           │   └── page.tsx              # Level → role tiers
+│           └── reaction-roles/
+│               └── page.tsx              # Reaction roles config
 ├── components/
-│   └── sidebar.tsx                       # Navigation sidebar
+│   ├── Sidebar.tsx                       # Navigation sidebar
+│   └── Skeleton.tsx                      # Loading skeleton components
 └── lib/
-    └── api.ts                            # API client functions
+    └── api.ts                            # Typed API client (fetch wrapper)
 ```
 
 ## Authentication Flow

@@ -40,16 +40,22 @@ Install all dependencies from root:
 bun install
 ```
 
-Run each app in a separate terminal:
+Start all apps at once in watch mode (auto-reload on file changes):
 
 ```bash
-# Terminal 1
+bun run dev
+```
+
+Or run each app individually in a separate terminal:
+
+```bash
+# Terminal 1 — Discord bot
 cd apps/bot && bun run start
 
-# Terminal 2
+# Terminal 2 — REST API
 cd apps/api && bun run start
 
-# Terminal 3
+# Terminal 3 — Web dashboard
 cd apps/panel && bun run dev
 ```
 
