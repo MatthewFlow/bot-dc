@@ -2,10 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getChannels, getRoles } from "@/lib/api";
-import type { Channel, Role } from "@/lib/api";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3002";
+import {
+  deleteReactionRole,
+  getChannels,
+  getReactionRoles,
+  getRoles,
+  publishReactionRole,
+} from "@/lib/api";
+import type { Channel, ReactionRole, ReactionRoleEntry, Role } from "@/lib/api";
 
 const PRESET_COLORS = [
   { label: "Złoty", value: "#d4a843" },
@@ -14,17 +18,6 @@ const PRESET_COLORS = [
   { label: "Czerwony", value: "#ED4245" },
   { label: "Szary", value: "#4f545c" },
 ];
-
-type ReactionRoleEntry = { emoji: string; roleId: string };
-type ReactionRole = {
-  guildId: string;
-  channelId: string;
-  messageId: string;
-  title: string;
-  content: string;
-  color?: string;
-  entries: ReactionRoleEntry[];
-};
 
 type FormState = {
   channelId: string;
@@ -42,39 +35,6 @@ const EMPTY_FORM: FormState = {
   entries: [{ emoji: "", roleId: "" }],
 };
 
-async function getReactionRoles(token: string, guildId: string): Promise<ReactionRole[]> {
-  const res = await fetch(`${API_URL}/guilds/${guildId}/reaction-roles`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) return [];
-  return res.json();
-}
-
-async function publishReactionRole(
-  token: string,
-  guildId: string,
-  data: FormState,
-): Promise<void> {
-  const res = await fetch(`${API_URL}/guilds/${guildId}/reaction-roles`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) throw new Error("Failed to publish");
-}
-
-async function deleteReactionRole(
-  token: string,
-  guildId: string,
-  messageId: string,
-): Promise<void> {
-  const res = await fetch(`${API_URL}/guilds/${guildId}/reaction-roles/${messageId}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) throw new Error("Failed to delete");
-}
-
 export default function ReactionRolesPage() {
   const router = useRouter();
   const params = useParams();
@@ -85,6 +45,7 @@ export default function ReactionRolesPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -129,7 +90,7 @@ export default function ReactionRolesPage() {
     setEditingMessageId(rr.messageId);
     setForm({
       channelId: rr.channelId,
-      title: rr.title ?? "", // ← dodaj ?? ""
+      title: rr.title ?? "",
       content: rr.content ?? "",
       color: rr.color ?? "#d4a843",
       entries: rr.entries,
@@ -168,7 +129,8 @@ export default function ReactionRolesPage() {
       setForm(EMPTY_FORM);
       setEditingMessageId(null);
     } catch {
-      alert("Nie udało się opublikować.");
+      setError("Nie udało się opublikować.");
+      setTimeout(() => setError(null), 4000);
     } finally {
       setPublishing(false);
     }
@@ -183,7 +145,8 @@ export default function ReactionRolesPage() {
       setList((l) => l.filter((r) => r.messageId !== messageId));
       if (editingMessageId === messageId) cancelEdit();
     } catch {
-      alert("Nie udało się usunąć.");
+      setError("Nie udało się usunąć.");
+      setTimeout(() => setError(null), 4000);
     }
   }
 
@@ -371,6 +334,7 @@ export default function ReactionRolesPage() {
                     ? "Zapisz zmiany"
                     : "Opublikuj"}
               </button>
+              {error && <p className="text-xs text-red-400">{error}</p>}
             </div>
           </div>
         </div>

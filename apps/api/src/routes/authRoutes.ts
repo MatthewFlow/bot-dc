@@ -89,7 +89,8 @@ authRoutes.get("/callback", async (c) => {
     sameSite: "Lax",
   });
 
-  return c.redirect("http://localhost:3000/auth/success");
+  const panelUrl = process.env.PANEL_URL ?? "http://localhost:3000";
+  return c.redirect(`${panelUrl}/auth/success`);
 });
 
 authRoutes.get("/me", async (c) => {

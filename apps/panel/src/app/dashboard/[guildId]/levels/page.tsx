@@ -2,21 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { getGuildConfig, getRoles, updateGuildConfig } from "@/lib/api";
+import { getGuildConfig, getLeaderboard, getRoles, updateGuildConfig } from "@/lib/api";
 import { Skeleton, SkeletonRow } from "@/components/Skeleton";
-import type { GuildConfig, Role } from "@/lib/api";
+import type { GuildConfig, LeaderboardEntry, Role } from "@/lib/api";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3002";
 const MEDALS = ["🥇", "🥈", "🥉"];
-
-type LeaderboardEntry = {
-  position: number;
-  userId: string;
-  username: string;
-  avatar: string | null;
-  xp: number;
-  level: number;
-};
 
 function LevelsSkeleton() {
   return (
@@ -71,6 +61,7 @@ export default function LevelsPage() {
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [newLevel, setNewLevel] = useState("");
   const [newRoleId, setNewRoleId] = useState("");
 
@@ -91,10 +82,7 @@ export default function LevelsPage() {
     if (!t) return;
     setLeaderboardLoading(true);
     try {
-      const res = await fetch(`${API_URL}/guilds/${guildId}/leaderboard?limit=10`, {
-        headers: { Authorization: `Bearer ${t}` },
-      });
-      if (res.ok) setLeaderboard(await res.json() as LeaderboardEntry[]);
+      setLeaderboard(await getLeaderboard(t, guildId, 10));
     } catch {}
     finally { setLeaderboardLoading(false); }
   }
@@ -126,8 +114,10 @@ export default function LevelsPage() {
       await updateGuildConfig(token, guildId, { roleRewards: config.roleRewards });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch { alert("Nie udało się zapisać."); }
-    finally { setSaving(false); }
+    } catch {
+      setError("Nie udało się zapisać.");
+      setTimeout(() => setError(null), 4000);
+    } finally { setSaving(false); }
   }
 
   if (loading) return <LevelsSkeleton />;
@@ -151,10 +141,13 @@ export default function LevelsPage() {
               <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">Mapowanie progu XP na istniejącą rolę Discord</p>
               <p className="text-base font-semibold text-white">Tiery → Role</p>
             </div>
-            <button onClick={handleSave} disabled={saving}
-              className="rounded-lg bg-[#d4a843] px-4 py-2 text-sm font-semibold text-black transition hover:bg-[#c49b3a] disabled:opacity-50">
-              {saving ? "Zapisywanie..." : saved ? "Zapisano ✓" : "Zapisz zmiany"}
-            </button>
+            <div className="flex items-center gap-3">
+              {error && <p className="text-xs text-red-400">{error}</p>}
+              <button onClick={handleSave} disabled={saving}
+                className="rounded-lg bg-[#d4a843] px-4 py-2 text-sm font-semibold text-black transition hover:bg-[#c49b3a] disabled:opacity-50">
+                {saving ? "Zapisywanie..." : saved ? "Zapisano ✓" : "Zapisz zmiany"}
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-3 border-b border-white/5 px-6 py-2">
