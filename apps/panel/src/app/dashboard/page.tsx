@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getGuilds, getMe } from "@/lib/api";
+import { useEffect, useState } from "react";
+
 import { Skeleton } from "@/components/Skeleton";
 import type { Guild, User } from "@/lib/api";
+import { getGuilds, getMe } from "@/lib/api";
 
 function guildIconUrl(guild: Guild) {
   if (!guild.icon) return null;
@@ -68,32 +69,36 @@ export default function DashboardPage() {
               <Skeleton className="h-8 w-8 rounded-full" />
               <Skeleton className="h-4 w-24" />
             </div>
-          ) : user && (
-            <div className="flex items-center gap-3">
-              {avatarUrl(user) ? (
-                <img src={avatarUrl(user)!} alt={user.username} className="h-8 w-8 rounded-full" />
-              ) : (
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1a1f2e] text-sm font-bold">
-                  {user.username[0]?.toUpperCase()}
-                </div>
-              )}
-              <span className="text-sm text-gray-300">{user.username}</span>
-              <button
-                onClick={() => {
-                  localStorage.removeItem("jh_token");
-                  router.replace("/");
-                }}
-                className="text-sm text-gray-500 hover:text-gray-300"
-              >
-                Logout
-              </button>
-            </div>
+          ) : (
+            user && (
+              <div className="flex items-center gap-3">
+                {avatarUrl(user) ? (
+                  <img
+                    src={avatarUrl(user)!}
+                    alt={user.username}
+                    className="h-8 w-8 rounded-full"
+                  />
+                ) : (
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1a1f2e] text-sm font-bold">
+                    {user.username[0]?.toUpperCase()}
+                  </div>
+                )}
+                <span className="text-sm text-gray-300">{user.username}</span>
+                <button
+                  onClick={() => {
+                    localStorage.removeItem("jh_token");
+                    router.replace("/");
+                  }}
+                  className="text-sm text-gray-500 hover:text-gray-300"
+                >
+                  Logout
+                </button>
+              </div>
+            )
           )}
         </div>
 
-        <h2 className="mb-4 text-lg font-semibold text-gray-200">
-          Wybierz serwer
-        </h2>
+        <h2 className="mb-4 text-lg font-semibold text-gray-200">Wybierz serwer</h2>
 
         {loading ? (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
@@ -114,7 +119,11 @@ export default function DashboardPage() {
                 className="flex items-center gap-4 rounded-xl bg-[#1a1f2e] p-4 text-left transition hover:bg-[#222838]"
               >
                 {guildIconUrl(guild) ? (
-                  <img src={guildIconUrl(guild)!} alt={guild.name} className="h-12 w-12 rounded-full" />
+                  <img
+                    src={guildIconUrl(guild)!}
+                    alt={guild.name}
+                    className="h-12 w-12 rounded-full"
+                  />
                 ) : (
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#2a2f3e] text-lg font-bold text-gray-300">
                     {guild.name[0]?.toUpperCase()}

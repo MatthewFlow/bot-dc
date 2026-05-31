@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
+import type { Channel, ReactionRole, ReactionRoleEntry, Role } from "@/lib/api";
 import {
   deleteReactionRole,
   getChannels,
@@ -9,7 +11,6 @@ import {
   getRoles,
   publishReactionRole,
 } from "@/lib/api";
-import type { Channel, ReactionRole, ReactionRoleEntry, Role } from "@/lib/api";
 
 const PRESET_COLORS = [
   { label: "Złoty", value: "#d4a843" },

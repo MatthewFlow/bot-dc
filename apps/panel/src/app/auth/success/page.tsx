@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Suspense, useEffect } from "react";
 
 function AuthSuccessInner() {
   const router = useRouter();

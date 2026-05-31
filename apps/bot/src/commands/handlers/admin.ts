@@ -197,12 +197,16 @@ export async function handleCfgSyncVerify(interaction: ChatInputCommandInteracti
   if (!cfg?.joinRoleId) {
     await interaction.reply({
       ephemeral: true,
-      content: "Nie ustawiono roli niezweryfikowanego. Ustaw ją najpierw w panelu (Auto-role).",
+      content:
+        "Nie ustawiono roli niezweryfikowanego. Ustaw ją najpierw w panelu (Auto-role).",
     });
     return;
   }
 
-  await interaction.reply({ ephemeral: true, content: "Start syncverify… Pobieram członków…" });
+  await interaction.reply({
+    ephemeral: true,
+    content: "Start syncverify… Pobieram członków…",
+  });
 
   let assigned = 0;
   let skipped = 0;
@@ -215,7 +219,9 @@ export async function handleCfgSyncVerify(interaction: ChatInputCommandInteracti
       if (m.user.bot) continue;
 
       const hasJoin = m.roles.cache.has(cfg.joinRoleId);
-      const hasVerified = cfg.verifiedRoleId ? m.roles.cache.has(cfg.verifiedRoleId) : false;
+      const hasVerified = cfg.verifiedRoleId
+        ? m.roles.cache.has(cfg.verifiedRoleId)
+        : false;
 
       if (hasJoin || hasVerified) {
         skipped++;
