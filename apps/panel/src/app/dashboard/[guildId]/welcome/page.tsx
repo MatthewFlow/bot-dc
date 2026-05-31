@@ -67,6 +67,7 @@ export default function WelcomePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -92,8 +93,10 @@ export default function WelcomePage() {
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch { alert("Failed to save configuration."); }
-    finally { setSaving(false); }
+    } catch {
+      setError("Nie udało się zapisać.");
+      setTimeout(() => setError(null), 4000);
+    } finally { setSaving(false); }
   }
 
   function insertVariable(variable: string) {
@@ -166,10 +169,13 @@ export default function WelcomePage() {
             </div>
           </div>
 
-          <button onClick={handleSave} disabled={saving}
-            className="rounded-lg bg-[#d4a843] px-6 py-3 font-semibold text-black transition hover:bg-[#c49b3a] disabled:opacity-50">
-            {saving ? "Zapisywanie..." : saved ? "Zapisano ✓" : "Zapisz zmiany"}
-          </button>
+          <div className="flex flex-col gap-2">
+            <button onClick={handleSave} disabled={saving}
+              className="rounded-lg bg-[#d4a843] px-6 py-3 font-semibold text-black transition hover:bg-[#c49b3a] disabled:opacity-50">
+              {saving ? "Zapisywanie..." : saved ? "Zapisano ✓" : "Zapisz zmiany"}
+            </button>
+            {error && <p className="text-xs text-red-400">{error}</p>}
+          </div>
         </div>
 
         <div className="flex-1 rounded-xl bg-[#1a1f2e] p-6">

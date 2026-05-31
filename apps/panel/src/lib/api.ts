@@ -35,6 +35,35 @@ export type User = {
   avatar: string | null;
 };
 
+export type ReactionRoleEntry = { emoji: string; roleId: string };
+
+export type ReactionRole = {
+  guildId: string;
+  channelId: string;
+  messageId: string;
+  title: string;
+  content: string;
+  color?: string;
+  entries: ReactionRoleEntry[];
+};
+
+export type ReactionRoleInput = {
+  channelId: string;
+  title: string;
+  content: string;
+  color?: string;
+  entries: ReactionRoleEntry[];
+};
+
+export type LeaderboardEntry = {
+  position: number;
+  userId: string;
+  username: string;
+  avatar: string | null;
+  xp: number;
+  level: number;
+};
+
 export class TokenExpiredError extends Error {
   constructor() {
     super("Token expired");
@@ -133,4 +162,53 @@ export async function getRoles(token: string, guildId: string): Promise<Role[]> 
   });
   if (!res.ok) throw new Error("Failed to fetch roles");
   return res.json();
+}
+
+export async function getLeaderboard(
+  token: string,
+  guildId: string,
+  limit = 10,
+): Promise<LeaderboardEntry[]> {
+  const res = await fetchWithRetry(
+    `${API_URL}/guilds/${guildId}/leaderboard?limit=${limit}`,
+    { headers: authHeaders(token) },
+  );
+  if (!res.ok) throw new Error("Failed to fetch leaderboard");
+  return res.json();
+}
+
+export async function getReactionRoles(
+  token: string,
+  guildId: string,
+): Promise<ReactionRole[]> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/reaction-roles`, {
+    headers: authHeaders(token),
+  });
+  if (!res.ok) throw new Error("Failed to fetch reaction roles");
+  return res.json();
+}
+
+export async function publishReactionRole(
+  token: string,
+  guildId: string,
+  data: ReactionRoleInput,
+): Promise<void> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/reaction-roles`, {
+    method: "POST",
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error("Failed to publish reaction role");
+}
+
+export async function deleteReactionRole(
+  token: string,
+  guildId: string,
+  messageId: string,
+): Promise<void> {
+  const res = await fetchWithRetry(
+    `${API_URL}/guilds/${guildId}/reaction-roles/${messageId}`,
+    { method: "DELETE", headers: authHeaders(token) },
+  );
+  if (!res.ok) throw new Error("Failed to delete reaction role");
 }

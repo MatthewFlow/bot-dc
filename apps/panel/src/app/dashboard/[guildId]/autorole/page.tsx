@@ -48,6 +48,7 @@ export default function AutoRolePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("jh_token");
@@ -68,8 +69,10 @@ export default function AutoRolePage() {
       setSavedRoleId(config.joinRoleId);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
-    } catch { alert("Nie udało się zapisać."); }
-    finally { setSaving(false); }
+    } catch {
+      setError("Nie udało się zapisać.");
+      setTimeout(() => setError(null), 4000);
+    } finally { setSaving(false); }
   }
 
   const hasChanges = config.joinRoleId !== savedRoleId;
@@ -126,10 +129,13 @@ export default function AutoRolePage() {
           </div>
 
           <div className="border-t border-white/5 px-6 py-4">
-            <button onClick={handleSave} disabled={saving || !hasChanges}
-              className="rounded-lg bg-[#d4a843] px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-[#c49b3a] disabled:opacity-50">
-              {saving ? "Zapisywanie..." : saved ? "Zapisano ✓" : "Zapisz zmiany"}
-            </button>
+            <div className="flex items-center gap-4">
+              <button onClick={handleSave} disabled={saving || !hasChanges}
+                className="rounded-lg bg-[#d4a843] px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-[#c49b3a] disabled:opacity-50">
+                {saving ? "Zapisywanie..." : saved ? "Zapisano ✓" : "Zapisz zmiany"}
+              </button>
+              {error && <p className="text-xs text-red-400">{error}</p>}
+            </div>
           </div>
         </div>
 
