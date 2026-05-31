@@ -40,16 +40,16 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Pages
 
-| Route                           | Description                                      |
-| ------------------------------- | ------------------------------------------------ |
-| `/`                             | Landing page with Login with Discord button      |
-| `/auth/success`                 | Handles OAuth2 callback, saves JWT token         |
-| `/dashboard`                    | List of servers where user has admin permissions |
-| `/dashboard/[guildId]`          | Server overview                                  |
-| `/dashboard/[guildId]/welcome`  | Welcome & Goodbye channel configuration          |
-| `/dashboard/[guildId]/autorole`         | Auto-role on member join configuration           |
-| `/dashboard/[guildId]/levels`           | XP level → role reward tiers                     |
-| `/dashboard/[guildId]/reaction-roles`   | Reaction role embeds with emoji → role pairs     |
+| Route                                 | Description                                      |
+| ------------------------------------- | ------------------------------------------------ |
+| `/`                                   | Landing page with Login with Discord button      |
+| `/auth/success`                       | Handles OAuth2 callback, saves JWT token         |
+| `/dashboard`                          | List of servers where user has admin permissions |
+| `/dashboard/[guildId]`                | Server overview                                  |
+| `/dashboard/[guildId]/welcome`        | Welcome & Goodbye channel configuration          |
+| `/dashboard/[guildId]/autorole`       | Auto-role on member join configuration           |
+| `/dashboard/[guildId]/levels`         | XP level → role reward tiers                     |
+| `/dashboard/[guildId]/reaction-roles` | Reaction role embeds with emoji → role pairs     |
 
 ## Project Structure
 
