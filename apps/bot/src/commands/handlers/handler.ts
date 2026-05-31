@@ -7,8 +7,8 @@ import {
   handleCfgRoleList,
   handleCfgSetGoodbye,
   handleCfgSetWelcome,
-  handleCfgSyncAll,
-  handleCfgSyncRole,
+  handleCfgSyncVerify,
+  handleCfgSyncXp,
 } from "./admin";
 import { requireAdminRole } from "./guard";
 import { handleCfgAddXp, handleTestGoodbye, handleTestWelcome } from "./test";
@@ -23,8 +23,8 @@ const handlers: Record<string, Handler> = {
   cfg_setgoodbye: handleCfgSetGoodbye,
   cfg_addreward: handleCfgAddReward,
   cfg_rolelist: handleCfgRoleList,
-  cfg_syncrole: handleCfgSyncRole,
-  cfg_syncall: handleCfgSyncAll,
+  cfg_syncxp: handleCfgSyncXp,
+  cfg_syncverify: handleCfgSyncVerify,
   cfg_checkrole: handleCfgCheckRole,
   cfg_clear: handleCfgClear,
   cfg_addxp: handleCfgAddXp,

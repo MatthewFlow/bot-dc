@@ -92,38 +92,37 @@ export async function handleCfgRoleList(interaction: ChatInputCommandInteraction
   await interaction.reply({ ephemeral: true, content: `Progi ról:\n${lines}` });
 }
 
-export async function handleCfgSyncRole(interaction: ChatInputCommandInteraction) {
+export async function handleCfgSyncXp(interaction: ChatInputCommandInteraction) {
   const guildId = interaction.guildId!;
   const guild = interaction.guild!;
 
-  const targetUser = interaction.options.getUser("user") ?? interaction.user;
-  const member = await guild.members.fetch(targetUser.id);
+  const targetUser = interaction.options.getUser("user");
 
-  const xp = await xpRepository.getXp(guildId, targetUser.id);
-  const level = levelFromXp(xp);
+  if (targetUser) {
+    const member = await guild.members.fetch(targetUser.id);
+    const xp = await xpRepository.getXp(guildId, targetUser.id);
+    const level = levelFromXp(xp);
 
-  try {
-    await applyAutoRole(member, level);
-    await interaction.reply({
-      ephemeral: true,
-      content: `Zrobiono sync roli dla ${targetUser}. Level: **${level}**, XP: **${xp}** ✅`,
-    });
-  } catch (e) {
-    await interaction.reply({
-      ephemeral: true,
-      content: `Nie udało się zsynchronizować roli.\nBłąd: ${String(e)}`,
-    });
+    try {
+      await applyAutoRole(member, level);
+      await interaction.reply({
+        ephemeral: true,
+        content: `Zrobiono sync XP dla ${targetUser}. Level: **${level}**, XP: **${xp}** ✅`,
+      });
+    } catch (e) {
+      await interaction.reply({
+        ephemeral: true,
+        content: `Nie udało się zsynchronizować roli.\nBłąd: ${String(e)}`,
+      });
+    }
+    return;
   }
-}
 
-export async function handleCfgSyncAll(interaction: ChatInputCommandInteraction) {
-  const guildId = interaction.guildId!;
-  const guild = interaction.guild!;
   const limit = interaction.options.getInteger("limit") ?? 50;
 
   await interaction.reply({
     ephemeral: true,
-    content: `Start syncall… limit: ${limit}. Pobieram członków…`,
+    content: `Start syncxp… limit: ${limit}. Pobieram członków…`,
   });
 
   let processed = 0;
@@ -152,11 +151,11 @@ export async function handleCfgSyncAll(interaction: ChatInputCommandInteraction)
     }
 
     await interaction.editReply(
-      `Syncall skończony ✅\nPrzetworzono: **${processed}**\nBłędy: **${failed}**`,
+      `Syncxp skończony ✅\nPrzetworzono: **${processed}**\nBłędy: **${failed}**`,
     );
   } catch (e) {
     await interaction.editReply(
-      `Syncall przerwany ❌\nBłąd: ${String(e)}\nPrzetworzono do tej pory: **${processed}**`,
+      `Syncxp przerwany ❌\nBłąd: ${String(e)}\nPrzetworzono do tej pory: **${processed}**`,
     );
   }
 }
@@ -187,6 +186,60 @@ export async function handleCfgCheckRole(interaction: ChatInputCommandInteractio
   ];
 
   await interaction.reply({ ephemeral: true, content: lines.join("\n") });
+}
+
+export async function handleCfgSyncVerify(interaction: ChatInputCommandInteraction) {
+  const guildId = interaction.guildId!;
+  const guild = interaction.guild!;
+
+  const cfg = await guildConfigRepository.get(guildId);
+
+  if (!cfg?.joinRoleId) {
+    await interaction.reply({
+      ephemeral: true,
+      content: "Nie ustawiono roli niezweryfikowanego. Ustaw ją najpierw w panelu (Auto-role).",
+    });
+    return;
+  }
+
+  await interaction.reply({ ephemeral: true, content: "Start syncverify… Pobieram członków…" });
+
+  let assigned = 0;
+  let skipped = 0;
+  let failed = 0;
+
+  try {
+    const members = await guild.members.fetch();
+
+    for (const [, m] of members) {
+      if (m.user.bot) continue;
+
+      const hasJoin = m.roles.cache.has(cfg.joinRoleId);
+      const hasVerified = cfg.verifiedRoleId ? m.roles.cache.has(cfg.verifiedRoleId) : false;
+
+      if (hasJoin || hasVerified) {
+        skipped++;
+        continue;
+      }
+
+      try {
+        await m.roles.add(cfg.joinRoleId);
+        assigned++;
+      } catch {
+        failed++;
+      }
+
+      await sleep(XP_SYNCALL_DELAY_MS);
+    }
+
+    await interaction.editReply(
+      `Syncverify skończony ✅\nNadano rolę niezweryfikowanego: **${assigned}**\nPominięto (już mają rolę): **${skipped}**\nBłędy: **${failed}**`,
+    );
+  } catch (e) {
+    await interaction.editReply(
+      `Syncverify przerwany ❌\nBłąd: ${String(e)}\nNadano do tej pory: **${assigned}**`,
+    );
+  }
 }
 
 export async function handleCfgClear(interaction: ChatInputCommandInteraction) {

@@ -6,6 +6,7 @@ export type GuildConfig = {
   goodbyeChannelId?: string;
   levelUpChannelId?: string;
   joinRoleId?: string;
+  verifiedRoleId?: string;
   welcomeMessage?: string;
   goodbyeMessage?: string;
   roleRewards: RoleReward[];

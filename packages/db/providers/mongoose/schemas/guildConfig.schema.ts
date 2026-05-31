@@ -11,6 +11,7 @@ export type GuildConfigDocument = {
   goodbyeChannelId?: string;
   levelUpChannelId?: string;
   joinRoleId?: string;
+  verifiedRoleId?: string;
   welcomeMessage?: string;
   goodbyeMessage?: string;
   roleRewards: RoleReward[];
@@ -31,6 +32,7 @@ const guildConfigSchema = new Schema<GuildConfigDocument>(
     goodbyeChannelId: { type: String },
     levelUpChannelId: { type: String },
     joinRoleId: { type: String },
+    verifiedRoleId: { type: String },
     welcomeMessage: { type: String },
     goodbyeMessage: { type: String },
     roleRewards: { type: [roleRewardSchema], default: [] },
