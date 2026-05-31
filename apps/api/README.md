@@ -46,6 +46,9 @@ DISCORD_CLIENT_SECRET=
 DISCORD_REDIRECT_URI=http://localhost:3002/auth/callback
 DISCORD_TOKEN=
 
+# ── PANEL ──────────────────────────────────────────────────────────
+PANEL_URL=http://localhost:3000
+
 # ── AUTH ───────────────────────────────────────────────────────────
 JWT_SECRET=
 ```

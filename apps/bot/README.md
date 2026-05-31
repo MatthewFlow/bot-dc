@@ -43,13 +43,13 @@ MONGODB_URI=mongodb://localhost:27017/jurassic-haven
 
 # ── DISCORD ────────────────────────────────────────────────────────
 DISCORD_TOKEN=
-DISCORD_CLIENT_ID=
 
 # ── SERVER ─────────────────────────────────────────────────────────
 GUILD_ID=
 CFG_ADMIN_ROLE_ID=
 
-# ── CHANNELS ───────────────────────────────────────────────────────
+# ── CHANNELS (fallback) ────────────────────────────────────────────
+# Used only if the channel has not been set via /cfg_* commands or the dashboard
 WELCOME_CHANNEL_ID=
 GOODBYE_CHANNEL_ID=
 LEVEL_UP_CHANNEL_ID=
@@ -63,7 +63,7 @@ RESET_COMMANDS=false
 1. Go to the [Discord Developer Portal](https://discord.com/developers/applications)
 2. Create a new application → open the **Bot** tab
 3. Click **Reset Token**, copy it into `DISCORD_TOKEN`
-4. Enable **Privileged Gateway Intents**: `Server Members Intent`, `Message Content Intent` and `Guild Message Reactions Intent`
+4. Enable **Privileged Gateway Intents**: `Server Members Intent` and `Message Content Intent`
 
 ### Inviting the bot to your server
 
