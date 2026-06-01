@@ -51,13 +51,13 @@ Or run each app individually in a separate terminal:
 
 ```bash
 # Terminal 1 — Discord bot
-cd apps/bot && bun run start
+bun run bot
 
 # Terminal 2 — REST API
-cd apps/api && bun run start
+bun run api
 
 # Terminal 3 — Web dashboard
-cd apps/panel && bun run dev
+bun run panel
 ```
 
 ## Linting and Formatting

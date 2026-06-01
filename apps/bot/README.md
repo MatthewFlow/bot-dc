@@ -112,15 +112,15 @@ Set `RESET_COMMANDS=true` in `.env` and restart the bot. Set it back to `false` 
 | `/cfg_checkrole [user]`         | Shows progression role status for a user                            |
 | `/cfg_syncxp [user] [limit]`    | Sync XP roles — single user if `user` given, otherwise all (max 50) |
 | `/cfg_syncverify`               | Assign unverified role to all members who have no verification role |
-| `/cfg_addxp <amount> [user]`    | Adds XP to a user without cooldown                                  |
 | `/cfg_clear <amount>`           | Deletes the last N messages from the current channel                |
 
 ### Testing (requires admin role)
 
-| Command         | Description                                             |
-| --------------- | ------------------------------------------------------- |
-| `/test_welcome` | Sends a test welcome message to the configured channel  |
-| `/test_goodbye` | Sends a test farewell message to the configured channel |
+| Command                      | Description                                             |
+| ---------------------------- | ------------------------------------------------------- |
+| `/test_welcome`              | Sends a test welcome message to the configured channel  |
+| `/test_goodbye`              | Sends a test farewell message to the configured channel |
+| `/cfg_addxp <amount> [user]` | Adds XP to a user without cooldown (bypasses 5s limit)  |
 
 ## XP and Leveling System
 

@@ -76,8 +76,18 @@ src/
 │           └── reaction-roles/
 │               └── page.tsx              # Reaction roles config
 ├── components/
-│   ├── Sidebar.tsx                       # Navigation sidebar
-│   └── Skeleton.tsx                      # Loading skeleton components
+│   ├── Sidebar.tsx                       # Navigation sidebar (mobile + desktop)
+│   ├── Skeleton.tsx                      # Loading skeleton
+│   ├── Avatar.tsx                        # Discord user avatar
+│   ├── ChannelSelect.tsx                 # Channel picker dropdown
+│   ├── RoleSelect.tsx                    # Role picker dropdown
+│   ├── SaveButton.tsx                    # Submit button with loading state
+│   ├── PageHeader.tsx                    # Section title + description
+│   ├── HowItWorks.tsx                    # Collapsible help block
+│   ├── confirmModal.tsx                  # Delete confirmation dialog
+│   └── toast.tsx                         # Toast notification
+├── hooks/
+│   └── useGuildLoad.ts                   # Generic guild-page data loader
 └── lib/
     └── api.ts                            # Typed API client (fetch wrapper)
 ```
