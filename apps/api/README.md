@@ -36,6 +36,8 @@ Edit `.env`:
 ```env
 # ── API ────────────────────────────────────────────────────────────
 API_PORT=3002
+# Optional — set to require "Authorization: Bearer <token>" on all requests
+API_TOKEN=
 
 # ── DATABASE ───────────────────────────────────────────────────────
 MONGODB_URI=mongodb://localhost:27017/jurassic-haven
@@ -81,11 +83,12 @@ bun run start
 
 ### Auth
 
-| Method | Path             | Description                              |
-| ------ | ---------------- | ---------------------------------------- |
-| `GET`  | `/auth/discord`  | Redirect to Discord OAuth2 login         |
-| `GET`  | `/auth/callback` | OAuth2 callback — exchanges code for JWT |
-| `GET`  | `/auth/me`       | Returns current user info                |
+| Method   | Path             | Description                              |
+| -------- | ---------------- | ---------------------------------------- |
+| `GET`    | `/auth/discord`  | Redirect to Discord OAuth2 login         |
+| `GET`    | `/auth/callback` | OAuth2 callback — exchanges code for JWT |
+| `GET`    | `/auth/me`       | Returns current user info                |
+| `POST`   | `/auth/logout`   | Clears the `jh_token` cookie             |
 
 ### Guilds (requires JWT)
 
