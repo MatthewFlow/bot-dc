@@ -7,24 +7,8 @@ function AuthSuccessInner() {
   const router = useRouter();
 
   useEffect(() => {
-    // Odczytaj token z cookie ustawionego przez API
-    const token = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("jh_token="))
-      ?.split("=")[1];
-
-    if (!token) {
-      console.error("[auth] No token in cookie");
-      router.replace("/");
-      return;
-    }
-
-    // Przenieś token z cookie do localStorage
-    localStorage.setItem("jh_token", token);
-
-    // Usuń cookie
-    document.cookie = "jh_token=; path=/; max-age=0";
-
+    // Cookie jh_token is HttpOnly — set automatically by the API.
+    // Just redirect to dashboard; all subsequent API calls use credentials:include.
     router.replace("/dashboard");
   }, [router]);
 

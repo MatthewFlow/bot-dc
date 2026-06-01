@@ -1,6 +1,7 @@
 import { guildConfigRepository, levelFromXp, xpRepository } from "@jurassic-haven/db";
 import { Hono } from "hono";
 
+import { fetchGuilds, isGuildAdmin } from "../lib/guildGuard";
 import { authMiddleware } from "../middleware/authMiddleware";
 import type { AppVariables } from "../types";
 
@@ -11,43 +12,39 @@ const DISCORD_CHANNEL_TYPES = {
   GuildAnnouncement: 5,
 } as const;
 
+const CONFIG_ALLOWED_FIELDS = [
+  "welcomeChannelId",
+  "goodbyeChannelId",
+  "levelUpChannelId",
+  "joinRoleId",
+  "verifiedRoleId",
+  "welcomeMessage",
+  "goodbyeMessage",
+  "roleRewards",
+] as const;
+
 export const guildRoutes = new Hono<{ Variables: AppVariables }>();
 
 guildRoutes.use("*", authMiddleware);
 
-guildRoutes.get("/", async (c) => {
+// Verify guild admin access for all /:guildId/* routes
+guildRoutes.use("/:guildId/*", async (c, next) => {
+  const guildId = c.req.param("guildId");
   const accessToken = c.get("accessToken");
 
-  const res = await fetch(`${DISCORD_API}/users/@me/guilds`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-
-  if (res.status === 429) {
-    const data = (await res.json()) as { retry_after: number };
-    console.warn(`[guilds] Rate limited, retry after ${data.retry_after}s`);
-    return c.json(
-      { error: "Rate limited by Discord", retry_after: data.retry_after },
-      429,
-    );
+  if (!(await isGuildAdmin(accessToken, guildId))) {
+    return c.json({ error: "Forbidden" }, 403);
   }
 
-  if (!res.ok) {
-    const body = await res.text();
-    console.error(`[guilds] Discord error ${res.status}:`, body);
-    return c.json({ error: "Failed to fetch guilds" }, 502);
-  }
+  await next();
+});
 
-  const guilds = (await res.json()) as Array<{
-    id: string;
-    name: string;
-    icon: string | null;
-    permissions: string;
-  }>;
-
+guildRoutes.get("/", async (c) => {
+  const accessToken = c.get("accessToken");
+  const guilds = await fetchGuilds(accessToken);
   const adminGuilds = guilds.filter(
     (g) => (BigInt(g.permissions) & BigInt(0x8)) === BigInt(0x8),
   );
-
   return c.json(adminGuilds);
 });
 
@@ -59,10 +56,17 @@ guildRoutes.get("/:guildId/config", async (c) => {
 
 guildRoutes.put("/:guildId/config", async (c) => {
   const guildId = c.req.param("guildId");
-  const body = await c.req.json().catch(() => null);
-  if (!body) return c.json({ error: "Invalid JSON body" }, 400);
+  const raw = await c.req.json().catch(() => null);
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+    return c.json({ error: "Invalid JSON body" }, 400);
+  }
 
-  await guildConfigRepository.set(guildId, body);
+  // Allowlist — only known config fields reach the DB
+  const patch = Object.fromEntries(
+    CONFIG_ALLOWED_FIELDS.filter((k) => k in raw).map((k) => [k, raw[k]]),
+  );
+
+  await guildConfigRepository.set(guildId, patch);
   return c.json({ ok: true });
 });
 
@@ -157,12 +161,12 @@ guildRoutes.get("/:guildId/leaderboard", async (c) => {
   const botToken = process.env.DISCORD_TOKEN;
   if (!botToken) return c.json({ error: "Missing bot token" }, 500);
 
-  const limit = Number(c.req.query("limit") ?? 10);
+  const raw = Number(c.req.query("limit") ?? 10);
+  const limit = Number.isFinite(raw) && raw > 0 ? Math.min(raw, 100) : 10;
 
   try {
     const entries = await xpRepository.getLeaderboard(guildId, limit);
 
-    // Pobierz nazwy użytkowników z Discord API
     const enriched = await Promise.all(
       entries.map(async (entry, idx) => {
         const res = await fetch(

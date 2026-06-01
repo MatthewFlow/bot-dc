@@ -1,10 +1,15 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { useState } from "react";
 
+import { ChannelSelect } from "@/components/ChannelSelect";
+import { HowItWorks } from "@/components/HowItWorks";
 import { ConfirmModal } from "@/components/confirmModal";
+import { PageHeader } from "@/components/PageHeader";
+import { RoleSelect } from "@/components/RoleSelect";
 import { useToast } from "@/components/toast";
+import { useGuildLoad } from "@/hooks/useGuildLoad";
 import type { Channel, ReactionRole, ReactionRoleEntry, Role } from "@/lib/api";
 import {
   deleteReactionRole,
@@ -39,7 +44,6 @@ const EMPTY_FORM: FormState = {
 };
 
 export default function ReactionRolesPage() {
-  const router = useRouter();
   const params = useParams();
   const guildId = params.guildId as string;
   const toast = useToast();
@@ -47,33 +51,20 @@ export default function ReactionRolesPage() {
   const [list, setList] = useState<ReactionRole[]>([]);
   const [channels, setChannels] = useState<Channel[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
-  const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState(false);
-
   const [form, setForm] = useState<FormState>(EMPTY_FORM);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
-  useEffect(() => {
-    const token = localStorage.getItem("jh_token");
-    if (!token) {
-      router.replace("/");
-      return;
-    }
-
-    Promise.all([
-      getReactionRoles(token, guildId),
-      getChannels(token, guildId),
-      getRoles(token, guildId),
-    ])
-      .then(([rr, ch, r]) => {
-        setList(rr);
-        setChannels(ch);
-        setRoles(r);
-      })
-      .catch(() => router.replace("/dashboard"))
-      .finally(() => setLoading(false));
-  }, [guildId, router]);
+  const { loading } = useGuildLoad(
+    guildId,
+    (id) => Promise.all([getReactionRoles(id), getChannels(id), getRoles(id)]),
+    ([rr, ch, r]) => {
+      setList(rr);
+      setChannels(ch);
+      setRoles(r);
+    },
+  );
 
   function updateEntry(idx: number, field: keyof ReactionRoleEntry, value: string) {
     setForm((f) => ({
@@ -114,21 +105,17 @@ export default function ReactionRolesPage() {
     form.entries.every((e) => e.emoji.trim() && e.roleId);
 
   async function handlePublish() {
-    const token = localStorage.getItem("jh_token");
-    if (!token || !isFormValid) return;
-
+    if (!isFormValid) return;
     setPublishing(true);
     try {
       if (editingMessageId) {
-        await deleteReactionRole(token, guildId, editingMessageId);
+        await deleteReactionRole(guildId, editingMessageId);
       }
-
-      await publishReactionRole(token, guildId, {
+      await publishReactionRole(guildId, {
         ...form,
         entries: form.entries.filter((e) => e.emoji.trim() && e.roleId),
       });
-
-      const updated = await getReactionRoles(token, guildId);
+      const updated = await getReactionRoles(guildId);
       setList(updated);
       setForm(EMPTY_FORM);
       setEditingMessageId(null);
@@ -140,12 +127,9 @@ export default function ReactionRolesPage() {
   }
 
   async function handleDelete(messageId: string) {
-    const token = localStorage.getItem("jh_token");
-    if (!token) return;
-
     setPendingDelete(null);
     try {
-      await deleteReactionRole(token, guildId, messageId);
+      await deleteReactionRole(guildId, messageId);
       setList((l) => l.filter((r) => r.messageId !== messageId));
       if (editingMessageId === messageId) cancelEdit();
       toast("Wiadomość usunięta.", "success");
@@ -171,18 +155,16 @@ export default function ReactionRolesPage() {
   }
 
   return (
-    <div className="flex flex-col p-8">
-      <div className="mb-8">
-        <p className="text-xs font-semibold uppercase tracking-wider text-gray-600">
-          Assignment Grid
-        </p>
-        <h1 className="mt-1 text-2xl font-bold text-white">
-          Reaction <span className="italic text-[#d4a843]">Roles</span>
-        </h1>
-        <p className="mt-1 text-sm text-gray-400">
-          Bot publikuje embed z emoji — reakcja nadaje rolę.
-        </p>
-      </div>
+    <div className="flex flex-col p-4 sm:p-6 lg:p-8">
+      <PageHeader
+        category="Assignment Grid"
+        title={
+          <>
+            Reaction <span className="italic text-[#d4a843]">Roles</span>
+          </>
+        }
+        description="Bot publikuje embed z emoji — reakcja nadaje rolę."
+      />
 
       <div className="flex flex-col gap-8 lg:flex-row">
         {/* Form */}
@@ -203,24 +185,17 @@ export default function ReactionRolesPage() {
             </div>
 
             <div className="flex flex-col gap-4 p-6">
-              {/* Channel */}
               <div>
                 <label className="mb-1 block text-xs text-gray-500">Kanał</label>
-                <select
+                <ChannelSelect
                   value={form.channelId}
-                  onChange={(e) => setForm((f) => ({ ...f, channelId: e.target.value }))}
-                  className="w-full rounded-lg bg-[#0f1117] px-3 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]"
-                >
-                  <option value="">— Wybierz kanał —</option>
-                  {channels.map((ch) => (
-                    <option key={ch.id} value={ch.id}>
-                      # {ch.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => setForm((f) => ({ ...f, channelId: v }))}
+                  channels={channels}
+                  placeholder="— Wybierz kanał —"
+                  className="w-full px-3 py-2.5"
+                />
               </div>
 
-              {/* Title */}
               <div>
                 <label className="mb-1 block text-xs text-gray-500">Tytuł embeda</label>
                 <input
@@ -231,7 +206,6 @@ export default function ReactionRolesPage() {
                 />
               </div>
 
-              {/* Content */}
               <div>
                 <label className="mb-1 block text-xs text-gray-500">Treść</label>
                 <textarea
@@ -243,7 +217,6 @@ export default function ReactionRolesPage() {
                 />
               </div>
 
-              {/* Color */}
               <div>
                 <label className="mb-2 block text-xs text-gray-500">Kolor embeda</label>
                 <div className="flex items-center gap-2">
@@ -266,11 +239,8 @@ export default function ReactionRolesPage() {
                 </div>
               </div>
 
-              {/* Entries */}
               <div>
-                <label className="mb-2 block text-xs text-gray-500">
-                  Pary emoji → rola
-                </label>
+                <label className="mb-2 block text-xs text-gray-500">Pary emoji → rola</label>
                 <div className="flex flex-col gap-2">
                   {form.entries.map((entry, idx) => (
                     <div key={idx} className="flex items-center gap-2">
@@ -280,18 +250,13 @@ export default function ReactionRolesPage() {
                         placeholder="emoji"
                         className="w-16 rounded-lg bg-[#0f1117] px-2 py-2 text-center text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]"
                       />
-                      <select
+                      <RoleSelect
                         value={entry.roleId}
-                        onChange={(e) => updateEntry(idx, "roleId", e.target.value)}
-                        className="flex-1 rounded-lg bg-[#0f1117] px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]"
-                      >
-                        <option value="">— Rola —</option>
-                        {roles.map((r) => (
-                          <option key={r.id} value={r.id}>
-                            {r.name}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(v) => updateEntry(idx, "roleId", v)}
+                        roles={roles}
+                        placeholder="— Rola —"
+                        className="flex-1 px-3 py-2"
+                      />
                       {form.entries.length > 1 && (
                         <button
                           onClick={() => removeEntry(idx)}
@@ -311,7 +276,6 @@ export default function ReactionRolesPage() {
                 </button>
               </div>
 
-              {/* Preview */}
               <div className="rounded-lg bg-[#0f1117] p-3">
                 <p className="mb-2 text-xs text-gray-500">Podgląd</p>
                 <div
@@ -343,7 +307,7 @@ export default function ReactionRolesPage() {
         </div>
 
         {/* List */}
-        <div className="flex-1">
+        <div className="flex flex-1 flex-col gap-4">
           <div className="rounded-xl bg-[#1a1f2e]">
             <div className="border-b border-white/5 px-6 py-4">
               <p className="text-sm font-semibold text-white">
@@ -371,9 +335,7 @@ export default function ReactionRolesPage() {
                             style={{ backgroundColor: rr.color }}
                           />
                         )}
-                        <p className="text-xs text-gray-500">
-                          # {channelName(rr.channelId)}
-                        </p>
+                        <p className="text-xs text-gray-500"># {channelName(rr.channelId)}</p>
                       </div>
                       <p className="mt-1 text-sm font-semibold text-white">{rr.title}</p>
                       <p className="truncate text-xs text-gray-400">{rr.content}</p>
@@ -408,6 +370,14 @@ export default function ReactionRolesPage() {
               ))
             )}
           </div>
+          <HowItWorks
+            steps={[
+              "Wypełnij formularz: wybierz kanał, tytuł, treść i kolor embeda",
+              "Dodaj pary emoji → rola (np. ✅ → Zweryfikowany)",
+              "Kliknij Opublikuj — bot wyśle embed i doda reakcje automatycznie",
+              "Gdy członek kliknie reakcję, bot natychmiast nadaje przypisaną rolę",
+            ]}
+          />
         </div>
       </div>
 

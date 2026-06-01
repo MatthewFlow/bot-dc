@@ -1,10 +1,15 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useParams } from "next/navigation";
+import { useRef, useState } from "react";
 
+import { ChannelSelect } from "@/components/ChannelSelect";
+import { HowItWorks } from "@/components/HowItWorks";
+import { PageHeader } from "@/components/PageHeader";
+import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
+import { useGuildLoad } from "@/hooks/useGuildLoad";
 import type { Channel, GuildConfig } from "@/lib/api";
 import { getChannels, getGuildConfig, updateGuildConfig } from "@/lib/api";
 
@@ -32,18 +37,18 @@ function WelcomeSkeleton() {
   return (
     <div className="flex h-full flex-col">
       <div className="border-b border-white/5 px-8 py-6">
-        <Skeleton className="h-3 w-24 mb-2" />
-        <Skeleton className="h-7 w-48 mb-2" />
+        <Skeleton className="mb-2 h-3 w-24" />
+        <Skeleton className="mb-2 h-7 w-48" />
         <Skeleton className="h-3 w-64" />
       </div>
-      <div className="flex flex-1 gap-6 p-8">
+      <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6 lg:p-8 xl:flex-row">
         <div className="flex w-full max-w-lg flex-col gap-4">
           <Skeleton className="h-10 w-full rounded-lg" />
-          <div className="rounded-xl bg-[#1a1f2e] p-5 space-y-3">
+          <div className="space-y-3 rounded-xl bg-[#1a1f2e] p-5">
             <Skeleton className="h-3 w-16" />
             <Skeleton className="h-10 w-full rounded-lg" />
           </div>
-          <div className="rounded-xl bg-[#1a1f2e] p-5 space-y-3">
+          <div className="space-y-3 rounded-xl bg-[#1a1f2e] p-5">
             <Skeleton className="h-3 w-24" />
             <Skeleton className="h-24 w-full rounded-lg" />
             <div className="flex gap-2">
@@ -61,7 +66,6 @@ function WelcomeSkeleton() {
 }
 
 export default function WelcomePage() {
-  const router = useRouter();
   const params = useParams();
   const guildId = params.guildId as string;
   const toast = useToast();
@@ -69,32 +73,22 @@ export default function WelcomePage() {
   const [tab, setTab] = useState<Tab>("welcome");
   const [config, setConfig] = useState<GuildConfig>({});
   const [channels, setChannels] = useState<Channel[]>([]);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    const token = localStorage.getItem("jh_token");
-    if (!token) {
-      router.replace("/");
-      return;
-    }
-
-    Promise.all([getGuildConfig(token, guildId), getChannels(token, guildId)])
-      .then(([cfg, ch]) => {
-        setConfig(cfg);
-        setChannels(ch);
-      })
-      .catch(() => router.replace("/dashboard"))
-      .finally(() => setLoading(false));
-  }, [guildId, router]);
+  const { loading } = useGuildLoad(
+    guildId,
+    (id) => Promise.all([getGuildConfig(id), getChannels(id)]),
+    ([cfg, ch]) => {
+      setConfig(cfg);
+      setChannels(ch);
+    },
+  );
 
   async function handleSave() {
-    const token = localStorage.getItem("jh_token");
-    if (!token) return;
     setSaving(true);
     try {
-      await updateGuildConfig(token, guildId, {
+      await updateGuildConfig(guildId, {
         welcomeChannelId: config.welcomeChannelId,
         goodbyeChannelId: config.goodbyeChannelId,
         welcomeMessage: config.welcomeMessage,
@@ -135,19 +129,20 @@ export default function WelcomePage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-white/5 px-8 py-6">
-        <p className="text-xs font-semibold uppercase tracking-wider text-gray-600">
-          First Contact
-        </p>
-        <h1 className="mt-1 text-2xl font-bold text-white">
-          Welcome <span className="text-[#d4a843]">&</span> Goodbye
-        </h1>
-        <p className="mt-1 text-sm text-gray-400">
-          Wiadomości powitalne i pożegnalne na Twoim serwerze.
-        </p>
+      <div className="border-b border-white/5 px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
+        <PageHeader
+          category="First Contact"
+          title={
+            <>
+              Welcome <span className="text-[#d4a843]">&</span> Goodbye
+            </>
+          }
+          description="Wiadomości powitalne i pożegnalne na Twoim serwerze."
+          className="mb-0"
+        />
       </div>
 
-      <div className="flex flex-1 gap-6 overflow-auto p-8">
+      <div className="flex flex-1 flex-col gap-6 overflow-auto p-4 sm:p-6 lg:p-8 xl:flex-row">
         <div className="flex w-full max-w-lg flex-col gap-4">
           <div className="flex gap-1 rounded-lg bg-[#1a1f2e] p-1">
             {(["welcome", "goodbye"] as Tab[]).map((t) => (
@@ -165,25 +160,19 @@ export default function WelcomePage() {
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
               Kanał
             </p>
-            <select
+            <ChannelSelect
               value={channelId ?? ""}
-              onChange={(e) => {
-                const val = e.target.value || undefined;
+              onChange={(val) =>
                 setConfig((c) =>
                   tab === "welcome"
-                    ? { ...c, welcomeChannelId: val }
-                    : { ...c, goodbyeChannelId: val },
-                );
-              }}
-              className="w-full rounded-lg bg-[#0f1117] px-4 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]"
-            >
-              <option value="">— Nie ustawiono —</option>
-              {channels.map((ch) => (
-                <option key={ch.id} value={ch.id}>
-                  # {ch.name}
-                </option>
-              ))}
-            </select>
+                    ? { ...c, welcomeChannelId: val || undefined }
+                    : { ...c, goodbyeChannelId: val || undefined },
+                )
+              }
+              channels={channels}
+              placeholder="— Nie ustawiono —"
+              className="w-full px-4 py-2.5"
+            />
           </div>
 
           <div className="rounded-xl bg-[#1a1f2e] p-5">
@@ -214,58 +203,62 @@ export default function WelcomePage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="rounded-lg bg-[#d4a843] px-6 py-3 font-semibold text-black transition hover:bg-[#c49b3a] disabled:opacity-50"
-            >
-              {saving ? "Zapisywanie..." : "Zapisz zmiany"}
-            </button>
-          </div>
+          <SaveButton
+            onClick={handleSave}
+            saving={saving}
+            className="w-full px-6 py-3 font-semibold"
+          />
         </div>
 
-        <div className="flex-1 rounded-xl bg-[#1a1f2e] p-6">
-          <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-500">
-            Tak będzie to wyglądać w Discord
-          </p>
-          <div className="rounded-lg bg-[#0d1117] p-4">
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#d4a843] text-sm font-bold text-black">
-                JH
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold text-white">Jurassic Haven</span>
-                  <span className="rounded bg-[#5865F2] px-1 py-0.5 text-xs text-white">
-                    APP
-                  </span>
-                  <span className="text-xs text-gray-500">— dziś</span>
-                </div>
-                <div className="mt-2 rounded-lg border-l-4 border-[#d4a843] bg-[#1a1f2e] p-3">
-                  <p className="text-sm font-semibold text-white">
-                    {tab === "welcome" ? "🎉 Witamy na serwerze!" : "👋 Do zobaczenia!"}
-                  </p>
-                  <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-300">
-                    {resolvePreview(message)}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="mt-6">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
-              Dostępne zmienne
+        <div className="flex flex-1 flex-col gap-4">
+          <div className="rounded-xl bg-[#1a1f2e] p-6">
+            <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-500">
+              Tak będzie to wyglądać w Discord
             </p>
-            <div className="flex flex-col gap-2">
-              {VARIABLES.map((v) => (
-                <div key={v.label} className="flex items-center gap-3">
-                  <span className="w-32 font-mono text-xs text-[#d4a843]">{v.label}</span>
-                  <span className="text-xs text-gray-400">{v.desc}</span>
+            <div className="rounded-lg bg-[#0d1117] p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#d4a843] text-sm font-bold text-black">
+                  JH
                 </div>
-              ))}
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-white">Jurassic Haven</span>
+                    <span className="rounded bg-[#5865F2] px-1 py-0.5 text-xs text-white">APP</span>
+                    <span className="text-xs text-gray-500">— dziś</span>
+                  </div>
+                  <div className="mt-2 rounded-lg border-l-4 border-[#d4a843] bg-[#1a1f2e] p-3">
+                    <p className="text-sm font-semibold text-white">
+                      {tab === "welcome" ? "🎉 Witamy na serwerze!" : "👋 Do zobaczenia!"}
+                    </p>
+                    <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-300">
+                      {resolvePreview(message)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="mt-6">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                Dostępne zmienne
+              </p>
+              <div className="flex flex-col gap-2">
+                {VARIABLES.map((v) => (
+                  <div key={v.label} className="flex items-center gap-3">
+                    <span className="w-32 font-mono text-xs text-[#d4a843]">{v.label}</span>
+                    <span className="text-xs text-gray-400">{v.desc}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
+          <HowItWorks
+            steps={[
+              "Wybierz kanał i napisz treść wiadomości powitalnej",
+              "Użyj zmiennych ({user}, {server} itd.) aby spersonalizować tekst",
+              "Zapisz — bot wyśle wiadomość gdy ktoś dołączy lub odejdzie",
+              "Zakładka Goodbye działa tak samo, ale przy wyjściu z serwera",
+            ]}
+          />
         </div>
       </div>
     </div>

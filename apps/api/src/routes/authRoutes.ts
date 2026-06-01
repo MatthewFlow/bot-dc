@@ -1,8 +1,11 @@
 import { Hono } from "hono";
-import { setCookie } from "hono/cookie";
+import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { jwtVerify, SignJWT } from "jose";
 
+import { sessions } from "../lib/sessions";
+
 const DISCORD_API = "https://discord.com/api/v10";
+const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export const authRoutes = new Hono();
 
@@ -14,11 +17,21 @@ authRoutes.get("/discord", (c) => {
     return c.json({ error: "Missing OAuth2 config" }, 500);
   }
 
+  const state = crypto.randomUUID();
+
+  setCookie(c, "oauth_state", state, {
+    httpOnly: true,
+    path: "/",
+    maxAge: 300,
+    sameSite: "Lax",
+  });
+
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
     response_type: "code",
     scope: "identify guilds",
+    state,
   });
 
   return c.redirect(`https://discord.com/oauth2/authorize?${params}`);
@@ -26,7 +39,15 @@ authRoutes.get("/discord", (c) => {
 
 authRoutes.get("/callback", async (c) => {
   const code = c.req.query("code");
+  const state = c.req.query("state");
+
   if (!code) return c.json({ error: "Missing code" }, 400);
+
+  const storedState = getCookie(c, "oauth_state");
+  if (!state || !storedState || state !== storedState) {
+    return c.json({ error: "Invalid state" }, 400);
+  }
+  deleteCookie(c, "oauth_state", { path: "/" });
 
   const clientId = process.env.DISCORD_CLIENT_ID;
   const clientSecret = process.env.DISCORD_CLIENT_SECRET;
@@ -71,21 +92,23 @@ authRoutes.get("/callback", async (c) => {
     avatar: string | null;
   };
 
+  // Store Discord access_token server-side — never expose it in the JWT
+  sessions.set(user.id, tokenData.access_token, SESSION_TTL_MS);
+
   const jwt = await new SignJWT({
     userId: user.id,
     username: user.username,
     avatar: user.avatar,
-    accessToken: tokenData.access_token,
   })
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("7d")
     .sign(new TextEncoder().encode(jwtSecret));
 
-  // Zapisz token w cookie zamiast URL
   setCookie(c, "jh_token", jwt, {
-    httpOnly: false,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: 60 * 60 * 24 * 7,
+    maxAge: SESSION_TTL_MS / 1000,
     sameSite: "Lax",
   });
 
@@ -95,7 +118,10 @@ authRoutes.get("/callback", async (c) => {
 
 authRoutes.get("/me", async (c) => {
   const header = c.req.header("authorization") ?? "";
-  const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+  const headerToken = header.startsWith("Bearer ") ? header.slice(7) : null;
+  const cookieToken = getCookie(c, "jh_token") ?? null;
+  const token = headerToken ?? cookieToken;
+
   if (!token) return c.json({ error: "Unauthorized" }, 401);
 
   const jwtSecret = process.env.JWT_SECRET;
@@ -103,12 +129,23 @@ authRoutes.get("/me", async (c) => {
 
   try {
     const { payload } = await jwtVerify(token, new TextEncoder().encode(jwtSecret));
+    const userId = payload.userId as string;
+
+    if (!sessions.get(userId)) {
+      return c.json({ error: "Session expired" }, 401);
+    }
+
     return c.json({
-      userId: payload.userId,
+      userId,
       username: payload.username,
       avatar: payload.avatar,
     });
   } catch {
-    return c.json({ error: "Invalid token" }, 401);
+    return c.json({ error: "Invalid or expired token" }, 401);
   }
+});
+
+authRoutes.post("/logout", (c) => {
+  deleteCookie(c, "jh_token", { path: "/" });
+  return c.json({ ok: true });
 });
