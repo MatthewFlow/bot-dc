@@ -1,11 +1,17 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { ConfirmModal } from "@/components/confirmModal";
+import { HowItWorks } from "@/components/HowItWorks";
+import { PageHeader } from "@/components/PageHeader";
+import { Avatar } from "@/components/Avatar";
+import { RoleSelect } from "@/components/RoleSelect";
+import { SaveButton } from "@/components/SaveButton";
 import { Skeleton, SkeletonRow } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
+import { useGuildLoad } from "@/hooks/useGuildLoad";
 import type { GuildConfig, LeaderboardEntry, Role } from "@/lib/api";
 import { getGuildConfig, getLeaderboard, getRoles, updateGuildConfig } from "@/lib/api";
 
@@ -13,10 +19,10 @@ const MEDALS = ["🥇", "🥈", "🥉"];
 
 function LevelsSkeleton() {
   return (
-    <div className="flex flex-col p-8 gap-8">
+    <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
       <div>
-        <Skeleton className="h-3 w-24 mb-2" />
-        <Skeleton className="h-7 w-48 mb-2" />
+        <Skeleton className="mb-2 h-3 w-24" />
+        <Skeleton className="mb-2 h-7 w-48" />
         <Skeleton className="h-3 w-64" />
       </div>
       <div className="flex flex-col gap-6 lg:flex-row">
@@ -39,7 +45,7 @@ function LevelsSkeleton() {
             </div>
           ))}
         </div>
-        <Skeleton className="w-full lg:w-72 h-48 rounded-xl" />
+        <Skeleton className="h-48 w-full rounded-xl lg:w-72" />
       </div>
       <div className="rounded-xl bg-[#1a1f2e]">
         <div className="border-b border-white/5 px-6 py-4">
@@ -56,7 +62,6 @@ function LevelsSkeleton() {
 }
 
 export default function LevelsPage() {
-  const router = useRouter();
   const params = useParams();
   const guildId = params.guildId as string;
   const toast = useToast();
@@ -64,38 +69,30 @@ export default function LevelsPage() {
   const [config, setConfig] = useState<GuildConfig>({});
   const [roles, setRoles] = useState<Role[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [loading, setLoading] = useState(true);
   const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [newLevel, setNewLevel] = useState("");
   const [newRoleId, setNewRoleId] = useState("");
   const [pendingDelete, setPendingDelete] = useState<number | null>(null);
 
+  const { loading } = useGuildLoad(
+    guildId,
+    (id) => Promise.all([getGuildConfig(id), getRoles(id)]),
+    ([cfg, r]) => {
+      setConfig(cfg);
+      setRoles(r);
+    },
+  );
+
   useEffect(() => {
-    const token = localStorage.getItem("jh_token");
-    if (!token) {
-      router.replace("/");
-      return;
-    }
-
-    Promise.all([getGuildConfig(token, guildId), getRoles(token, guildId)])
-      .then(([cfg, r]) => {
-        setConfig(cfg);
-        setRoles(r);
-      })
-      .catch(() => router.replace("/dashboard"))
-      .finally(() => setLoading(false));
-
-    fetchLeaderboard(token);
+    fetchLeaderboard();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [guildId, router]);
+  }, [guildId]);
 
-  async function fetchLeaderboard(token?: string) {
-    const t = token ?? localStorage.getItem("jh_token");
-    if (!t) return;
+  async function fetchLeaderboard() {
     setLeaderboardLoading(true);
     try {
-      setLeaderboard(await getLeaderboard(t, guildId, 10));
+      setLeaderboard(await getLeaderboard(guildId, 10));
     } catch {
       // leaderboard jest opcjonalny — błąd fetch nie blokuje reszty strony
     } finally {
@@ -128,11 +125,9 @@ export default function LevelsPage() {
   }
 
   async function handleSave() {
-    const token = localStorage.getItem("jh_token");
-    if (!token) return;
     setSaving(true);
     try {
-      await updateGuildConfig(token, guildId, { roleRewards: config.roleRewards });
+      await updateGuildConfig(guildId, { roleRewards: config.roleRewards });
       toast("Zapisano zmiany.", "success");
     } catch {
       toast("Nie udało się zapisać.", "error");
@@ -146,18 +141,17 @@ export default function LevelsPage() {
   const rewards = (config.roleRewards ?? []).slice().sort((a, b) => a.level - b.level);
 
   return (
-    <div className="flex flex-col p-8 gap-8">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-gray-600">
-          Growth Ladder
-        </p>
-        <h1 className="mt-1 text-2xl font-bold text-white">
-          System <span className="italic text-[#d4a843]">levelowania</span>
-        </h1>
-        <p className="mt-1 text-sm text-gray-400">
-          Mapowanie progów XP na istniejące role Discord.
-        </p>
-      </div>
+    <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
+      <PageHeader
+        category="Growth Ladder"
+        title={
+          <>
+            System <span className="italic text-[#d4a843]">levelowania</span>
+          </>
+        }
+        description="Mapowanie progów XP na istniejące role Discord."
+        className="mb-0"
+      />
 
       <div className="flex flex-col gap-6 lg:flex-row">
         <div className="flex-1 rounded-xl bg-[#1a1f2e]">
@@ -168,23 +162,12 @@ export default function LevelsPage() {
               </p>
               <p className="text-base font-semibold text-white">Tiery → Role</p>
             </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={handleSave}
-                disabled={saving}
-                className="rounded-lg bg-[#d4a843] px-4 py-2 text-sm font-semibold text-black transition hover:bg-[#c49b3a] disabled:opacity-50"
-              >
-                {saving ? "Zapisywanie..." : "Zapisz zmiany"}
-              </button>
-            </div>
+            <SaveButton onClick={handleSave} saving={saving} className="px-4 py-2" />
           </div>
 
           <div className="grid grid-cols-3 border-b border-white/5 px-6 py-2">
             {["Lv.", "Tier", "Discord rola"].map((h) => (
-              <span
-                key={h}
-                className="text-xs font-semibold uppercase tracking-wider text-gray-600"
-              >
+              <span key={h} className="text-xs font-semibold uppercase tracking-wider text-gray-600">
                 {h}
               </span>
             ))}
@@ -223,7 +206,7 @@ export default function LevelsPage() {
           )}
         </div>
 
-        <div className="w-full lg:w-72">
+        <div className="flex w-full flex-col gap-4 lg:w-72">
           <div className="rounded-xl bg-[#1a1f2e] p-6">
             <p className="mb-4 text-sm font-semibold text-white">Dodaj próg</p>
             <div className="flex flex-col gap-3">
@@ -240,18 +223,12 @@ export default function LevelsPage() {
               </div>
               <div>
                 <label className="mb-1 block text-xs text-gray-500">Rola Discord</label>
-                <select
+                <RoleSelect
                   value={newRoleId}
-                  onChange={(e) => setNewRoleId(e.target.value)}
-                  className="w-full rounded-lg bg-[#0f1117] px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]"
-                >
-                  <option value="">— Wybierz rolę —</option>
-                  {roles.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setNewRoleId}
+                  roles={roles}
+                  className="w-full px-3 py-2"
+                />
               </div>
               <button
                 onClick={addReward}
@@ -262,6 +239,14 @@ export default function LevelsPage() {
               </button>
             </div>
           </div>
+          <HowItWorks
+            steps={[
+              "Użytkownik wysyła wiadomości na serwerze i zdobywa XP",
+              "Po osiągnięciu progu level bot automatycznie nadaje rolę",
+              "Wyższy level = wyższa rola z listy tierów",
+              "Leaderboard pokazuje ranking wszystkich aktywnych członków",
+            ]}
+          />
         </div>
       </div>
 
@@ -314,20 +299,8 @@ export default function LevelsPage() {
                 {MEDALS[entry.position - 1] ?? entry.position}
               </span>
               <div className="flex min-w-0 items-center gap-3">
-                {entry.avatar ? (
-                  <img
-                    src={entry.avatar}
-                    alt={entry.username}
-                    className="h-8 w-8 rounded-full"
-                  />
-                ) : (
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2a2f3e] text-xs font-bold text-gray-300">
-                    {entry.username[0]?.toUpperCase()}
-                  </div>
-                )}
-                <span className="truncate text-sm font-medium text-white">
-                  {entry.username}
-                </span>
+                <Avatar src={entry.avatar} name={entry.username} size="sm" />
+                <span className="truncate text-sm font-medium text-white">{entry.username}</span>
               </div>
               <div className="text-right">
                 <span className="rounded bg-[#d4a843]/20 px-2 py-0.5 text-xs font-semibold text-[#d4a843]">

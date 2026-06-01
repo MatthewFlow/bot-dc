@@ -25,6 +25,12 @@ export async function handleCfgAddXp(interaction: ChatInputCommandInteraction) {
   const guild = interaction.guild!;
 
   const amount = interaction.options.getInteger("amount", true);
+
+  if (amount < 1) {
+    await interaction.reply({ ephemeral: true, content: "Ilość XP musi być >= 1." });
+    return;
+  }
+
   const targetUser = interaction.options.getUser("user") ?? interaction.user;
   const targetMember = await guild.members.fetch(targetUser.id);
 

@@ -13,24 +13,18 @@ export default function GuildLayout({ children }: { children: React.ReactNode })
   const [guildName, setGuildName] = useState("...");
 
   useEffect(() => {
-    const token = localStorage.getItem("jh_token");
-    if (!token) {
-      router.replace("/");
-      return;
-    }
-
-    getGuilds(token)
+    getGuilds()
       .then((guilds) => {
         const guild = guilds.find((g) => g.id === guildId);
         if (guild) setGuildName(guild.name);
       })
-      .catch(() => {});
+      .catch(() => router.replace("/"));
   }, [guildId, router]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#0f1117]">
       <Sidebar guildName={guildName} />
-      <main className="flex-1 overflow-y-auto pt-14 md:pt-0">{children}</main>
+      <main className="flex-1 overflow-auto pt-14 md:pt-0">{children}</main>
     </div>
   );
 }

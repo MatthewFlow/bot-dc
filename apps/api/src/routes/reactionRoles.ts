@@ -1,10 +1,12 @@
 import { reactionRoleRepository } from "@jurassic-haven/db";
 import { Hono } from "hono";
 
+import { isGuildAdmin } from "../lib/guildGuard";
 import { authMiddleware } from "../middleware/authMiddleware";
 import type { AppVariables } from "../types";
 
 const DISCORD_API = "https://discord.com/api/v10";
+const COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
 
 function hexToDecimal(hex: string): number {
   return parseInt(hex.replace("#", ""), 16);
@@ -13,6 +15,18 @@ function hexToDecimal(hex: string): number {
 export const reactionRoleRoutes = new Hono<{ Variables: AppVariables }>();
 
 reactionRoleRoutes.use("*", authMiddleware);
+
+// Verify guild admin access for all /:guildId/* routes
+reactionRoleRoutes.use("/:guildId/*", async (c, next) => {
+  const guildId = c.req.param("guildId");
+  const accessToken = c.get("accessToken");
+
+  if (!(await isGuildAdmin(accessToken, guildId))) {
+    return c.json({ error: "Forbidden" }, 403);
+  }
+
+  await next();
+});
 
 reactionRoleRoutes.get("/:guildId/reaction-roles", async (c) => {
   const guildId = c.req.param("guildId");
@@ -34,10 +48,16 @@ reactionRoleRoutes.post("/:guildId/reaction-roles", async (c) => {
     return c.json({ error: "Missing required fields" }, 400);
   }
 
+  if (body.title.length > 256) return c.json({ error: "Title too long (max 256)" }, 400);
+  if (body.content.length > 4096) return c.json({ error: "Content too long (max 4096)" }, 400);
+  if (body.entries.length > 20) return c.json({ error: "Too many entries (max 20)" }, 400);
+  if (body.color && !COLOR_RE.test(body.color)) {
+    return c.json({ error: "Invalid color format, expected #RRGGBB" }, 400);
+  }
+
   const botToken = process.env.DISCORD_TOKEN;
   if (!botToken) return c.json({ error: "Missing bot token" }, 500);
 
-  // Wyślij jako embed
   const embed = {
     title: body.title,
     description: body.content,
@@ -93,11 +113,15 @@ reactionRoleRoutes.post("/:guildId/reaction-roles", async (c) => {
 });
 
 reactionRoleRoutes.delete("/:guildId/reaction-roles/:messageId", async (c) => {
+  const guildId = c.req.param("guildId");
   const messageId = c.req.param("messageId");
   const botToken = process.env.DISCORD_TOKEN;
 
   const config = await reactionRoleRepository.getByMessageId(messageId);
   if (!config) return c.json({ error: "Not found" }, 404);
+
+  // Ensure the record actually belongs to the requested guild
+  if (config.guildId !== guildId) return c.json({ error: "Not found" }, 404);
 
   if (botToken) {
     await fetch(`${DISCORD_API}/channels/${config.channelId}/messages/${messageId}`, {

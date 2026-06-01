@@ -1,26 +1,17 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useEffect } from "react";
+
+import { PageHeader } from "@/components/PageHeader";
 
 export default function GuildOverviewPage() {
   const router = useRouter();
   const params = useParams();
   const guildId = params.guildId as string;
 
-  useEffect(() => {
-    const token = localStorage.getItem("jh_token");
-    if (!token) router.replace("/");
-  }, [router]);
-
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <p className="text-xs font-semibold uppercase tracking-wider text-gray-600">
-          Przegląd
-        </p>
-        <h1 className="mt-1 text-2xl font-bold text-white">Dashboard</h1>
-      </div>
+    <div className="p-4 sm:p-6 lg:p-8">
+      <PageHeader category="Przegląd" title="Dashboard" description="" />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {[
