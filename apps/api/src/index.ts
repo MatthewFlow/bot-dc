@@ -4,6 +4,7 @@ import { cors } from "hono/cors";
 
 import { authRoutes } from "./routes/authRoutes";
 import { guildRoutes } from "./routes/guilds";
+import { moderationRoutes } from "./routes/moderation";
 import { reactionRoleRoutes } from "./routes/reactionRoles";
 import type { AppVariables } from "./types";
 
@@ -22,6 +23,7 @@ app.use(
 app.route("/auth", authRoutes);
 app.route("/guilds", guildRoutes);
 app.route("/guilds", reactionRoleRoutes);
+app.route("/guilds", moderationRoutes);
 
 app.get("/health", (c) => c.json({ ok: true }));
 

@@ -1,14 +1,24 @@
 export { connectDb } from "./client";
 export {
   guildConfigRepository,
+  modActionRepository,
   reactionRoleRepository,
+  ticketRepository,
+  warnRepository,
   xpRepository,
 } from "./providers/mongoose/providers";
 export type { GuildConfig, GuildConfigPatch } from "./repositories/guildConfigRepository";
 export type {
+  AddModActionOpts,
+  ModAction,
+  ModActionType,
+} from "./repositories/modActionRepository";
+export type {
   ReactionRole,
   ReactionRoleEntry,
 } from "./repositories/reactionRoleRepository";
+export type { CreateTicketOpts, Ticket, TicketStatus } from "./repositories/ticketRepository";
+export type { AddWarnOpts, Warn } from "./repositories/warnRepository";
 export type {
   AddXpResult,
   AddXpWithCooldownOpts,

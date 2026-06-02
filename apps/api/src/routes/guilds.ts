@@ -21,6 +21,10 @@ const CONFIG_ALLOWED_FIELDS = [
   "welcomeMessage",
   "goodbyeMessage",
   "roleRewards",
+  "modLogChannelId",
+  "ticketSupportRoleId",
+  "ticketSupportRoleId2",
+  "ticketLogChannelId",
 ] as const;
 
 export const guildRoutes = new Hono<{ Variables: AppVariables }>();
@@ -112,6 +116,115 @@ guildRoutes.get("/:guildId/channels", async (c) => {
   } catch (e) {
     console.error(`[guilds] Błąd pobierania kanałów dla ${guildId}:`, e);
     return c.json({ error: "Failed to fetch channels" }, 502);
+  }
+});
+
+guildRoutes.post("/:guildId/channels", async (c) => {
+  const guildId = c.req.param("guildId");
+  const botToken = process.env.DISCORD_TOKEN;
+  if (!botToken) return c.json({ error: "Missing bot token" }, 500);
+
+  const body = (await c.req.json().catch(() => null)) as { name?: unknown } | null;
+  const name = typeof body?.name === "string" ? body.name.trim() : "";
+  if (!name || name.length > 100) {
+    return c.json({ error: "Invalid channel name" }, 400);
+  }
+
+  try {
+    const res = await fetch(`${DISCORD_API}/guilds/${guildId}/channels`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bot ${botToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name, type: DISCORD_CHANNEL_TYPES.GuildText }),
+    });
+
+    if (res.status === 429) {
+      const data = (await res.json()) as { retry_after: number };
+      return c.json(
+        { error: "Rate limited by Discord", retry_after: data.retry_after },
+        429,
+      );
+    }
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      console.error(`[guilds] Discord create channel error ${res.status}:`, errBody);
+      return c.json({ error: "Failed to create channel" }, 502);
+    }
+
+    const ch = (await res.json()) as { id: string; name: string; type: number };
+    return c.json({ id: ch.id, name: ch.name, type: ch.type }, 201);
+  } catch (e) {
+    console.error(`[guilds] Błąd tworzenia kanału dla ${guildId}:`, e);
+    return c.json({ error: "Failed to create channel" }, 502);
+  }
+});
+
+guildRoutes.post("/:guildId/ticket-panel", async (c) => {
+  const botToken = process.env.DISCORD_TOKEN;
+  if (!botToken) return c.json({ error: "Missing bot token" }, 500);
+
+  const body = (await c.req.json().catch(() => null)) as { channelId?: unknown } | null;
+  const channelId = typeof body?.channelId === "string" ? body.channelId : "";
+  if (!channelId) return c.json({ error: "Missing channelId" }, 400);
+
+  // Embed + przycisk identyczny jak /ticket_setup; custom_id "ticket_open" obsługuje bot
+  const payload = {
+    embeds: [
+      {
+        title: "📩 Złóż ticket",
+        description:
+          "Naciśnij przycisk poniżej, opisz swój problem, a Twoje zgłoszenie trafi do ekipy. " +
+          "Po przejęciu przez moderatora lub admina otrzymasz pomoc w prywatnym wątku.",
+        color: 0x5865f2,
+      },
+    ],
+    components: [
+      {
+        type: 1,
+        components: [
+          {
+            type: 2,
+            style: 1,
+            label: "Złóż ticket",
+            custom_id: "ticket_open",
+            emoji: { name: "📩" },
+          },
+        ],
+      },
+    ],
+  };
+
+  try {
+    const res = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bot ${botToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.status === 429) {
+      const data = (await res.json()) as { retry_after: number };
+      return c.json(
+        { error: "Rate limited by Discord", retry_after: data.retry_after },
+        429,
+      );
+    }
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      console.error(`[guilds] Discord ticket-panel error ${res.status}:`, errBody);
+      return c.json({ error: "Failed to send ticket panel" }, 502);
+    }
+
+    return c.json({ ok: true });
+  } catch (e) {
+    console.error("[guilds] Błąd wysyłania panelu ticketów:", e);
+    return c.json({ error: "Failed to send ticket panel" }, 502);
   }
 });
 
