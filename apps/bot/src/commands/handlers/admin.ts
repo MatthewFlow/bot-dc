@@ -248,6 +248,36 @@ export async function handleCfgSyncVerify(interaction: ChatInputCommandInteracti
   }
 }
 
+export async function handleCfgSetModLog(interaction: ChatInputCommandInteraction) {
+  const guildId = interaction.guildId!;
+  const channel = interaction.options.getChannel("channel", true);
+
+  if (!isTextChannel(channel.type)) {
+    await interaction.reply({
+      content: "Wybierz kanał tekstowy.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  await guildConfigRepository.set(guildId, { modLogChannelId: channel.id });
+  await interaction.reply({
+    content: `Ustawiono kanał logów na ${channel}`,
+    ephemeral: true,
+  });
+}
+
+export async function handleCfgSetTicketRole(interaction: ChatInputCommandInteraction) {
+  const guildId = interaction.guildId!;
+  const role = interaction.options.getRole("role", true);
+
+  await guildConfigRepository.set(guildId, { ticketSupportRoleId: role.id });
+  await interaction.reply({
+    content: `Ustawiono rolę supportu na ${role}`,
+    ephemeral: true,
+  });
+}
+
 export async function handleCfgClear(interaction: ChatInputCommandInteraction) {
   const amount = interaction.options.getInteger("amount", true);
   const channel = interaction.channel;

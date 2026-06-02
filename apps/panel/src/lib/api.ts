@@ -16,6 +16,47 @@ export type GuildConfig = {
   welcomeMessage?: string;
   goodbyeMessage?: string;
   roleRewards?: Array<{ level: number; roleId: string }>;
+  modLogChannelId?: string;
+  ticketSupportRoleId?: string;
+  ticketSupportRoleId2?: string;
+  ticketLogChannelId?: string;
+};
+
+export type ModActionType = "warn" | "mute" | "unmute" | "kick" | "ban" | "clearwarns";
+
+export type ModAction = {
+  id: string;
+  guildId: string;
+  type: ModActionType;
+  userId: string;
+  moderatorId: string;
+  reason: string;
+  extra?: string;
+  createdAt: string;
+};
+
+export type Warn = {
+  id: string;
+  guildId: string;
+  userId: string;
+  moderatorId: string;
+  reason: string;
+  createdAt: string;
+};
+
+export type TicketStatus = "pending" | "open" | "closed";
+
+export type Ticket = {
+  id: string;
+  guildId: string;
+  threadId: string;
+  userId: string;
+  status: TicketStatus;
+  subject?: string;
+  assignedTo?: string;
+  createdAt: string;
+  claimedAt?: string;
+  closedAt?: string;
 };
 
 export type Channel = {
@@ -146,6 +187,16 @@ export async function getRoles(guildId: string): Promise<Role[]> {
   return res.json();
 }
 
+export async function createChannel(guildId: string, name: string): Promise<Channel> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/channels`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+  if (!res.ok) throw new Error("Failed to create channel");
+  return res.json();
+}
+
 export async function getLeaderboard(
   guildId: string,
   limit = 10,
@@ -184,4 +235,60 @@ export async function deleteReactionRole(
     { method: "DELETE" },
   );
   if (!res.ok) throw new Error("Failed to delete reaction role");
+}
+
+export async function getWarnings(guildId: string, userId: string): Promise<Warn[]> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/warnings/${userId}`);
+  if (!res.ok) throw new Error("Failed to fetch warnings");
+  return res.json();
+}
+
+export async function clearWarnings(guildId: string, userId: string): Promise<void> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/warnings/${userId}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to clear warnings");
+}
+
+export async function getTickets(
+  guildId: string,
+  status?: TicketStatus,
+): Promise<Ticket[]> {
+  const query = status ? `?status=${status}` : "";
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/tickets${query}`);
+  if (!res.ok) throw new Error("Failed to fetch tickets");
+  return res.json();
+}
+
+export async function getModActions(guildId: string, limit = 25): Promise<ModAction[]> {
+  const res = await fetchWithRetry(
+    `${API_URL}/guilds/${guildId}/mod-actions?limit=${limit}`,
+  );
+  if (!res.ok) throw new Error("Failed to fetch mod actions");
+  return res.json();
+}
+
+export async function sendTicketPanel(guildId: string, channelId: string): Promise<void> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/ticket-panel`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ channelId }),
+  });
+  if (!res.ok) throw new Error("Failed to send ticket panel");
+}
+
+export async function closeTicket(guildId: string, threadId: string): Promise<void> {
+  const res = await fetchWithRetry(
+    `${API_URL}/guilds/${guildId}/tickets/${threadId}/close`,
+    { method: "POST" },
+  );
+  if (!res.ok) throw new Error("Failed to close ticket");
+}
+
+export async function reopenTicket(guildId: string, threadId: string): Promise<void> {
+  const res = await fetchWithRetry(
+    `${API_URL}/guilds/${guildId}/tickets/${threadId}/reopen`,
+    { method: "POST" },
+  );
+  if (!res.ok) throw new Error("Failed to reopen ticket");
 }

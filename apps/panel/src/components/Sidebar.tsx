@@ -9,6 +9,8 @@ const navItems = [
   { label: "Auto-role", href: "/autorole", icon: "🎭" },
   { label: "Reaction Roles", href: "/reaction-roles", icon: "⚡" },
   { label: "Levelowanie", href: "/levels", icon: "📈" },
+  { label: "Moderacja", href: "/moderation", icon: "🛡️" },
+  { label: "Tickety", href: "/tickets", icon: "🎫" },
 ];
 
 export function Sidebar({ guildName }: { guildName: string }) {

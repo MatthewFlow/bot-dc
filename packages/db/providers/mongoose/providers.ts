@@ -1,7 +1,13 @@
 import { GuildConfigProvider } from "./guildConfigProvider";
+import { ModActionProvider } from "./modActionProvider";
 import { ReactionRoleProvider } from "./reactionRoleProvider";
+import { TicketProvider } from "./ticketProvider";
+import { WarnProvider } from "./warnProvider";
 import { XpProvider } from "./xpProvider";
 
 export const guildConfigRepository = new GuildConfigProvider();
 export const xpRepository = new XpProvider();
 export const reactionRoleRepository = new ReactionRoleProvider();
+export const warnRepository = new WarnProvider();
+export const ticketRepository = new TicketProvider();
+export const modActionRepository = new ModActionProvider();

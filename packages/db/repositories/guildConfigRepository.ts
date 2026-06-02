@@ -10,6 +10,10 @@ export type GuildConfig = {
   welcomeMessage?: string;
   goodbyeMessage?: string;
   roleRewards: RoleReward[];
+  modLogChannelId?: string;
+  ticketSupportRoleId?: string;
+  ticketSupportRoleId2?: string;
+  ticketLogChannelId?: string;
 };
 
 export type GuildConfigPatch = Partial<Omit<GuildConfig, "guildId">>;

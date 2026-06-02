@@ -7,6 +7,13 @@ import { onMemberRemove } from "./events/memberRemove";
 import { onMessageCreate } from "./events/messageCreate";
 import { onMessageReactionAdd } from "./events/messageReactionAdd";
 import { onMessageReactionRemove } from "./events/messageReactionRemove";
+import { onThreadDelete } from "./events/threadDelete";
+import { onThreadUpdate } from "./events/threadUpdate";
+import {
+  handleTicketClaim,
+  handleTicketSubmit,
+  showTicketModal,
+} from "./tickets/handler";
 
 export function createBot() {
   const client = new Client({
@@ -40,10 +47,22 @@ export function createBot() {
   client.on("messageCreate", onMessageCreate);
   client.on("messageReactionAdd", onMessageReactionAdd);
   client.on("messageReactionRemove", onMessageReactionRemove);
+  client.on("threadDelete", onThreadDelete);
+  client.on("threadUpdate", onThreadUpdate);
 
   client.on("interactionCreate", async (interaction) => {
-    if (!interaction.isChatInputCommand()) return;
-    await handleCommand(interaction);
+    if (interaction.isChatInputCommand()) {
+      await handleCommand(interaction);
+      return;
+    }
+    if (interaction.isButton()) {
+      if (interaction.customId === "ticket_open") await showTicketModal(interaction);
+      else if (interaction.customId === "ticket_claim") await handleTicketClaim(interaction);
+      return;
+    }
+    if (interaction.isModalSubmit() && interaction.customId === "ticket_submit") {
+      await handleTicketSubmit(interaction);
+    }
   });
 
   return client;

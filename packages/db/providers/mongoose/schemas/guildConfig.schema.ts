@@ -15,6 +15,10 @@ export type GuildConfigDocument = {
   welcomeMessage?: string;
   goodbyeMessage?: string;
   roleRewards: RoleReward[];
+  modLogChannelId?: string;
+  ticketSupportRoleId?: string;
+  ticketSupportRoleId2?: string;
+  ticketLogChannelId?: string;
 };
 
 const roleRewardSchema = new Schema<RoleReward>(
@@ -36,6 +40,10 @@ const guildConfigSchema = new Schema<GuildConfigDocument>(
     welcomeMessage: { type: String },
     goodbyeMessage: { type: String },
     roleRewards: { type: [roleRewardSchema], default: [] },
+    modLogChannelId: { type: String },
+    ticketSupportRoleId: { type: String },
+    ticketSupportRoleId2: { type: String },
+    ticketLogChannelId: { type: String },
   },
   { versionKey: false },
 );

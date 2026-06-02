@@ -120,6 +120,117 @@ export const commands = [
         .setMaxValue(100),
     ),
 
+  new SlashCommandBuilder()
+    .setName("cfg_setmodlog")
+    .setDescription("Ustaw kanał logów moderacyjnych")
+    .addChannelOption((opt) =>
+      opt.setName("channel").setDescription("Kanał tekstowy").setRequired(true),
+    ),
+
+  // ===== MODERATION =====
+  new SlashCommandBuilder()
+    .setName("mod_warn")
+    .setDescription("Ostrzeż użytkownika")
+    .addUserOption((opt) =>
+      opt.setName("user").setDescription("Użytkownik").setRequired(true),
+    )
+    .addStringOption((opt) =>
+      opt.setName("reason").setDescription("Powód").setRequired(false),
+    ),
+
+  new SlashCommandBuilder()
+    .setName("mod_warnings")
+    .setDescription("Pokaż ostrzeżenia użytkownika")
+    .addUserOption((opt) =>
+      opt.setName("user").setDescription("Użytkownik").setRequired(true),
+    ),
+
+  new SlashCommandBuilder()
+    .setName("mod_clearwarns")
+    .setDescription("Usuń wszystkie ostrzeżenia użytkownika")
+    .addUserOption((opt) =>
+      opt.setName("user").setDescription("Użytkownik").setRequired(true),
+    ),
+
+  new SlashCommandBuilder()
+    .setName("mod_mute")
+    .setDescription("Wycisz użytkownika (Discord timeout)")
+    .addUserOption((opt) =>
+      opt.setName("user").setDescription("Użytkownik").setRequired(true),
+    )
+    .addIntegerOption((opt) =>
+      opt
+        .setName("duration")
+        .setDescription("Czas w minutach")
+        .setRequired(true)
+        .setMinValue(1)
+        .setMaxValue(40320),
+    )
+    .addStringOption((opt) =>
+      opt.setName("reason").setDescription("Powód").setRequired(false),
+    ),
+
+  new SlashCommandBuilder()
+    .setName("mod_unmute")
+    .setDescription("Usuń wyciszenie użytkownika")
+    .addUserOption((opt) =>
+      opt.setName("user").setDescription("Użytkownik").setRequired(true),
+    )
+    .addStringOption((opt) =>
+      opt.setName("reason").setDescription("Powód").setRequired(false),
+    ),
+
+  new SlashCommandBuilder()
+    .setName("mod_kick")
+    .setDescription("Wyrzuć użytkownika z serwera")
+    .addUserOption((opt) =>
+      opt.setName("user").setDescription("Użytkownik").setRequired(true),
+    )
+    .addStringOption((opt) =>
+      opt.setName("reason").setDescription("Powód").setRequired(false),
+    ),
+
+  new SlashCommandBuilder()
+    .setName("mod_ban")
+    .setDescription("Zbanuj użytkownika")
+    .addUserOption((opt) =>
+      opt.setName("user").setDescription("Użytkownik").setRequired(true),
+    )
+    .addStringOption((opt) =>
+      opt.setName("reason").setDescription("Powód").setRequired(false),
+    )
+    .addIntegerOption((opt) =>
+      opt
+        .setName("delete_messages")
+        .setDescription("Usuń wiadomości z ostatnich X dni (0–7)")
+        .setRequired(false)
+        .setMinValue(0)
+        .setMaxValue(7),
+    ),
+
+  // ===== TICKETS =====
+  new SlashCommandBuilder()
+    .setName("cfg_setticketrole")
+    .setDescription("Ustaw rolę supportu dla systemu ticketów")
+    .addRoleOption((opt) =>
+      opt.setName("role").setDescription("Rola supportu").setRequired(true),
+    ),
+
+  new SlashCommandBuilder()
+    .setName("ticket_setup")
+    .setDescription("Utwórz panel ticketów w bieżącym kanale"),
+
+  new SlashCommandBuilder()
+    .setName("ticket_close")
+    .setDescription("Zamknij bieżący ticket"),
+
+  new SlashCommandBuilder()
+    .setName("ticket_add")
+    .setDescription("Dodaj użytkownika do bieżącego ticketu")
+    .addUserOption((opt) =>
+      opt.setName("user").setDescription("Użytkownik do dodania").setRequired(true),
+    ),
+
   // ===== TESTS =====
   new SlashCommandBuilder()
     .setName("test_welcome")
@@ -132,26 +243,25 @@ export const commands = [
 
 export async function clearGuildCommands(client: Client) {
   if (!client.user) return;
-  if (!guildId) {
-    console.log("Brak GUILD_ID w .env – nie czyszczę komend");
-    return;
-  }
 
   const rest = new REST({ version: "10" }).setToken(token);
-  await rest.put(Routes.applicationGuildCommands(client.user.id, guildId), { body: [] });
-  console.log("Wyczyszczono komendy na serwerze ✅");
+  // Czyścimy zarówno globalne, jak i (jeśli jest GUILD_ID) gildiowe — żeby nie
+  // zostały duplikaty po wcześniejszej rejestracji gildiowej.
+  await rest.put(Routes.applicationCommands(client.user.id), { body: [] });
+  if (guildId) {
+    await rest
+      .put(Routes.applicationGuildCommands(client.user.id, guildId), { body: [] })
+      .catch(() => {});
+  }
+  console.log("Wyczyszczono komendy ✅");
 }
 
 export async function registerCommands(client: Client) {
   if (!client.user) return;
-  if (!guildId) {
-    console.log("Brak GUILD_ID w .env – pomijam rejestrację komend");
-    return;
-  }
 
   const rest = new REST({ version: "10" }).setToken(token);
-  await rest.put(Routes.applicationGuildCommands(client.user.id, guildId), {
-    body: commands,
-  });
-  console.log("Komendy zarejestrowane na serwerze ✅");
+  // Rejestracja GLOBALNA — globalna pula nie podlega dziennemu limitowi per-gildia
+  // (kod 30034), a idempotentny PUT tych samych komend nie liczy się jako "create".
+  await rest.put(Routes.applicationCommands(client.user.id), { body: commands });
+  console.log("Komendy zarejestrowane globalnie ✅");
 }
