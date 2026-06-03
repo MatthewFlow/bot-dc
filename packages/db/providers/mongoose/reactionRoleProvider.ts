@@ -16,6 +16,7 @@ export class ReactionRoleProvider implements IReactionRoleRepository {
       title: doc.title,
       content: doc.content,
       color: doc.color,
+      embed: doc.embed,
       entries: doc.entries ?? [],
     };
   }
@@ -42,6 +43,7 @@ export class ReactionRoleProvider implements IReactionRoleRepository {
       title: doc.title,
       content: doc.content,
       color: doc.color,
+      embed: doc.embed,
       entries: doc.entries ?? [],
     };
   }

@@ -1,4 +1,10 @@
-import type { RoleReward } from "../providers/mongoose/schemas/guildConfig.schema";
+import type { EmbedConfig } from "../embed";
+import type {
+  RoleReward,
+  TicketPanelButton,
+} from "../providers/mongoose/schemas/guildConfig.schema";
+
+export type { TicketPanelButton };
 
 export type GuildConfig = {
   guildId: string;
@@ -14,6 +20,10 @@ export type GuildConfig = {
   ticketSupportRoleId?: string;
   ticketSupportRoleId2?: string;
   ticketLogChannelId?: string;
+  welcomeEmbed?: EmbedConfig;
+  goodbyeEmbed?: EmbedConfig;
+  ticketPanelEmbed?: EmbedConfig;
+  ticketPanelButton?: TicketPanelButton;
 };
 
 export type GuildConfigPatch = Partial<Omit<GuildConfig, "guildId">>;

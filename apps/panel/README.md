@@ -40,16 +40,21 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Pages
 
-| Route                                 | Description                                      |
-| ------------------------------------- | ------------------------------------------------ |
-| `/`                                   | Landing page with Login with Discord button      |
-| `/auth/success`                       | Handles OAuth2 callback, saves JWT token         |
-| `/dashboard`                          | List of servers where user has admin permissions |
-| `/dashboard/[guildId]`                | Server overview                                  |
-| `/dashboard/[guildId]/welcome`        | Welcome & Goodbye channel configuration          |
-| `/dashboard/[guildId]/autorole`       | Auto-role on member join configuration           |
-| `/dashboard/[guildId]/levels`         | XP level → role reward tiers                     |
-| `/dashboard/[guildId]/reaction-roles` | Reaction role embeds with emoji → role pairs     |
+| Route                                 | Description                                              |
+| ------------------------------------- | ------------------------------------------------------- |
+| `/`                                   | Landing page with Login with Discord button             |
+| `/auth/success`                       | Handles OAuth2 callback, saves JWT token                |
+| `/dashboard`                          | List of servers where user has admin permissions        |
+| `/dashboard/[guildId]`                | Server overview — stat cards (members, bans, warnings, tickets) + quick nav |
+| `/dashboard/[guildId]/welcome`        | Welcome & Goodbye config (plain text or full embed)     |
+| `/dashboard/[guildId]/autorole`       | Auto-role on member join (with "create role")           |
+| `/dashboard/[guildId]/levels`         | XP level → role reward tiers (with "create role")       |
+| `/dashboard/[guildId]/reaction-roles` | Reaction role messages with the embed editor            |
+| `/dashboard/[guildId]/moderation`     | Warnings & recent moderation actions                    |
+| `/dashboard/[guildId]/tickets`        | Ticket list + panel embed/button editor + config        |
+
+Every server page sits under a sticky **TopBar** (breadcrumb + user menu) and the navigation
+**Sidebar**, both driven by the shared `lib/nav.ts` map.
 
 ## Project Structure
 
@@ -65,22 +70,25 @@ src/
 │   └── dashboard/
 │       ├── page.tsx                      # Server list
 │       └── [guildId]/
-│           ├── layout.tsx                # Sidebar layout
-│           ├── page.tsx                  # Server overview
-│           ├── welcome/
-│           │   └── page.tsx              # Welcome/Goodbye config
-│           ├── autorole/
-│           │   └── page.tsx              # Auto-role config
-│           ├── levels/
-│           │   └── page.tsx              # Level → role tiers
-│           └── reaction-roles/
-│               └── page.tsx              # Reaction roles config
+│           ├── layout.tsx                # Sidebar + TopBar layout
+│           ├── page.tsx                  # Server overview (stat cards + nav)
+│           ├── welcome/page.tsx          # Welcome/Goodbye (text or embed)
+│           ├── autorole/page.tsx         # Auto-role config
+│           ├── levels/page.tsx           # Level → role tiers
+│           ├── reaction-roles/page.tsx   # Reaction roles (embed editor)
+│           ├── moderation/page.tsx       # Warnings + mod-action log
+│           └── tickets/page.tsx          # Tickets + panel embed editor
 ├── components/
 │   ├── Sidebar.tsx                       # Navigation sidebar (mobile + desktop)
+│   ├── TopBar.tsx                        # Sticky breadcrumb + user/logout
 │   ├── Skeleton.tsx                      # Loading skeleton
 │   ├── Avatar.tsx                        # Discord user avatar
 │   ├── ChannelSelect.tsx                 # Channel picker dropdown
 │   ├── RoleSelect.tsx                    # Role picker dropdown
+│   ├── CreateChannelButton.tsx           # Inline "create channel" via bot
+│   ├── CreateRoleButton.tsx              # Inline "create role" via bot
+│   ├── EmbedEditor.tsx                   # Full Discord embed editor
+│   ├── EmbedPreview.tsx                  # Live Discord-style embed preview
 │   ├── SaveButton.tsx                    # Submit button with loading state
 │   ├── PageHeader.tsx                    # Section title + description
 │   ├── HowItWorks.tsx                    # Collapsible help block
@@ -89,8 +97,12 @@ src/
 ├── hooks/
 │   └── useGuildLoad.ts                   # Generic guild-page data loader
 └── lib/
-    └── api.ts                            # Typed API client (fetch wrapper)
+    ├── api.ts                            # Typed API client (fetch wrapper)
+    ├── embed.ts                          # Embed color/variable helpers
+    └── nav.ts                            # Shared navigation map (icons + routes)
 ```
+
+Icons are provided by [lucide-react](https://lucide.dev).
 
 ## Authentication Flow
 

@@ -92,17 +92,37 @@ bun run start
 
 ### Guilds (requires JWT)
 
-| Method   | Path                                         | Description                       |
-| -------- | -------------------------------------------- | --------------------------------- |
-| `GET`    | `/guilds`                                    | List servers where user is admin  |
-| `GET`    | `/guilds/:guildId/config`                    | Get server configuration          |
-| `PUT`    | `/guilds/:guildId/config`                    | Update server configuration       |
-| `GET`    | `/guilds/:guildId/channels`                  | List text channels                |
-| `GET`    | `/guilds/:guildId/roles`                     | List server roles                 |
-| `GET`    | `/guilds/:guildId/leaderboard`               | Get XP leaderboard (top 10)       |
-| `GET`    | `/guilds/:guildId/reaction-roles`            | List reaction role configurations |
-| `POST`   | `/guilds/:guildId/reaction-roles`            | Publish new reaction role message |
-| `DELETE` | `/guilds/:guildId/reaction-roles/:messageId` | Delete reaction role message      |
+| Method   | Path                                         | Description                                         |
+| -------- | -------------------------------------------- | --------------------------------------------------- |
+| `GET`    | `/guilds`                                    | List servers where user is admin                    |
+| `GET`    | `/guilds/:guildId/config`                    | Get server configuration                            |
+| `PUT`    | `/guilds/:guildId/config`                    | Update server configuration (allowlisted fields)    |
+| `GET`    | `/guilds/:guildId/stats`                     | Dashboard stats (members, bans, warnings, tickets)  |
+| `GET`    | `/guilds/:guildId/channels`                  | List text channels                                  |
+| `POST`   | `/guilds/:guildId/channels`                  | Create a text channel via the bot                   |
+| `GET`    | `/guilds/:guildId/roles`                     | List server roles                                   |
+| `POST`   | `/guilds/:guildId/roles`                     | Create a role via the bot                           |
+| `GET`    | `/guilds/:guildId/leaderboard`               | Get XP leaderboard (top 10), enriched with members  |
+| `POST`   | `/guilds/:guildId/ticket-panel`             | Send the ticket panel embed + button to a channel    |
+| `GET`    | `/guilds/:guildId/reaction-roles`            | List reaction role configurations                   |
+| `POST`   | `/guilds/:guildId/reaction-roles`            | Publish new reaction role message (full embed)      |
+| `DELETE` | `/guilds/:guildId/reaction-roles/:messageId` | Delete reaction role message                        |
+
+### Moderation & Tickets (requires JWT + guild admin)
+
+| Method   | Path                                          | Description                                  |
+| -------- | --------------------------------------------- | -------------------------------------------- |
+| `GET`    | `/guilds/:guildId/warnings/:userId`           | List a user's warnings                       |
+| `DELETE` | `/guilds/:guildId/warnings/:userId`           | Clear a user's warnings                      |
+| `GET`    | `/guilds/:guildId/mod-actions`                | Recent moderation actions log                |
+| `GET`    | `/guilds/:guildId/tickets`                    | List tickets, enriched with usernames/avatars|
+| `POST`   | `/guilds/:guildId/tickets/:threadId/close`    | Close (lock + archive) a ticket thread       |
+| `POST`   | `/guilds/:guildId/tickets/:threadId/reopen`   | Reopen a closed ticket thread                |
+
+The `config` PUT uses an explicit allowlist — unknown fields are dropped. Editable embeds
+(`welcomeEmbed`, `goodbyeEmbed`, `ticketPanelEmbed`) and `ticketPanelButton` are part of the
+config. Both the user OAuth token (guild list) and the bot token (channels, roles, leaderboard,
+tickets, reaction roles, stats) are used.
 
 All `/guilds` endpoints require:
 
@@ -117,11 +137,15 @@ JWT tokens expire after **7 days**. The panel handles expiry automatically by re
 ```
 src/
 ├── middleware/
-│   └── authMiddleware.ts    # JWT verification
+│   └── authMiddleware.ts    # JWT verification + session lookup
+├── lib/
+│   ├── sessions.ts          # In-memory store of Discord access tokens (by userId)
+│   └── guildGuard.ts        # fetchGuilds + isGuildAdmin (cached per token)
 ├── routes/
 │   ├── authRoutes.ts        # Discord OAuth2 flow
-│   ├── guilds.ts            # Guild config + leaderboard endpoints
-│   └── reactionRoles.ts     # Reaction roles endpoints
+│   ├── guilds.ts            # Config, stats, channels/roles (create), leaderboard, ticket panel
+│   ├── reactionRoles.ts     # Reaction roles endpoints (full embed)
+│   └── moderation.ts        # Warnings, mod-actions, tickets
 ├── types.ts                 # Hono context types
 └── index.ts                 # Entry point
 ```

@@ -2,6 +2,7 @@ import type {
   CreateTicketOpts,
   ITicketRepository,
   Ticket,
+  TicketCounts,
   TicketStatus,
 } from "../../repositories/ticketRepository";
 import { TicketModel } from "./schemas/ticket.schema";
@@ -45,6 +46,19 @@ export class TicketProvider implements ITicketRepository {
     const filter = status ? { guildId, status } : { guildId };
     const docs = await TicketModel.find(filter).sort({ createdAt: -1 });
     return docs.map(toTicket);
+  }
+
+  async counts(guildId: string): Promise<TicketCounts> {
+    const rows = await TicketModel.aggregate<{ _id: TicketStatus; n: number }>([
+      { $match: { guildId } },
+      { $group: { _id: "$status", n: { $sum: 1 } } },
+    ]);
+    const out: TicketCounts = { total: 0, pending: 0, open: 0, closed: 0 };
+    for (const row of rows) {
+      out[row._id] = row.n;
+      out.total += row.n;
+    }
+    return out;
   }
 
   async claim(threadId: string, moderatorId: string): Promise<void> {

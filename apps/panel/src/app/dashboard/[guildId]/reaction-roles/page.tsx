@@ -4,13 +4,15 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 
 import { ChannelSelect } from "@/components/ChannelSelect";
+import { EmbedEditor } from "@/components/EmbedEditor";
+import { EmbedPreview } from "@/components/EmbedPreview";
 import { HowItWorks } from "@/components/HowItWorks";
 import { ConfirmModal } from "@/components/confirmModal";
 import { PageHeader } from "@/components/PageHeader";
 import { RoleSelect } from "@/components/RoleSelect";
 import { useToast } from "@/components/toast";
 import { useGuildLoad } from "@/hooks/useGuildLoad";
-import type { Channel, ReactionRole, ReactionRoleEntry, Role } from "@/lib/api";
+import type { Channel, EmbedConfig, ReactionRole, ReactionRoleEntry, Role } from "@/lib/api";
 import {
   deleteReactionRole,
   getChannels,
@@ -18,28 +20,17 @@ import {
   getRoles,
   publishReactionRole,
 } from "@/lib/api";
-
-const PRESET_COLORS = [
-  { label: "Złoty", value: "#d4a843" },
-  { label: "Niebieski", value: "#5865F2" },
-  { label: "Zielony", value: "#57F287" },
-  { label: "Czerwony", value: "#ED4245" },
-  { label: "Szary", value: "#4f545c" },
-];
+import { hexToNumber, isEmbedEmpty } from "@/lib/embed";
 
 type FormState = {
   channelId: string;
-  title: string;
-  content: string;
-  color: string;
+  embed: EmbedConfig;
   entries: ReactionRoleEntry[];
 };
 
 const EMPTY_FORM: FormState = {
   channelId: "",
-  title: "",
-  content: "",
-  color: "#d4a843",
+  embed: { color: 0xd4a843 },
   entries: [{ emoji: "", roleId: "" }],
 };
 
@@ -85,9 +76,11 @@ export default function ReactionRolesPage() {
     setEditingMessageId(rr.messageId);
     setForm({
       channelId: rr.channelId,
-      title: rr.title ?? "",
-      content: rr.content ?? "",
-      color: rr.color ?? "#d4a843",
+      embed: rr.embed ?? {
+        title: rr.title ?? "",
+        description: rr.content ?? "",
+        color: rr.color ? (hexToNumber(rr.color) ?? 0xd4a843) : 0xd4a843,
+      },
       entries: rr.entries,
     });
   }
@@ -99,8 +92,7 @@ export default function ReactionRolesPage() {
 
   const isFormValid =
     form.channelId &&
-    form.title.trim() &&
-    form.content.trim() &&
+    !isEmbedEmpty(form.embed) &&
     form.entries.length > 0 &&
     form.entries.every((e) => e.emoji.trim() && e.roleId);
 
@@ -112,7 +104,8 @@ export default function ReactionRolesPage() {
         await deleteReactionRole(guildId, editingMessageId);
       }
       await publishReactionRole(guildId, {
-        ...form,
+        channelId: form.channelId,
+        embed: form.embed,
         entries: form.entries.filter((e) => e.emoji.trim() && e.roleId),
       });
       const updated = await getReactionRoles(guildId);
@@ -196,48 +189,10 @@ export default function ReactionRolesPage() {
                 />
               </div>
 
-              <div>
-                <label className="mb-1 block text-xs text-gray-500">Tytuł embeda</label>
-                <input
-                  value={form.title}
-                  onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                  placeholder="np. Weryfikacja"
-                  className="w-full rounded-lg bg-[#0f1117] px-3 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs text-gray-500">Treść</label>
-                <textarea
-                  value={form.content}
-                  onChange={(e) => setForm((f) => ({ ...f, content: e.target.value }))}
-                  rows={3}
-                  placeholder="np. Zareaguj emoji aby otrzymać rolę!"
-                  className="w-full resize-none rounded-lg bg-[#0f1117] px-3 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-xs text-gray-500">Kolor embeda</label>
-                <div className="flex items-center gap-2">
-                  {PRESET_COLORS.map((c) => (
-                    <button
-                      key={c.value}
-                      onClick={() => setForm((f) => ({ ...f, color: c.value }))}
-                      title={c.label}
-                      className={`h-7 w-7 rounded-full transition ${form.color === c.value ? "ring-2 ring-white ring-offset-2 ring-offset-[#1a1f2e]" : ""}`}
-                      style={{ backgroundColor: c.value }}
-                    />
-                  ))}
-                  <input
-                    type="color"
-                    value={form.color}
-                    onChange={(e) => setForm((f) => ({ ...f, color: e.target.value }))}
-                    className="h-7 w-7 cursor-pointer rounded-full border-0 bg-transparent p-0"
-                    title="Własny kolor"
-                  />
-                </div>
-              </div>
+              <EmbedEditor
+                value={form.embed}
+                onChange={(embed) => setForm((f) => ({ ...f, embed }))}
+              />
 
               <div>
                 <label className="mb-2 block text-xs text-gray-500">Pary emoji → rola</label>
@@ -276,19 +231,9 @@ export default function ReactionRolesPage() {
                 </button>
               </div>
 
-              <div className="rounded-lg bg-[#0f1117] p-3">
+              <div>
                 <p className="mb-2 text-xs text-gray-500">Podgląd</p>
-                <div
-                  className="rounded border-l-4 bg-[#1a1f2e] p-3"
-                  style={{ borderColor: form.color }}
-                >
-                  <p className="text-sm font-semibold text-white">
-                    {form.title || "Tytuł embeda"}
-                  </p>
-                  <p className="mt-1 text-sm text-gray-300">
-                    {form.content || "Treść wiadomości..."}
-                  </p>
-                </div>
+                <EmbedPreview embed={form.embed} />
               </div>
 
               <button

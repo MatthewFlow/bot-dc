@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Sidebar } from "@/components/Sidebar";
+import { TopBar } from "@/components/TopBar";
 import { getGuilds } from "@/lib/api";
 
 export default function GuildLayout({ children }: { children: React.ReactNode }) {
@@ -24,7 +25,10 @@ export default function GuildLayout({ children }: { children: React.ReactNode })
   return (
     <div className="flex h-screen overflow-hidden bg-[#0f1117]">
       <Sidebar guildName={guildName} />
-      <main className="flex-1 overflow-auto pt-14 md:pt-0">{children}</main>
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <TopBar guildName={guildName} />
+        <main className="flex-1 overflow-auto">{children}</main>
+      </div>
     </div>
   );
 }

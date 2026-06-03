@@ -1,4 +1,9 @@
-import { reactionRoleRepository } from "@jurassic-haven/db";
+import {
+  type EmbedConfig,
+  isEmbedEmpty,
+  reactionRoleRepository,
+  toDiscordEmbed,
+} from "@jurassic-haven/db";
 import { Hono } from "hono";
 
 import { isGuildAdmin } from "../lib/guildGuard";
@@ -38,31 +43,57 @@ reactionRoleRoutes.post("/:guildId/reaction-roles", async (c) => {
   const guildId = c.req.param("guildId");
   const body = (await c.req.json().catch(() => null)) as {
     channelId: string;
-    title: string;
-    content: string;
+    title?: string;
+    content?: string;
     color?: string;
+    embed?: EmbedConfig;
     entries: Array<{ emoji: string; roleId: string }>;
   } | null;
 
-  if (!body?.channelId || !body?.title || !body?.content || !body?.entries?.length) {
+  if (!body?.channelId || !body?.entries?.length) {
     return c.json({ error: "Missing required fields" }, 400);
   }
-
-  if (body.title.length > 256) return c.json({ error: "Title too long (max 256)" }, 400);
-  if (body.content.length > 4096) return c.json({ error: "Content too long (max 4096)" }, 400);
   if (body.entries.length > 20) return c.json({ error: "Too many entries (max 20)" }, 400);
-  if (body.color && !COLOR_RE.test(body.color)) {
-    return c.json({ error: "Invalid color format, expected #RRGGBB" }, 400);
-  }
 
   const botToken = process.env.DISCORD_TOKEN;
   if (!botToken) return c.json({ error: "Missing bot token" }, 500);
 
-  const embed = {
-    title: body.title,
-    description: body.content,
-    color: body.color ? hexToDecimal(body.color) : hexToDecimal("#d4a843"),
-  };
+  // Tryb pełnego embeda (z edytora) ma pierwszeństwo nad legacy title/content/color.
+  let embed: ReturnType<typeof toDiscordEmbed>;
+  let title: string;
+  let content: string;
+  let colorHex: string | undefined;
+
+  if (body.embed) {
+    embed = toDiscordEmbed(body.embed);
+    if (isEmbedEmpty(embed)) {
+      return c.json({ error: "Embed is empty" }, 400);
+    }
+    title = (body.embed.title ?? "").slice(0, 256) || "Reaction roles";
+    content = (body.embed.description ?? "").slice(0, 4096) || title;
+    colorHex =
+      typeof body.embed.color === "number"
+        ? `#${body.embed.color.toString(16).padStart(6, "0")}`
+        : undefined;
+  } else {
+    if (!body.title || !body.content) {
+      return c.json({ error: "Missing required fields" }, 400);
+    }
+    if (body.title.length > 256) return c.json({ error: "Title too long (max 256)" }, 400);
+    if (body.content.length > 4096)
+      return c.json({ error: "Content too long (max 4096)" }, 400);
+    if (body.color && !COLOR_RE.test(body.color)) {
+      return c.json({ error: "Invalid color format, expected #RRGGBB" }, 400);
+    }
+    title = body.title;
+    content = body.content;
+    colorHex = body.color;
+    embed = {
+      title: body.title,
+      description: body.content,
+      color: body.color ? hexToDecimal(body.color) : hexToDecimal("#d4a843"),
+    };
+  }
 
   const msgRes = await fetch(`${DISCORD_API}/channels/${body.channelId}/messages`, {
     method: "POST",
@@ -103,9 +134,10 @@ reactionRoleRoutes.post("/:guildId/reaction-roles", async (c) => {
     guildId,
     channelId: body.channelId,
     messageId: msg.id,
-    title: body.title,
-    content: body.content,
-    color: body.color,
+    title,
+    content,
+    color: colorHex,
+    embed: body.embed,
     entries: body.entries,
   });
 

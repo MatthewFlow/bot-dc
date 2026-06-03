@@ -7,6 +7,33 @@ export type Guild = {
   permissions: string;
 };
 
+export type EmbedFieldConfig = {
+  name: string;
+  value: string;
+  inline?: boolean;
+};
+
+export type EmbedConfig = {
+  title?: string;
+  description?: string;
+  /** Kolor jako liczba dziesiętna (0xRRGGBB). */
+  color?: number;
+  url?: string;
+  authorName?: string;
+  authorIconUrl?: string;
+  thumbnailUrl?: string;
+  imageUrl?: string;
+  footerText?: string;
+  footerIconUrl?: string;
+  timestamp?: boolean;
+  fields?: EmbedFieldConfig[];
+};
+
+export type TicketPanelButton = {
+  label?: string;
+  emoji?: string;
+};
+
 export type GuildConfig = {
   welcomeChannelId?: string;
   goodbyeChannelId?: string;
@@ -20,6 +47,10 @@ export type GuildConfig = {
   ticketSupportRoleId?: string;
   ticketSupportRoleId2?: string;
   ticketLogChannelId?: string;
+  welcomeEmbed?: EmbedConfig;
+  goodbyeEmbed?: EmbedConfig;
+  ticketPanelEmbed?: EmbedConfig;
+  ticketPanelButton?: TicketPanelButton;
 };
 
 export type ModActionType = "warn" | "mute" | "unmute" | "kick" | "ban" | "clearwarns";
@@ -44,6 +75,20 @@ export type Warn = {
   createdAt: string;
 };
 
+export type GuildStats = {
+  /** Przybliżona liczba członków (z Discorda); null gdy niedostępna. */
+  memberCount: number | null;
+  /** Przybliżona liczba osób online; null gdy niedostępna. */
+  onlineCount: number | null;
+  /** Liczba banów na serwerze; null gdy bot nie ma uprawnień. */
+  banCount: number | null;
+  /** True, gdy liczba banów osiągnęła limit strony (faktycznie może być więcej). */
+  banCountCapped: boolean;
+  /** Łączna liczba ostrzeżeń w bazie. */
+  warnCount: number;
+  tickets: { total: number; pending: number; open: number; closed: number };
+};
+
 export type TicketStatus = "pending" | "open" | "closed";
 
 export type Ticket = {
@@ -51,9 +96,15 @@ export type Ticket = {
   guildId: string;
   threadId: string;
   userId: string;
+  /** Nazwa autora ticketu (nick/username z Discorda); null jeśli nie udało się pobrać. */
+  username?: string | null;
+  /** Avatar autora ticketu (URL CDN Discorda); null jeśli brak/nie pobrano. */
+  avatar?: string | null;
   status: TicketStatus;
   subject?: string;
   assignedTo?: string;
+  /** Nazwa osoby, która przejęła ticket; null jeśli nie udało się pobrać. */
+  assignedToUsername?: string | null;
   createdAt: string;
   claimedAt?: string;
   closedAt?: string;
@@ -86,14 +137,13 @@ export type ReactionRole = {
   title: string;
   content: string;
   color?: string;
+  embed?: EmbedConfig;
   entries: ReactionRoleEntry[];
 };
 
 export type ReactionRoleInput = {
   channelId: string;
-  title: string;
-  content: string;
-  color?: string;
+  embed: EmbedConfig;
   entries: ReactionRoleEntry[];
 };
 
@@ -148,6 +198,13 @@ export async function getMe(): Promise<User> {
   return res.json();
 }
 
+export async function logout(): Promise<void> {
+  await fetch(`${API_URL}/auth/logout`, {
+    method: "POST",
+    credentials: "include",
+  }).catch(() => {});
+}
+
 export async function getGuilds(): Promise<Guild[]> {
   const res = await fetchWithRetry(`${API_URL}/guilds`);
   if (!res.ok) throw new Error("Failed to fetch guilds");
@@ -161,9 +218,19 @@ export async function getGuildConfig(guildId: string): Promise<GuildConfig> {
   return res.json();
 }
 
+/** Patch konfiguracji — embedy mogą być `null`, by je wyczyścić (powrót do trybu tekstowego). */
+export type GuildConfigUpdate = Partial<
+  Omit<GuildConfig, "welcomeEmbed" | "goodbyeEmbed" | "ticketPanelEmbed" | "ticketPanelButton">
+> & {
+  welcomeEmbed?: EmbedConfig | null;
+  goodbyeEmbed?: EmbedConfig | null;
+  ticketPanelEmbed?: EmbedConfig | null;
+  ticketPanelButton?: TicketPanelButton | null;
+};
+
 export async function updateGuildConfig(
   guildId: string,
-  patch: Partial<GuildConfig>,
+  patch: GuildConfigUpdate,
 ): Promise<void> {
   const res = await fetch(`${API_URL}/guilds/${guildId}/config`, {
     ...BASE,
@@ -194,6 +261,16 @@ export async function createChannel(guildId: string, name: string): Promise<Chan
     body: JSON.stringify({ name }),
   });
   if (!res.ok) throw new Error("Failed to create channel");
+  return res.json();
+}
+
+export async function createRole(guildId: string, name: string): Promise<Role> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/roles`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+  if (!res.ok) throw new Error("Failed to create role");
   return res.json();
 }
 
@@ -291,4 +368,10 @@ export async function reopenTicket(guildId: string, threadId: string): Promise<v
     { method: "POST" },
   );
   if (!res.ok) throw new Error("Failed to reopen ticket");
+}
+
+export async function getGuildStats(guildId: string): Promise<GuildStats> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/stats`);
+  if (!res.ok) throw new Error("Failed to fetch guild stats");
+  return res.json();
 }

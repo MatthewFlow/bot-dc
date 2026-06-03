@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation";
 import { useState } from "react";
 
+import { CreateRoleButton } from "@/components/CreateRoleButton";
 import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
 import { RoleSelect } from "@/components/RoleSelect";
@@ -134,13 +135,23 @@ export default function AutoRolePage() {
               Nadawana każdemu nowemu członkowi przy dołączeniu. Zazwyczaj{" "}
               <span className="text-white">@Niezweryfikowany</span>.
             </p>
-            <RoleSelect
-              value={config.joinRoleId ?? ""}
-              onChange={(v) => setConfig((c) => ({ ...c, joinRoleId: v || undefined }))}
-              roles={roles}
-              placeholder="— Nie ustawiono —"
-              className="w-full max-w-sm px-4 py-2.5"
-            />
+            <div className="flex max-w-sm flex-wrap items-center gap-2">
+              <RoleSelect
+                value={config.joinRoleId ?? ""}
+                onChange={(v) => setConfig((c) => ({ ...c, joinRoleId: v || undefined }))}
+                roles={roles}
+                placeholder="— Nie ustawiono —"
+                className="flex-1 px-4 py-2.5"
+              />
+              <CreateRoleButton
+                guildId={guildId}
+                defaultName="Niezweryfikowany"
+                onCreated={(role) => {
+                  setRoles((prev) => [...prev, role].sort((a, b) => b.position - a.position));
+                  setConfig((c) => ({ ...c, joinRoleId: role.id }));
+                }}
+              />
+            </div>
             {activeRole && (
               <div className="mt-4 flex items-center gap-3 rounded-lg bg-[#0f1117] px-4 py-3">
                 <span className="h-2.5 w-2.5 rounded-full bg-[#5865F2]" />
@@ -158,13 +169,23 @@ export default function AutoRolePage() {
               Gdy użytkownik zareaguje emoji w systemie Reaction Roles i ta rola zostanie mu
               nadana — bot automatycznie odbierze rolę niezweryfikowanego.
             </p>
-            <RoleSelect
-              value={config.verifiedRoleId ?? ""}
-              onChange={(v) => setConfig((c) => ({ ...c, verifiedRoleId: v || undefined }))}
-              roles={roles}
-              placeholder="— Nie ustawiono —"
-              className="w-full max-w-sm px-4 py-2.5"
-            />
+            <div className="flex max-w-sm flex-wrap items-center gap-2">
+              <RoleSelect
+                value={config.verifiedRoleId ?? ""}
+                onChange={(v) => setConfig((c) => ({ ...c, verifiedRoleId: v || undefined }))}
+                roles={roles}
+                placeholder="— Nie ustawiono —"
+                className="flex-1 px-4 py-2.5"
+              />
+              <CreateRoleButton
+                guildId={guildId}
+                defaultName="Zweryfikowany"
+                onCreated={(role) => {
+                  setRoles((prev) => [...prev, role].sort((a, b) => b.position - a.position));
+                  setConfig((c) => ({ ...c, verifiedRoleId: role.id }));
+                }}
+              />
+            </div>
             {activeVerifiedRole && (
               <div className="mt-4 flex items-center gap-3 rounded-lg bg-[#0f1117] px-4 py-3">
                 <span className="h-2.5 w-2.5 rounded-full bg-[#57F287]" />

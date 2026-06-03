@@ -1,6 +1,8 @@
 # Jurassic Haven — Discord Bot
 
-A Discord bot for the Jurassic Haven server. Features an XP leveling system, automatic role rewards, reaction roles, welcome and farewell messages.
+A Discord bot for the Jurassic Haven server. Features an XP leveling system, automatic role
+rewards, reaction roles, customizable welcome/farewell embeds, a moderation toolkit, and a
+support-ticket system.
 
 ## Tech Stack
 
@@ -74,7 +76,10 @@ In the Developer Portal go to **OAuth2 → URL Generator**, select the following
 
 And the following bot permissions:
 
-- `Manage Roles`
+- `Manage Roles` — auto-role, role rewards, creating roles from the dashboard
+- `Manage Channels` — creating channels from the dashboard
+- `Manage Threads` / `Create Private Threads` — ticket system
+- `Kick Members`, `Ban Members`, `Moderate Members` (timeout) — moderation commands
 - `Send Messages`
 - `View Channels`
 - `Read Message History`
@@ -100,6 +105,7 @@ Set `RESET_COMMANDS=true` in `.env` and restart the bot. Set it back to `false` 
 | -------------- | -------------------------------------------------------------- |
 | `/level`       | Shows your current level, XP, and XP needed for the next level |
 | `/leaderboard` | Shows top 10 players by XP on the server                       |
+| `/profile`     | Shows a user's profile card (level, XP, rank)                  |
 
 ### Configuration (requires admin role)
 
@@ -107,12 +113,40 @@ Set `RESET_COMMANDS=true` in `.env` and restart the bot. Set it back to `false` 
 | ------------------------------- | ------------------------------------------------------------------- |
 | `/cfg_setwelcome #channel`      | Sets the welcome message channel                                    |
 | `/cfg_setgoodbye #channel`      | Sets the farewell message channel                                   |
+| `/cfg_setmodlog #channel`       | Sets the moderation log channel                                     |
+| `/cfg_setticketrole <role>`     | Sets a ticket support role                                          |
 | `/cfg_addreward <level> <role>` | Adds a threshold: role granted from the given level onward          |
 | `/cfg_rolelist`                 | Lists all configured role thresholds                                |
 | `/cfg_checkrole [user]`         | Shows progression role status for a user                            |
 | `/cfg_syncxp [user] [limit]`    | Sync XP roles — single user if `user` given, otherwise all (max 50) |
 | `/cfg_syncverify`               | Assign unverified role to all members who have no verification role |
 | `/cfg_clear <amount>`           | Deletes the last N messages from the current channel                |
+
+### Moderation (requires admin role)
+
+| Command                           | Description                                          |
+| --------------------------------- | ---------------------------------------------------- |
+| `/mod_warn <user> <reason>`       | Warns a user (stored + logged)                       |
+| `/mod_warnings <user>`            | Lists a user's warnings                              |
+| `/mod_clearwarns <user>`          | Clears a user's warnings                             |
+| `/mod_mute <user> <duration>`     | Times out a user for a duration                      |
+| `/mod_unmute <user>`              | Removes a timeout                                    |
+| `/mod_kick <user> [reason]`       | Kicks a user                                         |
+| `/mod_ban <user> [reason]`        | Bans a user                                          |
+
+Every moderation action is written to `modActionRepository` and posted to the mod-log channel.
+
+### Tickets (requires admin / support role)
+
+| Command                  | Description                                                       |
+| ------------------------ | ---------------------------------------------------------------- |
+| `/ticket_setup`          | Posts the ticket panel embed + button on the current channel     |
+| `/ticket_close`          | Closes the current ticket thread (lock + archive)                |
+| `/ticket_add <user>`     | Adds a user to the current ticket thread                         |
+
+Users open tickets by clicking the panel button and filling in a short modal; the bot creates a
+private thread, pings the support roles, and posts a "claim" button. Ticket events are logged to
+the ticket-log channel.
 
 ### Testing (requires admin role)
 
@@ -131,9 +165,18 @@ Set `RESET_COMMANDS=true` in `.env` and restart the bot. Set it back to `false` 
 
 ## Welcome & Goodbye Messages
 
-- Welcome and goodbye message content is configurable via the web dashboard
-- Supported variables: `{user}`, `{username}`, `{server}`, `{member_count}`
-- Falls back to default message if not configured
+- Configurable via the web dashboard in two modes: **plain text** or a **full embed**
+- Supported variables: `{user}`, `{username}`, `{server}`, `{member_count}`, `{avatar}`
+- When a `welcomeEmbed` / `goodbyeEmbed` is configured the bot sends it (variables substituted);
+  otherwise it falls back to the legacy text message, then to a built-in default
+
+## Embeds
+
+- Configurable embeds (welcome, goodbye, ticket panel) are stored as `EmbedConfig` in the guild
+  config and rendered through the shared `toDiscordEmbed()` converter in `@jurassic-haven/db`
+- The ticket panel embed and its button (label + emoji) are edited from the dashboard; the
+  `{server}` and `{member_count}` variables are substituted when the panel is posted
+- Reaction-role messages are published from the dashboard embed editor (full embed support)
 
 ## Auto-role & Verification
 
@@ -158,23 +201,31 @@ src/
 │   ├── handlers/
 │   │   ├── handler.ts              # dispatcher
 │   │   ├── guard.ts                # admin role check
-│   │   ├── user.ts                 # /level, /leaderboard
+│   │   ├── user.ts                 # /level, /leaderboard, /profile
 │   │   ├── admin.ts                # /cfg_*
+│   │   ├── mod.ts                  # /mod_* moderation commands
 │   │   └── test.ts                 # /test_*
 │   └── register.ts                 # command registration
 ├── config/
 │   └── env.ts                      # environment variables
 ├── events/
-│   ├── memberAdd.ts                # handles member join + auto-role
-│   ├── memberRemove.ts             # handles member leave
+│   ├── memberAdd.ts                # member join + auto-role + welcome embed
+│   ├── memberRemove.ts             # member leave + goodbye embed
 │   ├── messageCreate.ts            # XP on message
 │   ├── messageReactionAdd.ts       # reaction role assignment
-│   └── messageReactionRemove.ts    # reaction role removal
+│   ├── messageReactionRemove.ts    # reaction role removal
+│   ├── threadUpdate.ts             # ticket thread state sync
+│   └── threadDelete.ts             # ticket thread cleanup
 ├── levels/
 │   ├── autorole.ts                 # progression role assignment
 │   └── levelUpNotify.ts            # level-up notifications
+├── tickets/
+│   ├── handler.ts                  # ticket panel, modal, claim, close, add
+│   └── log.ts                      # ticket event logging
+├── modlog.ts                       # moderation action logging
 ├── utils/
-│   └── channels.ts                 # channel type helper
+│   ├── channels.ts                 # channel type helper
+│   └── embedVars.ts                # member variable substitution ({user}, {avatar}, …)
 ├── bot.ts                          # Discord client setup
 └── index.ts                        # entry point
 ```

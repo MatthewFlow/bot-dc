@@ -1,4 +1,6 @@
 export { connectDb } from "./client";
+export type { DiscordEmbed, EmbedConfig, EmbedFieldConfig } from "./embed";
+export { isEmbedEmpty, toDiscordEmbed } from "./embed";
 export {
   guildConfigRepository,
   modActionRepository,
@@ -17,7 +19,12 @@ export type {
   ReactionRole,
   ReactionRoleEntry,
 } from "./repositories/reactionRoleRepository";
-export type { CreateTicketOpts, Ticket, TicketStatus } from "./repositories/ticketRepository";
+export type {
+  CreateTicketOpts,
+  Ticket,
+  TicketCounts,
+  TicketStatus,
+} from "./repositories/ticketRepository";
 export type { AddWarnOpts, Warn } from "./repositories/warnRepository";
 export type {
   AddXpResult,

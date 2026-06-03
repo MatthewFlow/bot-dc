@@ -2,6 +2,19 @@
 
 A modular Discord bot platform with a web dashboard for server configuration.
 
+## Features
+
+- **XP & levels** — message-based XP, level-up notifications, role reward tiers, leaderboard
+- **Auto-role & verification** — unverified/verified role flow driven by reaction roles
+- **Welcome / Goodbye** — plain text or fully customizable embeds with variables
+- **Reaction roles** — published from a full embed editor with emoji → role pairs
+- **Moderation** — warn / mute / kick / ban with a persisted action log and mod-log channel
+- **Tickets** — button panel → private threads, claim/close flow, dashboard management
+- **Embed editor** — shared editor + live preview for welcome, goodbye, ticket panel and
+  reaction-role embeds
+- **Dashboard** — per-server overview with live stats (members, bans, warnings, tickets),
+  create-channel / create-role helpers, OAuth2 login
+
 ## Project Structure
 
 ```

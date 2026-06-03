@@ -1,18 +1,15 @@
-import { guildConfigRepository, levelFromXp, xpRepository } from "@jurassic-haven/db";
+import { guildConfigRepository, levelFromXp, toDiscordEmbed, xpRepository } from "@jurassic-haven/db";
 import { EmbedBuilder, type GuildMember } from "discord.js";
 
 import { envWelcomeChannelId } from "../config/env";
 import { applyAutoRole } from "../levels/autorole";
+import { memberVarReplacer } from "../utils/embedVars";
 import { isAllowedTextChannel } from "../utils/channels";
 
 const DEFAULT_WELCOME = "Siema {user}, miło że jesteś 😄";
 
 function resolveMessage(template: string, member: GuildMember): string {
-  return template
-    .replace(/{user}/g, `<@${member.id}>`)
-    .replace(/{username}/g, member.user.username)
-    .replace(/{server}/g, member.guild.name)
-    .replace(/{member_count}/g, String(member.guild.memberCount));
+  return memberVarReplacer(member)(template);
 }
 
 export async function onMemberAdd(member: GuildMember) {
@@ -37,6 +34,13 @@ export async function onMemberAdd(member: GuildMember) {
 
   const ch = member.guild.channels.cache.get(channelId);
   if (!isAllowedTextChannel(ch)) return;
+
+  // Jeśli guild skonfigurował własny embed powitania — używamy go (ze zmiennymi).
+  if (cfg?.welcomeEmbed) {
+    const embed = toDiscordEmbed(cfg.welcomeEmbed, memberVarReplacer(member));
+    await ch.send({ embeds: [embed] }).catch(() => {});
+    return;
+  }
 
   const message = resolveMessage(cfg?.welcomeMessage ?? DEFAULT_WELCOME, member);
 

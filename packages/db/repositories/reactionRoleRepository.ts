@@ -1,3 +1,5 @@
+import type { EmbedConfig } from "../embed";
+
 export type ReactionRoleEntry = {
   emoji: string;
   roleId: string;
@@ -10,6 +12,7 @@ export type ReactionRole = {
   title: string;
   content: string;
   color?: string;
+  embed?: EmbedConfig;
   entries: ReactionRoleEntry[];
 };
 
