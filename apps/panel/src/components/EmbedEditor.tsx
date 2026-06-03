@@ -1,0 +1,212 @@
+"use client";
+
+import type { EmbedConfig, EmbedFieldConfig } from "@/lib/api";
+import { DEFAULT_EMBED_COLOR, hexToNumber, numberToHex } from "@/lib/embed";
+
+const INPUT =
+  "w-full rounded-lg bg-[#0f1117] px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]";
+const LABEL = "mb-1 block text-xs text-gray-500";
+
+function Group({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="border-t border-white/5 pt-4">
+      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+        {title}
+      </p>
+      <div className="flex flex-col gap-3">{children}</div>
+    </div>
+  );
+}
+
+export function EmbedEditor({
+  value,
+  onChange,
+  variables,
+}: {
+  value: EmbedConfig;
+  onChange: (next: EmbedConfig) => void;
+  /** Lista dostępnych zmiennych do pokazania jako podpowiedź (np. ["{server}"]). */
+  variables?: string[];
+}) {
+  const set = (patch: Partial<EmbedConfig>) => onChange({ ...value, ...patch });
+
+  const fields = value.fields ?? [];
+  const setFields = (next: EmbedFieldConfig[]) => set({ fields: next });
+  const updateField = (i: number, patch: Partial<EmbedFieldConfig>) =>
+    setFields(fields.map((f, idx) => (idx === i ? { ...f, ...patch } : f)));
+
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Treść */}
+      <div className="flex flex-col gap-3">
+        <div>
+          <label className={LABEL}>Tytuł</label>
+          <input
+            value={value.title ?? ""}
+            onChange={(e) => set({ title: e.target.value })}
+            maxLength={256}
+            placeholder="Tytuł embeda"
+            className={INPUT}
+          />
+        </div>
+        <div>
+          <label className={LABEL}>Opis</label>
+          <textarea
+            value={value.description ?? ""}
+            onChange={(e) => set({ description: e.target.value })}
+            maxLength={4096}
+            rows={4}
+            placeholder="Treść embeda (Markdown)"
+            className={`${INPUT} resize-y`}
+          />
+          {variables && variables.length > 0 && (
+            <p className="mt-1 text-xs text-gray-600">
+              Zmienne:{" "}
+              {variables.map((v) => (
+                <span key={v} className="mr-1 font-mono text-[#d4a843]">
+                  {v}
+                </span>
+              ))}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-3">
+          <div>
+            <label className={LABEL}>Kolor</label>
+            <input
+              type="color"
+              value={numberToHex(value.color ?? DEFAULT_EMBED_COLOR)}
+              onChange={(e) => set({ color: hexToNumber(e.target.value) })}
+              className="h-9 w-14 cursor-pointer rounded bg-transparent"
+            />
+          </div>
+          <div className="flex-1">
+            <label className={LABEL}>Link tytułu (URL)</label>
+            <input
+              value={value.url ?? ""}
+              onChange={(e) => set({ url: e.target.value })}
+              placeholder="https://…"
+              className={INPUT}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Autor */}
+      <Group title="Autor (góra embeda)">
+        <input
+          value={value.authorName ?? ""}
+          onChange={(e) => set({ authorName: e.target.value })}
+          maxLength={256}
+          placeholder="Nazwa autora"
+          className={INPUT}
+        />
+        <input
+          value={value.authorIconUrl ?? ""}
+          onChange={(e) => set({ authorIconUrl: e.target.value })}
+          placeholder="URL ikony autora"
+          className={INPUT}
+        />
+      </Group>
+
+      {/* Media */}
+      <Group title="Grafika">
+        <div>
+          <label className={LABEL}>Miniatura (mały obrazek w rogu)</label>
+          <input
+            value={value.thumbnailUrl ?? ""}
+            onChange={(e) => set({ thumbnailUrl: e.target.value })}
+            placeholder="URL miniatury (np. {avatar})"
+            className={INPUT}
+          />
+        </div>
+        <div>
+          <label className={LABEL}>Duży obrazek</label>
+          <input
+            value={value.imageUrl ?? ""}
+            onChange={(e) => set({ imageUrl: e.target.value })}
+            placeholder="URL obrazka"
+            className={INPUT}
+          />
+        </div>
+      </Group>
+
+      {/* Stopka */}
+      <Group title="Stopka">
+        <input
+          value={value.footerText ?? ""}
+          onChange={(e) => set({ footerText: e.target.value })}
+          maxLength={2048}
+          placeholder="Tekst stopki"
+          className={INPUT}
+        />
+        <input
+          value={value.footerIconUrl ?? ""}
+          onChange={(e) => set({ footerIconUrl: e.target.value })}
+          placeholder="URL ikony stopki"
+          className={INPUT}
+        />
+        <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-300">
+          <input
+            type="checkbox"
+            checked={Boolean(value.timestamp)}
+            onChange={(e) => set({ timestamp: e.target.checked })}
+            className="h-4 w-4 accent-[#d4a843]"
+          />
+          Pokaż datę/godzinę wysłania
+        </label>
+      </Group>
+
+      {/* Pola */}
+      <Group title={`Pola (${fields.length}/25)`}>
+        {fields.map((f, i) => (
+          <div key={i} className="rounded-lg border border-white/5 bg-[#0f1117] p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-xs text-gray-500">Pole #{i + 1}</span>
+              <button
+                type="button"
+                onClick={() => setFields(fields.filter((_, idx) => idx !== i))}
+                className="text-xs text-gray-600 hover:text-red-400"
+              >
+                Usuń
+              </button>
+            </div>
+            <input
+              value={f.name}
+              onChange={(e) => updateField(i, { name: e.target.value })}
+              maxLength={256}
+              placeholder="Nazwa pola"
+              className={`${INPUT} mb-2`}
+            />
+            <textarea
+              value={f.value}
+              onChange={(e) => updateField(i, { value: e.target.value })}
+              maxLength={1024}
+              rows={2}
+              placeholder="Wartość pola"
+              className={`${INPUT} resize-y`}
+            />
+            <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs text-gray-400">
+              <input
+                type="checkbox"
+                checked={Boolean(f.inline)}
+                onChange={(e) => updateField(i, { inline: e.target.checked })}
+                className="h-3.5 w-3.5 accent-[#d4a843]"
+              />
+              W jednej linii (inline)
+            </label>
+          </div>
+        ))}
+        {fields.length < 25 && (
+          <button
+            type="button"
+            onClick={() => setFields([...fields, { name: "", value: "", inline: false }])}
+            className="rounded-lg border border-dashed border-white/10 py-2 text-sm text-gray-400 transition hover:border-white/20 hover:text-white"
+          >
+            + Dodaj pole
+          </button>
+        )}
+      </Group>
+    </div>
+  );
+}

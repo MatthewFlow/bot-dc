@@ -3,10 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { LogOut } from "lucide-react";
+
 import { Avatar } from "@/components/Avatar";
 import { Skeleton } from "@/components/Skeleton";
 import type { Guild, User } from "@/lib/api";
-import { getGuilds, getMe } from "@/lib/api";
+import { getGuilds, getMe, logout } from "@/lib/api";
 
 function guildIconUrl(guild: Guild) {
   if (!guild.icon) return null;
@@ -64,15 +66,13 @@ export default function DashboardPage() {
                 <span className="text-sm text-gray-300">{user.username}</span>
                 <button
                   onClick={async () => {
-                    await fetch(`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3002"}/auth/logout`, {
-                      method: "POST",
-                      credentials: "include",
-                    }).catch(() => {});
+                    await logout();
                     router.replace("/");
                   }}
-                  className="text-sm text-gray-500 hover:text-gray-300"
+                  title="Wyloguj"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 outline-none transition hover:bg-white/5 hover:text-gray-200 focus-visible:ring-2 focus-visible:ring-[#d4a843]/40"
                 >
-                  Logout
+                  <LogOut size={16} />
                 </button>
               </div>
             )
@@ -97,7 +97,7 @@ export default function DashboardPage() {
               <button
                 key={guild.id}
                 onClick={() => router.push(`/dashboard/${guild.id}`)}
-                className="flex items-center gap-4 rounded-xl bg-[#1a1f2e] p-4 text-left transition hover:bg-[#222838]"
+                className="flex items-center gap-4 rounded-xl border border-white/5 bg-[#1a1f2e] p-4 text-left outline-none transition hover:-translate-y-0.5 hover:border-white/10 hover:bg-[#222838] focus-visible:ring-2 focus-visible:ring-[#d4a843]/40"
               >
                 <Avatar src={guildIconUrl(guild)} name={guild.name} size="lg" />
                 <span className="font-medium text-white">{guild.name}</span>

@@ -24,6 +24,10 @@ export class GuildConfigProvider implements IGuildConfigRepository {
       ticketSupportRoleId: doc.ticketSupportRoleId,
       ticketSupportRoleId2: doc.ticketSupportRoleId2,
       ticketLogChannelId: doc.ticketLogChannelId,
+      welcomeEmbed: doc.welcomeEmbed,
+      goodbyeEmbed: doc.goodbyeEmbed,
+      ticketPanelEmbed: doc.ticketPanelEmbed,
+      ticketPanelButton: doc.ticketPanelButton,
     };
   }
 

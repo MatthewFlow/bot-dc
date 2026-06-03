@@ -1,0 +1,73 @@
+import {
+  DoorOpen,
+  LayoutDashboard,
+  type LucideIcon,
+  ShieldAlert,
+  Ticket,
+  TrendingUp,
+  UserPlus,
+  Zap,
+} from "lucide-react";
+
+export type NavItem = {
+  label: string;
+  /** Sufiks ścieżki po `/dashboard/[guildId]` (puste = strona przeglądu). */
+  href: string;
+  desc: string;
+  icon: LucideIcon;
+};
+
+export const NAV_ITEMS: NavItem[] = [
+  {
+    label: "Dashboard",
+    href: "",
+    desc: "Przegląd serwera",
+    icon: LayoutDashboard,
+  },
+  {
+    label: "Welcome / Goodbye",
+    href: "/welcome",
+    desc: "Kanały i wiadomości powitalne",
+    icon: DoorOpen,
+  },
+  {
+    label: "Auto-role",
+    href: "/autorole",
+    desc: "Rola nadawana po wejściu",
+    icon: UserPlus,
+  },
+  {
+    label: "Reaction Roles",
+    href: "/reaction-roles",
+    desc: "Role za reakcje pod wiadomością",
+    icon: Zap,
+  },
+  {
+    label: "Levelowanie",
+    href: "/levels",
+    desc: "System XP, poziomów i nagród",
+    icon: TrendingUp,
+  },
+  {
+    label: "Moderacja",
+    href: "/moderation",
+    desc: "Ostrzeżenia, bany, logi akcji",
+    icon: ShieldAlert,
+  },
+  {
+    label: "Tickety",
+    href: "/tickets",
+    desc: "Obsługa zgłoszeń użytkowników",
+    icon: Ticket,
+  },
+];
+
+/** Dopasowuje pozycję nawigacji do bieżącej ścieżki (do breadcrumbów/topbara). */
+export function findNavItem(pathname: string, guildId: string): NavItem | undefined {
+  const base = `/dashboard/${guildId}`;
+  // Najpierw dłuższe ścieżki, żeby `/welcome` wygrało z `` (overview).
+  const sorted = [...NAV_ITEMS].sort((a, b) => b.href.length - a.href.length);
+  return sorted.find((item) =>
+    item.href === "" ? pathname === base : pathname.startsWith(base + item.href),
+  );
+}

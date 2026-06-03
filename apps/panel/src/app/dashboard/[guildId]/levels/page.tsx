@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { ConfirmModal } from "@/components/confirmModal";
+import { CreateRoleButton } from "@/components/CreateRoleButton";
 import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
 import { Avatar } from "@/components/Avatar";
@@ -229,6 +230,17 @@ export default function LevelsPage() {
                   roles={roles}
                   className="w-full px-3 py-2"
                 />
+                <div className="mt-2">
+                  <CreateRoleButton
+                    guildId={guildId}
+                    onCreated={(role) => {
+                      setRoles((prev) =>
+                        [...prev, role].sort((a, b) => b.position - a.position),
+                      );
+                      setNewRoleId(role.id);
+                    }}
+                  />
+                </div>
               </div>
               <button
                 onClick={addReward}

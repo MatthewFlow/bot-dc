@@ -4,14 +4,18 @@ import { useParams } from "next/navigation";
 import { useRef, useState } from "react";
 
 import { ChannelSelect } from "@/components/ChannelSelect";
+import { CreateChannelButton } from "@/components/CreateChannelButton";
+import { EmbedEditor } from "@/components/EmbedEditor";
+import { EmbedPreview } from "@/components/EmbedPreview";
 import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { useGuildLoad } from "@/hooks/useGuildLoad";
-import type { Channel, GuildConfig } from "@/lib/api";
+import type { Channel, EmbedConfig, GuildConfig } from "@/lib/api";
 import { getChannels, getGuildConfig, updateGuildConfig } from "@/lib/api";
+import { previewReplacer, WELCOME_VARS } from "@/lib/embed";
 
 type Tab = "welcome" | "goodbye";
 
@@ -20,6 +24,7 @@ const VARIABLES = [
   { label: "{username}", desc: "Nazwa użytkownika" },
   { label: "{server}", desc: "Nazwa serwera" },
   { label: "{member_count}", desc: "Liczba członków" },
+  { label: "{avatar}", desc: "Awatar użytkownika (URL — np. w miniaturze embeda)" },
 ];
 
 const DEFAULT_WELCOME = "Siema {user}, miło że jesteś 😄";
@@ -30,7 +35,19 @@ function resolvePreview(template: string): string {
     .replace(/{user}/g, "@nowy_użytkownik")
     .replace(/{username}/g, "nowy_użytkownik")
     .replace(/{server}/g, "Jurassic Haven")
-    .replace(/{member_count}/g, "1,337");
+    .replace(/{member_count}/g, "1,337")
+    .replace(/{avatar}/g, "https://cdn.discordapp.com/embed/avatars/0.png");
+}
+
+/** Domyślny embed seedowany treścią z trybu tekstowego (przy włączeniu trybu embed). */
+function seedEmbed(tab: Tab, message: string): EmbedConfig {
+  return {
+    title: tab === "welcome" ? "🎉 Witamy na serwerze!" : "👋 Do zobaczenia!",
+    description: message,
+    color: 0x5865f2,
+    thumbnailUrl: tab === "welcome" ? "{avatar}" : undefined,
+    timestamp: true,
+  };
 }
 
 function WelcomeSkeleton() {
@@ -93,6 +110,8 @@ export default function WelcomePage() {
         goodbyeChannelId: config.goodbyeChannelId,
         welcomeMessage: config.welcomeMessage,
         goodbyeMessage: config.goodbyeMessage,
+        welcomeEmbed: config.welcomeEmbed ?? null,
+        goodbyeEmbed: config.goodbyeEmbed ?? null,
       });
       toast("Zapisano zmiany.", "success");
     } catch {
@@ -124,6 +143,17 @@ export default function WelcomePage() {
       ? (config.welcomeMessage ?? DEFAULT_WELCOME)
       : (config.goodbyeMessage ?? DEFAULT_GOODBYE);
   const field = tab === "welcome" ? "welcomeMessage" : "goodbyeMessage";
+
+  const embedField = tab === "welcome" ? "welcomeEmbed" : "goodbyeEmbed";
+  const activeEmbed = (tab === "welcome" ? config.welcomeEmbed : config.goodbyeEmbed) ?? undefined;
+  const useEmbed = Boolean(activeEmbed);
+
+  function setActiveEmbed(embed: EmbedConfig | undefined) {
+    setConfig((c) => ({ ...c, [embedField]: embed }));
+  }
+  function toggleEmbed(on: boolean) {
+    setActiveEmbed(on ? seedEmbed(tab, message) : undefined);
+  }
 
   if (loading) return <WelcomeSkeleton />;
 
@@ -160,48 +190,90 @@ export default function WelcomePage() {
             <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
               Kanał
             </p>
-            <ChannelSelect
-              value={channelId ?? ""}
-              onChange={(val) =>
-                setConfig((c) =>
-                  tab === "welcome"
-                    ? { ...c, welcomeChannelId: val || undefined }
-                    : { ...c, goodbyeChannelId: val || undefined },
-                )
-              }
-              channels={channels}
-              placeholder="— Nie ustawiono —"
-              className="w-full px-4 py-2.5"
-            />
-          </div>
-
-          <div className="rounded-xl bg-[#1a1f2e] p-5">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
-              Treść (Markdown + zmienne)
-            </p>
-            <textarea
-              ref={textareaRef}
-              value={message}
-              onChange={(e) => setConfig((c) => ({ ...c, [field]: e.target.value }))}
-              rows={4}
-              className="w-full resize-none rounded-lg bg-[#0f1117] px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]"
-            />
-            <div className="mt-3">
-              <p className="mb-2 text-xs text-gray-500">Kliknij zmienną aby wstawić:</p>
-              <div className="flex flex-wrap gap-2">
-                {VARIABLES.map((v) => (
-                  <button
-                    key={v.label}
-                    onClick={() => insertVariable(v.label)}
-                    title={v.desc}
-                    className="rounded bg-[#0f1117] px-2.5 py-1 text-xs font-mono text-[#d4a843] transition hover:bg-[#d4a843] hover:text-black"
-                  >
-                    {v.label}
-                  </button>
-                ))}
-              </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <ChannelSelect
+                value={channelId ?? ""}
+                onChange={(val) =>
+                  setConfig((c) =>
+                    tab === "welcome"
+                      ? { ...c, welcomeChannelId: val || undefined }
+                      : { ...c, goodbyeChannelId: val || undefined },
+                  )
+                }
+                channels={channels}
+                placeholder="— Nie ustawiono —"
+                className="flex-1 px-4 py-2.5"
+              />
+              <CreateChannelButton
+                guildId={guildId}
+                defaultName={tab === "welcome" ? "powitania" : "pozegnania"}
+                onCreated={(ch) => {
+                  setChannels((prev) =>
+                    [...prev, ch].sort((a, b) => a.name.localeCompare(b.name)),
+                  );
+                  setConfig((c) =>
+                    tab === "welcome"
+                      ? { ...c, welcomeChannelId: ch.id }
+                      : { ...c, goodbyeChannelId: ch.id },
+                  );
+                }}
+              />
             </div>
           </div>
+
+          {/* Tryb: prosty tekst vs embed */}
+          <div className="flex gap-1 rounded-lg bg-[#1a1f2e] p-1">
+            <button
+              onClick={() => toggleEmbed(false)}
+              className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${!useEmbed ? "bg-[#0f1117] text-white" : "text-gray-500 hover:text-gray-300"}`}
+            >
+              Prosty tekst
+            </button>
+            <button
+              onClick={() => toggleEmbed(true)}
+              className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${useEmbed ? "bg-[#0f1117] text-[#d4a843]" : "text-gray-500 hover:text-gray-300"}`}
+            >
+              Embed (zaawansowany)
+            </button>
+          </div>
+
+          {useEmbed && activeEmbed ? (
+            <div className="rounded-xl bg-[#1a1f2e] p-5">
+              <EmbedEditor
+                value={activeEmbed}
+                onChange={setActiveEmbed}
+                variables={WELCOME_VARS}
+              />
+            </div>
+          ) : (
+            <div className="rounded-xl bg-[#1a1f2e] p-5">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                Treść (Markdown + zmienne)
+              </p>
+              <textarea
+                ref={textareaRef}
+                value={message}
+                onChange={(e) => setConfig((c) => ({ ...c, [field]: e.target.value }))}
+                rows={4}
+                className="w-full resize-none rounded-lg bg-[#0f1117] px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]"
+              />
+              <div className="mt-3">
+                <p className="mb-2 text-xs text-gray-500">Kliknij zmienną aby wstawić:</p>
+                <div className="flex flex-wrap gap-2">
+                  {VARIABLES.map((v) => (
+                    <button
+                      key={v.label}
+                      onClick={() => insertVariable(v.label)}
+                      title={v.desc}
+                      className="rounded bg-[#0f1117] px-2.5 py-1 text-xs font-mono text-[#d4a843] transition hover:bg-[#d4a843] hover:text-black"
+                    >
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
 
           <SaveButton
             onClick={handleSave}
@@ -215,28 +287,32 @@ export default function WelcomePage() {
             <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-500">
               Tak będzie to wyglądać w Discord
             </p>
-            <div className="rounded-lg bg-[#0d1117] p-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#d4a843] text-sm font-bold text-black">
-                  JH
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-white">Jurassic Haven</span>
-                    <span className="rounded bg-[#5865F2] px-1 py-0.5 text-xs text-white">APP</span>
-                    <span className="text-xs text-gray-500">— dziś</span>
+            {useEmbed && activeEmbed ? (
+              <EmbedPreview embed={activeEmbed} replace={previewReplacer} />
+            ) : (
+              <div className="rounded-lg bg-[#0d1117] p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#d4a843] text-sm font-bold text-black">
+                    JH
                   </div>
-                  <div className="mt-2 rounded-lg border-l-4 border-[#d4a843] bg-[#1a1f2e] p-3">
-                    <p className="text-sm font-semibold text-white">
-                      {tab === "welcome" ? "🎉 Witamy na serwerze!" : "👋 Do zobaczenia!"}
-                    </p>
-                    <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-300">
-                      {resolvePreview(message)}
-                    </p>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-white">Jurassic Haven</span>
+                      <span className="rounded bg-[#5865F2] px-1 py-0.5 text-xs text-white">APP</span>
+                      <span className="text-xs text-gray-500">— dziś</span>
+                    </div>
+                    <div className="mt-2 rounded-lg border-l-4 border-[#d4a843] bg-[#1a1f2e] p-3">
+                      <p className="text-sm font-semibold text-white">
+                        {tab === "welcome" ? "🎉 Witamy na serwerze!" : "👋 Do zobaczenia!"}
+                      </p>
+                      <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-300">
+                        {resolvePreview(message)}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
             <div className="mt-6">
               <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
                 Dostępne zmienne

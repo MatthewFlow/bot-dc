@@ -3,15 +3,7 @@
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
-const navItems = [
-  { label: "Dashboard", href: "", icon: "⊞" },
-  { label: "Welcome / Goodbye", href: "/welcome", icon: "👋" },
-  { label: "Auto-role", href: "/autorole", icon: "🎭" },
-  { label: "Reaction Roles", href: "/reaction-roles", icon: "⚡" },
-  { label: "Levelowanie", href: "/levels", icon: "📈" },
-  { label: "Moderacja", href: "/moderation", icon: "🛡️" },
-  { label: "Tickety", href: "/tickets", icon: "🎫" },
-];
+import { NAV_ITEMS } from "@/lib/nav";
 
 export function Sidebar({ guildName }: { guildName: string }) {
   const router = useRouter();
@@ -43,24 +35,25 @@ export function Sidebar({ guildName }: { guildName: string }) {
         <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-gray-600">
           Zarządzanie
         </p>
-        {navItems.map((item) => {
+        {NAV_ITEMS.map((item) => {
           const href = `/dashboard/${guildId}${item.href}`;
           const isActive =
             item.href === ""
               ? pathname === `/dashboard/${guildId}`
               : pathname.startsWith(href);
+          const Icon = item.icon;
 
           return (
             <button
               key={item.href}
               onClick={() => navigate(href)}
-              className={`mb-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition ${
+              className={`mb-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition outline-none focus-visible:ring-2 focus-visible:ring-[#d4a843]/40 ${
                 isActive
                   ? "bg-[#1a1f2e] text-[#d4a843]"
                   : "text-gray-400 hover:bg-[#1a1f2e] hover:text-white"
               }`}
             >
-              <span>{item.icon}</span>
+              <Icon size={18} className="shrink-0" />
               <span>{item.label}</span>
             </button>
           );

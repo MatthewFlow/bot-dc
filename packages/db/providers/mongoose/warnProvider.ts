@@ -30,4 +30,8 @@ export class WarnProvider implements IWarnRepository {
     const result = await WarnModel.deleteMany({ guildId, userId });
     return result.deletedCount;
   }
+
+  async countByGuild(guildId: string): Promise<number> {
+    return WarnModel.countDocuments({ guildId });
+  }
 }

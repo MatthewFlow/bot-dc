@@ -1,4 +1,11 @@
-import { guildConfigRepository, levelFromXp, xpRepository } from "@jurassic-haven/db";
+import {
+  guildConfigRepository,
+  levelFromXp,
+  ticketRepository,
+  toDiscordEmbed,
+  warnRepository,
+  xpRepository,
+} from "@jurassic-haven/db";
 import { Hono } from "hono";
 
 import { fetchGuilds, isGuildAdmin } from "../lib/guildGuard";
@@ -25,7 +32,20 @@ const CONFIG_ALLOWED_FIELDS = [
   "ticketSupportRoleId",
   "ticketSupportRoleId2",
   "ticketLogChannelId",
+  "welcomeEmbed",
+  "goodbyeEmbed",
+  "ticketPanelEmbed",
+  "ticketPanelButton",
 ] as const;
+
+// Domyślny embed panelu ticketów, gdy guild nie skonfigurował własnego.
+const DEFAULT_TICKET_PANEL_EMBED = {
+  title: "📩 Złóż ticket",
+  description:
+    "Naciśnij przycisk poniżej, opisz swój problem, a Twoje zgłoszenie trafi do ekipy. " +
+    "Po przejęciu przez moderatora lub admina otrzymasz pomoc w prywatnym wątku.",
+  color: 0x5865f2,
+};
 
 export const guildRoutes = new Hono<{ Variables: AppVariables }>();
 
@@ -170,17 +190,38 @@ guildRoutes.post("/:guildId/ticket-panel", async (c) => {
   const channelId = typeof body?.channelId === "string" ? body.channelId : "";
   if (!channelId) return c.json({ error: "Missing channelId" }, 400);
 
-  // Embed + przycisk identyczny jak /ticket_setup; custom_id "ticket_open" obsługuje bot
+  // Embed + przycisk z konfiguracji guildu (fallback do domyślnych).
+  // custom_id "ticket_open" obsługuje bot — musi pozostać niezmienny.
+  const guildId = c.req.param("guildId");
+  const cfg = await guildConfigRepository.get(guildId);
+
+  // Zmienne kontekstu serwera ({server}, {member_count}) — best-effort.
+  let serverName = "";
+  let memberCount = "";
+  try {
+    const gRes = await fetch(`${DISCORD_API}/guilds/${guildId}?with_counts=true`, {
+      headers: { Authorization: `Bot ${botToken}` },
+    });
+    if (gRes.ok) {
+      const g = (await gRes.json()) as {
+        name?: string;
+        approximate_member_count?: number;
+      };
+      serverName = g.name ?? "";
+      memberCount = g.approximate_member_count != null ? String(g.approximate_member_count) : "";
+    }
+  } catch {
+    // ignore — zmienne zostaną puste
+  }
+  const replace = (s: string) =>
+    s.replace(/{server}/g, serverName).replace(/{member_count}/g, memberCount);
+
+  const embed = toDiscordEmbed(cfg?.ticketPanelEmbed ?? DEFAULT_TICKET_PANEL_EMBED, replace);
+  const btnLabel = cfg?.ticketPanelButton?.label?.trim() || "Złóż ticket";
+  const btnEmoji = cfg?.ticketPanelButton?.emoji?.trim() || "📩";
+
   const payload = {
-    embeds: [
-      {
-        title: "📩 Złóż ticket",
-        description:
-          "Naciśnij przycisk poniżej, opisz swój problem, a Twoje zgłoszenie trafi do ekipy. " +
-          "Po przejęciu przez moderatora lub admina otrzymasz pomoc w prywatnym wątku.",
-        color: 0x5865f2,
-      },
-    ],
+    embeds: [embed],
     components: [
       {
         type: 1,
@@ -188,9 +229,9 @@ guildRoutes.post("/:guildId/ticket-panel", async (c) => {
           {
             type: 2,
             style: 1,
-            label: "Złóż ticket",
+            label: btnLabel.slice(0, 80),
             custom_id: "ticket_open",
-            emoji: { name: "📩" },
+            ...(btnEmoji ? { emoji: { name: btnEmoji } } : {}),
           },
         ],
       },
@@ -269,6 +310,49 @@ guildRoutes.get("/:guildId/roles", async (c) => {
   }
 });
 
+guildRoutes.post("/:guildId/roles", async (c) => {
+  const guildId = c.req.param("guildId");
+  const botToken = process.env.DISCORD_TOKEN;
+  if (!botToken) return c.json({ error: "Missing bot token" }, 500);
+
+  const body = (await c.req.json().catch(() => null)) as { name?: unknown } | null;
+  const name = typeof body?.name === "string" ? body.name.trim() : "";
+  if (!name || name.length > 100) {
+    return c.json({ error: "Invalid role name" }, 400);
+  }
+
+  try {
+    const res = await fetch(`${DISCORD_API}/guilds/${guildId}/roles`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bot ${botToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name }),
+    });
+
+    if (res.status === 429) {
+      const data = (await res.json()) as { retry_after: number };
+      return c.json(
+        { error: "Rate limited by Discord", retry_after: data.retry_after },
+        429,
+      );
+    }
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      console.error(`[guilds] Discord create role error ${res.status}:`, errBody);
+      return c.json({ error: "Failed to create role" }, 502);
+    }
+
+    const role = (await res.json()) as { id: string; name: string; position: number };
+    return c.json({ id: role.id, name: role.name, position: role.position }, 201);
+  } catch (e) {
+    console.error(`[guilds] Błąd tworzenia roli dla ${guildId}:`, e);
+    return c.json({ error: "Failed to create role" }, 502);
+  }
+});
+
 guildRoutes.get("/:guildId/leaderboard", async (c) => {
   const guildId = c.req.param("guildId");
   const botToken = process.env.DISCORD_TOKEN;
@@ -321,4 +405,61 @@ guildRoutes.get("/:guildId/leaderboard", async (c) => {
     console.error(`[guilds] Błąd pobierania leaderboard dla ${guildId}:`, e);
     return c.json({ error: "Failed to fetch leaderboard" }, 502);
   }
+});
+
+// Zbiorcze statystyki na overview dashboardu. Każde źródło best-effort —
+// gdy Discord/uprawnienia zawiodą, dane pole jest null (panel pokaże „—").
+guildRoutes.get("/:guildId/stats", async (c) => {
+  const guildId = c.req.param("guildId");
+  const botToken = process.env.DISCORD_TOKEN;
+  if (!botToken) return c.json({ error: "Missing bot token" }, 500);
+
+  const auth = { headers: { Authorization: `Bot ${botToken}` } };
+
+  // Liczba członków + online (approximate z Discorda)
+  const guildInfo = (async () => {
+    try {
+      const res = await fetch(`${DISCORD_API}/guilds/${guildId}?with_counts=true`, auth);
+      if (!res.ok) return { memberCount: null, onlineCount: null };
+      const g = (await res.json()) as {
+        approximate_member_count?: number;
+        approximate_presence_count?: number;
+      };
+      return {
+        memberCount: g.approximate_member_count ?? null,
+        onlineCount: g.approximate_presence_count ?? null,
+      };
+    } catch {
+      return { memberCount: null, onlineCount: null };
+    }
+  })();
+
+  // Liczba banów — pierwsza strona (max 1000). Wymaga uprawnienia BAN_MEMBERS.
+  const banInfo = (async () => {
+    try {
+      const res = await fetch(`${DISCORD_API}/guilds/${guildId}/bans?limit=1000`, auth);
+      if (!res.ok) return { banCount: null as number | null, banCountCapped: false };
+      const bans = (await res.json()) as unknown[];
+      return { banCount: bans.length, banCountCapped: bans.length >= 1000 };
+    } catch {
+      return { banCount: null as number | null, banCountCapped: false };
+    }
+  })();
+
+  const [{ memberCount, onlineCount }, { banCount, banCountCapped }, warnCount, tickets] =
+    await Promise.all([
+      guildInfo,
+      banInfo,
+      warnRepository.countByGuild(guildId),
+      ticketRepository.counts(guildId),
+    ]);
+
+  return c.json({
+    memberCount,
+    onlineCount,
+    banCount,
+    banCountCapped,
+    warnCount,
+    tickets,
+  });
 });

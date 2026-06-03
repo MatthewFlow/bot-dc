@@ -1,5 +1,7 @@
 import { model, Schema } from "mongoose";
 
+import type { EmbedConfig } from "../../../embed";
+
 export type ReactionRoleEntry = {
   emoji: string;
   roleId: string;
@@ -12,6 +14,8 @@ export type ReactionRoleDocument = {
   title: string;
   content: string;
   color?: string;
+  /** Pełna konfiguracja embeda (gdy użyto edytora); title/content/color to skrót do listy. */
+  embed?: EmbedConfig;
   entries: ReactionRoleEntry[];
 };
 
@@ -31,6 +35,7 @@ const reactionRoleSchema = new Schema<ReactionRoleDocument>(
     title: { type: String, required: true },
     content: { type: String, required: true },
     color: { type: String },
+    embed: { type: Schema.Types.Mixed, default: undefined },
     entries: { type: [reactionRoleEntrySchema], default: [] },
   },
   { versionKey: false },

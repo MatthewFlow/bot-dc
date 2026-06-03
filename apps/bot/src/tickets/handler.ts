@@ -1,4 +1,4 @@
-import { guildConfigRepository, ticketRepository } from "@jurassic-haven/db";
+import { guildConfigRepository, ticketRepository, toDiscordEmbed } from "@jurassic-haven/db";
 import {
   ActionRowBuilder,
   ButtonBuilder,
@@ -206,19 +206,33 @@ export async function handleTicketSetup(interaction: ChatInputCommandInteraction
     return;
   }
 
-  const embed = new EmbedBuilder()
-    .setTitle("📩 Złóż ticket")
-    .setDescription(
-      "Naciśnij przycisk poniżej, opisz swój problem, a Twoje zgłoszenie trafi do ekipy. " +
+  const guild = interaction.guild;
+  const cfg = guild ? await guildConfigRepository.get(guild.id) : null;
+
+  // Panel jest statyczny — podstawiamy tylko zmienne kontekstu serwera.
+  const replace = (s: string) =>
+    s
+      .replace(/{server}/g, guild?.name ?? "")
+      .replace(/{member_count}/g, String(guild?.memberCount ?? ""));
+
+  const embed = toDiscordEmbed(
+    cfg?.ticketPanelEmbed ?? {
+      title: "📩 Złóż ticket",
+      description:
+        "Naciśnij przycisk poniżej, opisz swój problem, a Twoje zgłoszenie trafi do ekipy. " +
         "Po przejęciu przez moderatora lub admina otrzymasz pomoc w prywatnym wątku.",
-    )
-    .setColor(0x5865f2);
+      color: 0x5865f2,
+    },
+    replace,
+  );
 
   const button = new ButtonBuilder()
     .setCustomId("ticket_open")
-    .setLabel("Złóż ticket")
-    .setStyle(ButtonStyle.Primary)
-    .setEmoji("📩");
+    .setLabel((cfg?.ticketPanelButton?.label?.trim() || "Złóż ticket").slice(0, 80))
+    .setStyle(ButtonStyle.Primary);
+
+  const emoji = cfg?.ticketPanelButton?.emoji?.trim() || "📩";
+  if (emoji) button.setEmoji(emoji);
 
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
 

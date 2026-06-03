@@ -16,21 +16,31 @@ The package follows a repository pattern:
 packages/db/
 ├── client.ts                          # connectDb() — call once at app startup
 ├── xpHelpers.ts                       # XP/level math constants and functions
+├── embed.ts                           # Shared embed model + EmbedConfig → Discord JSON converter
 ├── index.ts                           # Single public export surface
 ├── repositories/                      # TypeScript interfaces (contracts)
 │   ├── guildConfigRepository.ts
 │   ├── reactionRoleRepository.ts
-│   └── xpRepository.ts
+│   ├── xpRepository.ts
+│   ├── warnRepository.ts
+│   ├── modActionRepository.ts
+│   └── ticketRepository.ts
 └── providers/
     └── mongoose/                      # Mongoose implementations
         ├── providers.ts               # Singleton instances
         ├── guildConfigProvider.ts
         ├── reactionRoleProvider.ts
         ├── xpProvider.ts
+        ├── warnProvider.ts
+        ├── modActionProvider.ts
+        ├── ticketProvider.ts
         └── schemas/                   # Mongoose schema definitions
             ├── guildConfig.schema.ts
             ├── reactionRole.schema.ts
-            └── xp.schema.ts
+            ├── xp.schema.ts
+            ├── warn.schema.ts
+            ├── modAction.schema.ts
+            └── ticket.schema.ts
 ```
 
 `repositories/` defines interfaces only — no database logic. `providers/mongoose/` contains the Mongoose implementations. This separation allows swapping the database layer without touching consuming code.
@@ -48,6 +58,9 @@ const config = await guildConfigRepository.get(guildId);
 await xpRepository.addXpWithCooldown({ guildId, userId, amount: 15 });
 ```
 
+Singleton repositories exported from `index.ts`: `guildConfigRepository`, `xpRepository`,
+`reactionRoleRepository`, `warnRepository`, `ticketRepository`, `modActionRepository`.
+
 ## Repositories
 
 ### `guildConfigRepository`
@@ -59,7 +72,11 @@ Stores per-guild bot configuration.
 | `get(guildId)`        | Returns config or `null` if not set |
 | `set(guildId, patch)` | Upserts a partial config update     |
 
-**Schema fields:** `welcomeChannelId`, `goodbyeChannelId`, `levelUpChannelId`, `joinRoleId`, `welcomeMessage`, `goodbyeMessage`, `roleRewards[]` (`{ level, roleId }`)
+**Schema fields:** `welcomeChannelId`, `goodbyeChannelId`, `levelUpChannelId`, `joinRoleId`,
+`verifiedRoleId`, `welcomeMessage`, `goodbyeMessage`, `roleRewards[]` (`{ level, roleId }`),
+`modLogChannelId`, `ticketSupportRoleId`, `ticketSupportRoleId2`, `ticketLogChannelId`,
+`welcomeEmbed`, `goodbyeEmbed`, `ticketPanelEmbed` (all `EmbedConfig`), `ticketPanelButton`
+(`{ label?, emoji? }`).
 
 ### `xpRepository`
 
@@ -82,6 +99,56 @@ Stores reaction role message configurations.
 | `getByMessageId(messageId)` | Returns config for a specific Discord message |
 | `create(data)`              | Creates a new reaction role configuration     |
 | `delete(messageId)`         | Removes a reaction role configuration         |
+
+Each record stores `title`, `content`, `color` (summary for list display) plus an optional
+full `embed` (`EmbedConfig`) when published from the dashboard embed editor.
+
+### `warnRepository`
+
+Stores per-user moderation warnings.
+
+| Method                    | Description                                            |
+| ------------------------- | ----------------------------------------------------- |
+| `add(opts)`               | Adds a warning                                         |
+| `getAll(guildId, userId)` | Returns all warnings for a user                       |
+| `clear(guildId, userId)`  | Deletes all warnings for a user, returns deleted count |
+| `countByGuild(guildId)`   | Total number of warnings across the guild (dashboard) |
+
+### `ticketRepository`
+
+Stores support ticket threads.
+
+| Method                            | Description                                                  |
+| --------------------------------- | ------------------------------------------------------------ |
+| `create(opts)`                    | Creates a `pending` ticket                                   |
+| `getByThread(threadId)`           | Returns ticket for a thread                                  |
+| `getActiveByUser(guildId, userId)`| Returns the user's open/pending ticket, if any              |
+| `getAll(guildId, status?)`        | Lists tickets (optionally filtered by status)               |
+| `counts(guildId)`                 | `{ total, pending, open, closed }` counts (dashboard)        |
+| `claim(threadId, moderatorId)`    | Marks ticket `open` and assigns a moderator                 |
+| `close(threadId)`                 | Marks ticket `closed`                                        |
+| `reopen(threadId)`                | Reopens a closed ticket                                     |
+
+### `modActionRepository`
+
+Stores a log of moderation actions (`warn`, `mute`, `unmute`, `kick`, `ban`, `clearwarns`).
+
+| Method                       | Description                              |
+| ---------------------------- | ---------------------------------------- |
+| `add(opts)`                  | Records a moderation action              |
+| `getRecent(guildId, limit)`  | Most recent actions for a guild          |
+| `getByUser(guildId, userId)` | Actions targeting a specific user        |
+
+## Embed Helpers (`embed.ts`)
+
+Shared, generic Discord embed model used by the panel editor, the API (REST send) and the bot
+(discord.js accepts the same JSON in `embeds: []`).
+
+| Export                       | Description                                                                  |
+| ---------------------------- | ---------------------------------------------------------------------------- |
+| `EmbedConfig`                | Editable embed shape (title, description, color, author, images, footer, fields, …) |
+| `toDiscordEmbed(cfg, sub?)`  | Converts an `EmbedConfig` to a Discord embed JSON. `sub` substitutes template variables (`{user}`, `{server}`, …); empty fields are dropped and lengths clamped |
+| `isEmbedEmpty(embed)`        | True when an embed has no visible content (Discord rejects empty embeds)      |
 
 ## XP Helpers
 

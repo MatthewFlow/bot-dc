@@ -89,7 +89,71 @@ moderationRoutes.get("/:guildId/tickets", async (c) => {
       ? rawStatus
       : undefined;
   const tickets = await ticketRepository.getAll(guildId, status);
-  return c.json(tickets);
+
+  // Wzbogacamy o nazwy i avatary użytkowników (autor + osoba, która przejęła) —
+  // best-effort. Cache po unikalnym ID, żeby nie odpytywać Discorda wielokrotnie.
+  const botToken = process.env.DISCORD_TOKEN;
+  type ResolvedMember = { name: string | null; avatar: string | null };
+  const memberCache = new Map<string, ResolvedMember>();
+
+  async function resolveMember(userId?: string): Promise<ResolvedMember> {
+    if (!userId) return { name: null, avatar: null };
+    const cached = memberCache.get(userId);
+    if (cached) return cached;
+
+    let resolved: ResolvedMember = { name: null, avatar: null };
+    if (botToken) {
+      try {
+        const res = await fetch(`${DISCORD_API}/guilds/${guildId}/members/${userId}`, {
+          headers: { Authorization: `Bot ${botToken}` },
+        });
+        if (res.ok) {
+          const member = (await res.json()) as {
+            nick?: string;
+            avatar: string | null;
+            user: {
+              username: string;
+              global_name?: string | null;
+              avatar: string | null;
+            };
+          };
+          const name = member.nick ?? member.user.global_name ?? member.user.username;
+          const avatarHash = member.avatar ?? member.user.avatar;
+          const avatar = avatarHash
+            ? `https://cdn.discordapp.com/avatars/${userId}/${avatarHash}.png`
+            : null;
+          resolved = { name, avatar };
+        }
+      } catch {
+        // ignore — zostawiamy null, panel pokaże fallback (ID)
+      }
+    }
+    memberCache.set(userId, resolved);
+    return resolved;
+  }
+
+  const uniqueIds = [
+    ...new Set(
+      tickets.flatMap((t) =>
+        [t.userId, t.assignedTo].filter((id): id is string => Boolean(id)),
+      ),
+    ),
+  ];
+  await Promise.all(uniqueIds.map((id) => resolveMember(id)));
+
+  const enriched = tickets.map((t) => {
+    const author = memberCache.get(t.userId);
+    return {
+      ...t,
+      username: author?.name ?? null,
+      avatar: author?.avatar ?? null,
+      assignedToUsername: t.assignedTo
+        ? (memberCache.get(t.assignedTo)?.name ?? null)
+        : null,
+    };
+  });
+
+  return c.json(enriched);
 });
 
 moderationRoutes.post("/:guildId/tickets/:threadId/close", async (c) => {
