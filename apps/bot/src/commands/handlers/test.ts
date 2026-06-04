@@ -1,5 +1,4 @@
-import { levelFromXp } from "@jurassic-haven/db";
-import { guildConfigRepository, xpRepository } from "@jurassic-haven/db";
+import { guildConfigRepository, levelFromXp, toDiscordEmbed, xpRepository } from "@jurassic-haven/db";
 import { ChannelType, type ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
 
 import { envGoodbyeChannelId, envWelcomeChannelId } from "../../config/env";
@@ -9,15 +8,16 @@ import { notifyLevelUp } from "../../levels/levelUpNotify";
 const DEFAULT_WELCOME = "Siema {user}, miło że jesteś 😄";
 const DEFAULT_GOODBYE = "{username} wyszedł z serwera.";
 
-function resolveMessage(
-  template: string,
-  interaction: ChatInputCommandInteraction,
-): string {
-  return template
-    .replace(/{user}/g, `<@${interaction.user.id}>`)
-    .replace(/{username}/g, interaction.user.username)
-    .replace(/{server}/g, interaction.guild?.name ?? "serwer")
-    .replace(/{member_count}/g, String(interaction.guild?.memberCount ?? 0));
+/** Variable replacer for test commands — uses the invoking user as the sample member. */
+function testReplacer(interaction: ChatInputCommandInteraction): (template: string) => string {
+  const avatar = interaction.user.displayAvatarURL({ size: 256 });
+  return (template) =>
+    template
+      .replace(/{user}/g, `<@${interaction.user.id}>`)
+      .replace(/{username}/g, interaction.user.username)
+      .replace(/{server}/g, interaction.guild?.name ?? "serwer")
+      .replace(/{member_count}/g, String(interaction.guild?.memberCount ?? 0))
+      .replace(/{avatar}/g, avatar);
 }
 
 export async function handleCfgAddXp(interaction: ChatInputCommandInteraction) {
@@ -95,14 +95,19 @@ export async function handleTestWelcome(interaction: ChatInputCommandInteraction
     return;
   }
 
-  const message = resolveMessage(cfg?.welcomeMessage ?? DEFAULT_WELCOME, interaction);
+  const replace = testReplacer(interaction);
 
-  const embed = new EmbedBuilder()
-    .setTitle("Witamy! (TEST)")
-    .setDescription(message)
-    .setTimestamp();
+  // Mirror the real welcome: use the configured embed when set, else legacy text.
+  if (cfg?.welcomeEmbed) {
+    await ch.send({ embeds: [toDiscordEmbed(cfg.welcomeEmbed, replace)] });
+  } else {
+    const embed = new EmbedBuilder()
+      .setTitle("Witamy! (TEST)")
+      .setDescription(replace(cfg?.welcomeMessage ?? DEFAULT_WELCOME))
+      .setTimestamp();
+    await ch.send({ embeds: [embed] });
+  }
 
-  await ch.send({ embeds: [embed] });
   await interaction.reply({ content: "Wysłano ✅", ephemeral: true });
 }
 
@@ -134,13 +139,17 @@ export async function handleTestGoodbye(interaction: ChatInputCommandInteraction
     return;
   }
 
-  const message = resolveMessage(cfg?.goodbyeMessage ?? DEFAULT_GOODBYE, interaction);
+  const replace = testReplacer(interaction);
 
-  const embed = new EmbedBuilder()
-    .setTitle("Żegnamy! (TEST)")
-    .setDescription(message)
-    .setTimestamp();
+  if (cfg?.goodbyeEmbed) {
+    await ch.send({ embeds: [toDiscordEmbed(cfg.goodbyeEmbed, replace)] });
+  } else {
+    const embed = new EmbedBuilder()
+      .setTitle("Żegnamy! (TEST)")
+      .setDescription(replace(cfg?.goodbyeMessage ?? DEFAULT_GOODBYE))
+      .setTimestamp();
+    await ch.send({ embeds: [embed] });
+  }
 
-  await ch.send({ embeds: [embed] });
   await interaction.reply({ content: "Wysłano ✅", ephemeral: true });
 }

@@ -363,13 +363,13 @@ export default function TicketsPage() {
 
               <div>
                 <label className="mb-1 block text-xs text-gray-500">Kanał logów ticketów</label>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <ChannelSelect
                     value={config.ticketLogChannelId ?? ""}
                     onChange={(v) => setConfig((c) => ({ ...c, ticketLogChannelId: v }))}
                     channels={channels}
                     placeholder="— Wybierz kanał —"
-                    className="flex-1 px-3 py-2.5"
+                    className="min-w-0 flex-1 px-3 py-2.5"
                   />
                   <CreateChannelButton
                     guildId={guildId}
@@ -394,13 +394,13 @@ export default function TicketsPage() {
               Wyślij embed z przyciskiem „Złóż ticket" na wybrany kanał — bez komendy
               /ticket_setup.
             </p>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <ChannelSelect
                 value={panelChannelId}
                 onChange={setPanelChannelId}
                 channels={channels}
                 placeholder="— Wybierz kanał —"
-                className="flex-1 px-3 py-2.5"
+                className="min-w-0 flex-1 px-3 py-2.5"
               />
               <button
                 onClick={handleSendPanel}

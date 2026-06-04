@@ -36,8 +36,8 @@ Edit `.env`:
 ```env
 # ── API ────────────────────────────────────────────────────────────
 API_PORT=3002
-# Optional — set to require "Authorization: Bearer <token>" on all requests
-API_TOKEN=
+# Comma-separated allowed browser origins (defaults to PANEL_URL, then localhost)
+CORS_ORIGINS=http://localhost:3000
 
 # ── DATABASE ───────────────────────────────────────────────────────
 MONGODB_URI=mongodb://localhost:27017/jurassic-haven
@@ -130,16 +130,22 @@ All `/guilds` endpoints require:
 Authorization: Bearer <jwt_token>
 ```
 
-JWT tokens expire after **7 days**. The panel handles expiry automatically by redirecting to the login page.
+JWT tokens expire after **7 days** and are delivered as an HttpOnly+Secure cookie (`jh_token`).
+The Discord access token is stored server-side in MongoDB (`sessionRepository`, TTL-indexed), so
+sessions survive restarts and work across scaled instances. All endpoints are protected by JWT +
+per-guild admin authorization (`isGuildAdmin`); a per-IP rate limiter guards against abuse
+(stricter on `/auth/*`). The panel handles expiry by redirecting to the login page.
 
 ## Project Structure
 
 ```
 src/
 ├── middleware/
-│   └── authMiddleware.ts    # JWT verification + session lookup
+│   ├── authMiddleware.ts    # JWT verification + session lookup
+│   └── rateLimit.ts         # Per-IP fixed-window rate limiter
 ├── lib/
-│   ├── sessions.ts          # In-memory store of Discord access tokens (by userId)
+│   ├── sessions.ts          # Discord access-token store (MongoDB, TTL-indexed)
+│   ├── configSanitize.ts    # Validates/clamps config PUT payloads
 │   └── guildGuard.ts        # fetchGuilds + isGuildAdmin (cached per token)
 ├── routes/
 │   ├── authRoutes.ts        # Discord OAuth2 flow

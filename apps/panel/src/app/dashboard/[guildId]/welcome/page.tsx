@@ -202,7 +202,7 @@ export default function WelcomePage() {
                 }
                 channels={channels}
                 placeholder="— Nie ustawiono —"
-                className="flex-1 px-4 py-2.5"
+                className="min-w-0 flex-1 px-4 py-2.5"
               />
               <CreateChannelButton
                 guildId={guildId}

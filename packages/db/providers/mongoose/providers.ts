@@ -1,6 +1,7 @@
 import { GuildConfigProvider } from "./guildConfigProvider";
 import { ModActionProvider } from "./modActionProvider";
 import { ReactionRoleProvider } from "./reactionRoleProvider";
+import { SessionProvider } from "./sessionProvider";
 import { TicketProvider } from "./ticketProvider";
 import { WarnProvider } from "./warnProvider";
 import { XpProvider } from "./xpProvider";
@@ -11,3 +12,4 @@ export const reactionRoleRepository = new ReactionRoleProvider();
 export const warnRepository = new WarnProvider();
 export const ticketRepository = new TicketProvider();
 export const modActionRepository = new ModActionProvider();
+export const sessionRepository = new SessionProvider();

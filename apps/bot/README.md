@@ -36,10 +36,6 @@ cp .env.example .env
 Edit `.env`:
 
 ```env
-# ── API ────────────────────────────────────────────────────────────
-API_PORT=3001
-API_TOKEN=
-
 # ── DATABASE ───────────────────────────────────────────────────────
 MONGODB_URI=mongodb://localhost:27017/jurassic-haven
 
@@ -48,6 +44,8 @@ DISCORD_TOKEN=
 
 # ── SERVER ─────────────────────────────────────────────────────────
 GUILD_ID=
+# Legacy fallback admin role. Prefer the native Administrator permission or a
+# per-guild admin role configured from the dashboard.
 CFG_ADMIN_ROLE_ID=
 
 # ── CHANNELS (fallback) ────────────────────────────────────────────
@@ -106,6 +104,10 @@ Set `RESET_COMMANDS=true` in `.env` and restart the bot. Set it back to `false` 
 | `/level`       | Shows your current level, XP, and XP needed for the next level |
 | `/leaderboard` | Shows top 10 players by XP on the server                       |
 | `/profile`     | Shows a user's profile card (level, XP, rank)                  |
+
+> **Authorization (multi-tenant):** privileged commands pass when the member has the native
+> Discord **Administrator** permission, or a per-guild admin role (`adminRoleId`, set from the
+> dashboard), or the legacy global `CFG_ADMIN_ROLE_ID`. So no per-server env is required.
 
 ### Configuration (requires admin role)
 

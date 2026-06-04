@@ -1,5 +1,7 @@
 import { Hand, ShieldCheck, Ticket, TrendingUp } from "lucide-react";
 
+import { AnimatedBackground } from "@/components/AnimatedBackground";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3002";
 
 const FEATURES = [
@@ -12,9 +14,7 @@ const FEATURES = [
 export default function HomePage() {
   return (
     <main className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden p-6">
-      {/* Tło — miękkie poświaty */}
-      <div className="pointer-events-none absolute -top-40 left-1/2 h-96 w-[40rem] -translate-x-1/2 rounded-full bg-[#d4a843]/10 blur-[120px]" />
-      <div className="pointer-events-none absolute -bottom-40 left-1/2 h-96 w-[40rem] -translate-x-1/2 rounded-full bg-[#5865F2]/10 blur-[120px]" />
+      <AnimatedBackground />
 
       <div className="relative z-10 flex w-full max-w-md flex-col items-center gap-8 text-center">
         {/* Brand */}

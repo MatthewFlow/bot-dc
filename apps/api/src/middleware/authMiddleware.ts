@@ -26,7 +26,7 @@ export async function authMiddleware(
     const { payload } = await jwtVerify(token, new TextEncoder().encode(secret));
     const userId = payload.userId as string;
 
-    const accessToken = sessions.get(userId);
+    const accessToken = await sessions.get(userId);
     if (!accessToken) {
       return c.json({ error: "Session expired, please log in again" }, 401);
     }
