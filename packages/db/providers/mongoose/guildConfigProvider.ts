@@ -21,6 +21,7 @@ export class GuildConfigProvider implements IGuildConfigRepository {
       goodbyeMessage: doc.goodbyeMessage,
       roleRewards: doc.roleRewards ?? [],
       modLogChannelId: doc.modLogChannelId,
+      adminRoleId: doc.adminRoleId,
       ticketSupportRoleId: doc.ticketSupportRoleId,
       ticketSupportRoleId2: doc.ticketSupportRoleId2,
       ticketLogChannelId: doc.ticketLogChannelId,

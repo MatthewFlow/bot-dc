@@ -17,6 +17,7 @@ export type GuildConfig = {
   goodbyeMessage?: string;
   roleRewards: RoleReward[];
   modLogChannelId?: string;
+  adminRoleId?: string;
   ticketSupportRoleId?: string;
   ticketSupportRoleId2?: string;
   ticketLogChannelId?: string;

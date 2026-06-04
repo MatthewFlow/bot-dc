@@ -5,10 +5,12 @@ export {
   guildConfigRepository,
   modActionRepository,
   reactionRoleRepository,
+  sessionRepository,
   ticketRepository,
   warnRepository,
   xpRepository,
 } from "./providers/mongoose/providers";
+export type { ISessionRepository } from "./repositories/sessionRepository";
 export type { GuildConfig, GuildConfigPatch } from "./repositories/guildConfigRepository";
 export type {
   AddModActionOpts,

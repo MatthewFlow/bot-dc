@@ -24,7 +24,8 @@ packages/db/
 │   ├── xpRepository.ts
 │   ├── warnRepository.ts
 │   ├── modActionRepository.ts
-│   └── ticketRepository.ts
+│   ├── ticketRepository.ts
+│   └── sessionRepository.ts
 └── providers/
     └── mongoose/                      # Mongoose implementations
         ├── providers.ts               # Singleton instances
@@ -34,13 +35,15 @@ packages/db/
         ├── warnProvider.ts
         ├── modActionProvider.ts
         ├── ticketProvider.ts
+        ├── sessionProvider.ts
         └── schemas/                   # Mongoose schema definitions
             ├── guildConfig.schema.ts
             ├── reactionRole.schema.ts
             ├── xp.schema.ts
             ├── warn.schema.ts
             ├── modAction.schema.ts
-            └── ticket.schema.ts
+            ├── ticket.schema.ts
+            └── session.schema.ts
 ```
 
 `repositories/` defines interfaces only — no database logic. `providers/mongoose/` contains the Mongoose implementations. This separation allows swapping the database layer without touching consuming code.
@@ -74,9 +77,9 @@ Stores per-guild bot configuration.
 
 **Schema fields:** `welcomeChannelId`, `goodbyeChannelId`, `levelUpChannelId`, `joinRoleId`,
 `verifiedRoleId`, `welcomeMessage`, `goodbyeMessage`, `roleRewards[]` (`{ level, roleId }`),
-`modLogChannelId`, `ticketSupportRoleId`, `ticketSupportRoleId2`, `ticketLogChannelId`,
-`welcomeEmbed`, `goodbyeEmbed`, `ticketPanelEmbed` (all `EmbedConfig`), `ticketPanelButton`
-(`{ label?, emoji? }`).
+`modLogChannelId`, `adminRoleId`, `ticketSupportRoleId`, `ticketSupportRoleId2`,
+`ticketLogChannelId`, `welcomeEmbed`, `goodbyeEmbed`, `ticketPanelEmbed` (all `EmbedConfig`),
+`ticketPanelButton` (`{ label?, emoji? }`).
 
 ### `xpRepository`
 
@@ -138,6 +141,17 @@ Stores a log of moderation actions (`warn`, `mute`, `unmute`, `kick`, `ban`, `cl
 | `add(opts)`                  | Records a moderation action              |
 | `getRecent(guildId, limit)`  | Most recent actions for a guild          |
 | `getByUser(guildId, userId)` | Actions targeting a specific user        |
+
+### `sessionRepository`
+
+Server-side store of Discord OAuth access tokens (used by the API). Backed by a TTL-indexed
+collection so sessions expire automatically, survive restarts, and are shared across instances.
+
+| Method                          | Description                                       |
+| ------------------------------- | ------------------------------------------------- |
+| `set(userId, accessToken, ttl)` | Upserts a session with a TTL (ms)                 |
+| `get(userId)`                   | Returns the access token, or `null` if expired    |
+| `delete(userId)`                | Removes a session (e.g. on logout)                |
 
 ## Embed Helpers (`embed.ts`)
 

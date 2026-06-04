@@ -37,6 +37,27 @@ authRoutes.get("/discord", (c) => {
   return c.redirect(`https://discord.com/oauth2/authorize?${params}`);
 });
 
+// Bot invite link — redirects to Discord's authorize page with the scopes and
+// permissions the bot needs. Used by the panel's "Add server" button.
+authRoutes.get("/invite", (c) => {
+  const clientId = process.env.DISCORD_CLIENT_ID;
+  if (!clientId) return c.json({ error: "Missing OAuth2 config" }, 500);
+
+  // Permission bit indices the bot requires (View Channels, Send/Manage Messages,
+  // Read History, Add Reactions, Manage Roles/Channels, Kick/Ban, Timeout, Threads).
+  const permissions = [10, 11, 13, 16, 6, 28, 4, 1, 2, 40, 34, 36, 38]
+    .reduce((acc, bit) => acc | (1n << BigInt(bit)), 0n)
+    .toString();
+
+  const params = new URLSearchParams({
+    client_id: clientId,
+    scope: "bot applications.commands",
+    permissions,
+  });
+
+  return c.redirect(`https://discord.com/oauth2/authorize?${params}`);
+});
+
 authRoutes.get("/callback", async (c) => {
   const code = c.req.query("code");
   const state = c.req.query("state");
@@ -93,7 +114,7 @@ authRoutes.get("/callback", async (c) => {
   };
 
   // Store Discord access_token server-side — never expose it in the JWT
-  sessions.set(user.id, tokenData.access_token, SESSION_TTL_MS);
+  await sessions.set(user.id, tokenData.access_token, SESSION_TTL_MS);
 
   const jwt = await new SignJWT({
     userId: user.id,
@@ -131,7 +152,7 @@ authRoutes.get("/me", async (c) => {
     const { payload } = await jwtVerify(token, new TextEncoder().encode(jwtSecret));
     const userId = payload.userId as string;
 
-    if (!sessions.get(userId)) {
+    if (!(await sessions.get(userId))) {
       return c.json({ error: "Session expired" }, 401);
     }
 
@@ -145,7 +166,20 @@ authRoutes.get("/me", async (c) => {
   }
 });
 
-authRoutes.post("/logout", (c) => {
+authRoutes.post("/logout", async (c) => {
+  // Best-effort: also drop the server-side session so the access token is revoked.
+  const header = c.req.header("authorization") ?? "";
+  const token = (header.startsWith("Bearer ") ? header.slice(7) : null) ?? getCookie(c, "jh_token");
+  const jwtSecret = process.env.JWT_SECRET;
+  if (token && jwtSecret) {
+    try {
+      const { payload } = await jwtVerify(token, new TextEncoder().encode(jwtSecret));
+      await sessions.delete(payload.userId as string);
+    } catch {
+      // ignore — invalid token, nothing to revoke
+    }
+  }
+
   deleteCookie(c, "jh_token", { path: "/" });
   return c.json({ ok: true });
 });

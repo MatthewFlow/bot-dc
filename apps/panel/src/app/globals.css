@@ -15,3 +15,68 @@ body {
     transform: translateY(0);
   }
 }
+
+/* ── Animated background blobs ─────────────────────────────────────── */
+.jh-blob {
+  position: absolute;
+  border-radius: 9999px;
+  will-change: transform;
+}
+
+.jh-blob-a {
+  top: -10rem;
+  left: 6%;
+  animation: jh-float-a 22s ease-in-out infinite;
+}
+.jh-blob-b {
+  bottom: -10rem;
+  right: 4%;
+  animation: jh-float-b 28s ease-in-out infinite;
+}
+.jh-blob-c {
+  top: 28%;
+  left: 52%;
+  animation: jh-float-c 25s ease-in-out infinite;
+}
+
+@keyframes jh-float-a {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(7vw, 5vh) scale(1.12);
+  }
+  66% {
+    transform: translate(-4vw, 9vh) scale(0.94);
+  }
+}
+@keyframes jh-float-b {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1.05);
+  }
+  33% {
+    transform: translate(-6vw, -4vh) scale(0.92);
+  }
+  66% {
+    transform: translate(5vw, -8vh) scale(1.15);
+  }
+}
+@keyframes jh-float-c {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    transform: translate(-58%, -42%) scale(1.18);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jh-blob-a,
+  .jh-blob-b,
+  .jh-blob-c {
+    animation: none;
+  }
+}

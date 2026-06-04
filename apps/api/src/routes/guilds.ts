@@ -8,7 +8,8 @@ import {
 } from "@jurassic-haven/db";
 import { Hono } from "hono";
 
-import { fetchGuilds, isGuildAdmin } from "../lib/guildGuard";
+import { sanitizeConfigPatch } from "../lib/configSanitize";
+import { canManageGuild, fetchGuilds, isGuildAdmin } from "../lib/guildGuard";
 import { authMiddleware } from "../middleware/authMiddleware";
 import type { AppVariables } from "../types";
 
@@ -29,6 +30,7 @@ const CONFIG_ALLOWED_FIELDS = [
   "goodbyeMessage",
   "roleRewards",
   "modLogChannelId",
+  "adminRoleId",
   "ticketSupportRoleId",
   "ticketSupportRoleId2",
   "ticketLogChannelId",
@@ -66,9 +68,7 @@ guildRoutes.use("/:guildId/*", async (c, next) => {
 guildRoutes.get("/", async (c) => {
   const accessToken = c.get("accessToken");
   const guilds = await fetchGuilds(accessToken);
-  const adminGuilds = guilds.filter(
-    (g) => (BigInt(g.permissions) & BigInt(0x8)) === BigInt(0x8),
-  );
+  const adminGuilds = guilds.filter((g) => canManageGuild(g.permissions));
   return c.json(adminGuilds);
 });
 
@@ -85,12 +85,13 @@ guildRoutes.put("/:guildId/config", async (c) => {
     return c.json({ error: "Invalid JSON body" }, 400);
   }
 
-  // Allowlist — only known config fields reach the DB
-  const patch = Object.fromEntries(
+  // Allowlist — only known config fields reach the DB — then validate/clamp each value.
+  const allowlisted = Object.fromEntries(
     CONFIG_ALLOWED_FIELDS.filter((k) => k in raw).map((k) => [k, raw[k]]),
   );
+  const patch = sanitizeConfigPatch(allowlisted);
 
-  await guildConfigRepository.set(guildId, patch);
+  await guildConfigRepository.set(guildId, patch as Parameters<typeof guildConfigRepository.set>[1]);
   return c.json({ ok: true });
 });
 

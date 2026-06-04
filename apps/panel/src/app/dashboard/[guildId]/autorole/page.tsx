@@ -141,7 +141,7 @@ export default function AutoRolePage() {
                 onChange={(v) => setConfig((c) => ({ ...c, joinRoleId: v || undefined }))}
                 roles={roles}
                 placeholder="— Nie ustawiono —"
-                className="flex-1 px-4 py-2.5"
+                className="min-w-0 flex-1 px-4 py-2.5"
               />
               <CreateRoleButton
                 guildId={guildId}
@@ -175,7 +175,7 @@ export default function AutoRolePage() {
                 onChange={(v) => setConfig((c) => ({ ...c, verifiedRoleId: v || undefined }))}
                 roles={roles}
                 placeholder="— Nie ustawiono —"
-                className="flex-1 px-4 py-2.5"
+                className="min-w-0 flex-1 px-4 py-2.5"
               />
               <CreateRoleButton
                 guildId={guildId}

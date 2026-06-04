@@ -79,7 +79,7 @@ Entry point: `src/index.ts` → `createBot()` in `src/bot.ts`
 
 - **Commands** are registered guild-scoped (requires `GUILD_ID` env). Set `RESET_COMMANDS=true` in `.env` and restart to clear and re-register.
 - **Command naming convention**: user commands (`/level`, `/leaderboard`, `/profile`), admin config commands (`/cfg_*`), moderation commands (`/mod_*`), ticket commands (`/ticket_*`), test commands (`/test_*`).
-- **Command dispatch**: `src/commands/handlers/handler.ts` routes interactions via a `Record<string, Handler>` map to `user.ts`, `admin.ts`, `mod.ts`, or `test.ts`. Admin/mod commands are guarded by `guard.ts` (`requireAdminRole`) which checks `CFG_ADMIN_ROLE_ID` and replies ephemerally on failure.
+- **Command dispatch**: `src/commands/handlers/handler.ts` routes interactions via a `Record<string, Handler>` map to `user.ts`, `admin.ts`, `mod.ts`, or `test.ts`. Admin/mod commands are guarded by `guard.ts` (`requireAdminRole`): a member passes with the native Discord **Administrator** permission, or with the per-guild `adminRoleId` (set from the dashboard), or the legacy global `CFG_ADMIN_ROLE_ID` env — replies ephemerally on failure.
 - **Gateway intents**: `Guilds`, `GuildMembers`, `GuildMessages`, `MessageContent`, `GuildMessageReactions`. Partials: `Message`, `Reaction`, `User` — always fetch partials before processing in reaction event handlers.
 - **Events**: `memberAdd`, `memberRemove`, `messageCreate` (XP), `messageReactionAdd`/`Remove` (reaction roles), `threadUpdate`/`threadDelete` (ticket state sync).
 - **Levels subsystem**: `src/levels/autorole.ts` assigns progression roles; `src/levels/levelUpNotify.ts` posts level-up messages.
@@ -95,9 +95,9 @@ Entry point: `src/index.ts`
 Port: `API_PORT` env (default 3002)
 
 - Framework: Hono with typed context variables (`AppVariables` in `types.ts`)
-- Auth: Discord OAuth2 → JWT (jose library). JWT payload carries `userId`, `username`, `avatar` only. The Discord OAuth access token is stored **server-side** in an in-memory `Map` (`src/lib/sessions.ts`) keyed by `userId`, not in the JWT.
-- `authMiddleware.ts` verifies JWT, looks up the session store to retrieve the access token, and populates Hono context variables for downstream routes.
-- CORS is hard-coded to `http://localhost:3000`; change it in `src/index.ts` for production.
+- Auth: Discord OAuth2 → JWT (jose library), delivered as an **HttpOnly + Secure cookie** (`jh_token`); the panel calls the API with `credentials: include`. JWT payload carries `userId`, `username`, `avatar` only. The Discord OAuth access token is stored **server-side** in MongoDB (`sessionRepository`, TTL-indexed) via `src/lib/sessions.ts` — survives restarts and is shared across scaled instances. Never in the JWT.
+- `authMiddleware.ts` verifies JWT (from `Authorization: Bearer` or cookie), looks up the session store to retrieve the access token, and populates Hono context variables for downstream routes.
+- CORS origins come from `CORS_ORIGINS` (comma-separated, falls back to `PANEL_URL`, then localhost); credentials are enabled so a specific origin is echoed, never `*`. Rate limiting (`src/middleware/rateLimit.ts`) is applied globally per IP, with a stricter limit on `/auth/*`.
 - Routes:
   - `/auth/discord` — starts OAuth2 flow; `/auth/callback` — exchanges code, sets `jh_token` cookie, redirects to `PANEL_URL/auth/success`; `/auth/me` — returns user from JWT
   - `GET /guilds` — user's admin guilds via Discord API (OAuth token); cached per-token for 5 min with concurrent-request deduplication (`src/lib/guildGuard.ts`)
@@ -129,13 +129,13 @@ Framework: Next.js 16 App Router, all dashboard pages are client components (`"u
 | ----- | -------------------------- | ----------------------------------------------------------------- |
 | bot   | `DISCORD_TOKEN`            | Bot token                                                         |
 | bot   | `GUILD_ID`                 | Guild to register commands on                                     |
-| bot   | `CFG_ADMIN_ROLE_ID`        | Role ID required for `/cfg_*` and `/test_*` commands              |
+| bot   | `CFG_ADMIN_ROLE_ID`        | Legacy fallback admin role for `/cfg_*`/`/mod_*` (prefer native Administrator perm or per-guild `adminRoleId`) |
 | bot   | `RESET_COMMANDS`           | Set `true` once to reset slash commands                           |
 | bot   | `WELCOME_CHANNEL_ID`       | Fallback welcome channel (overridden by DB config)                |
 | bot   | `GOODBYE_CHANNEL_ID`       | Fallback goodbye channel (overridden by DB config)                |
 | bot   | `LEVEL_UP_CHANNEL_ID`      | Fallback level-up notification channel (overridden by DB config)  |
 | api   | `DISCORD_TOKEN`            | Bot token (used to proxy channel/role/leaderboard requests)       |
-| api   | `API_TOKEN`                | Optional bearer token to protect API endpoints (leave empty to disable) |
+| api   | `CORS_ORIGINS`             | Comma-separated allowed browser origins (falls back to `PANEL_URL`) |
 | api   | `DISCORD_CLIENT_ID/SECRET` | OAuth2 credentials                                                |
 | api   | `DISCORD_REDIRECT_URI`     | OAuth2 callback URL                                               |
 | api   | `JWT_SECRET`               | HS256 signing key                                                 |

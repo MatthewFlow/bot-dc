@@ -1,13 +1,17 @@
 "use client";
 
-import { ChevronRight, LogOut, Search, ServerOff } from "lucide-react";
+import { ChevronRight, LogOut, Plus, Search, ServerOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
+import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { Avatar } from "@/components/Avatar";
 import { Skeleton } from "@/components/Skeleton";
 import type { Guild, User } from "@/lib/api";
 import { getGuilds, getMe, logout } from "@/lib/api";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3002";
+const INVITE_URL = `${API_URL}/auth/invite`;
 
 function guildIconUrl(guild: Guild) {
   if (!guild.icon) return null;
@@ -49,8 +53,9 @@ export default function DashboardPage() {
   }, [guilds, query]);
 
   return (
-    <main className="min-h-screen p-4 sm:p-6 lg:p-8">
-      <div className="mx-auto max-w-4xl">
+    <main className="relative min-h-screen overflow-hidden p-4 sm:p-6 lg:p-8">
+      <AnimatedBackground />
+      <div className="relative z-10 mx-auto max-w-4xl">
         {/* Topbar */}
         <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -109,20 +114,31 @@ export default function DashboardPage() {
             </h2>
           </div>
 
-          {!loading && guilds.length > 6 && (
-            <div className="relative w-full sm:w-64">
-              <Search
-                size={16}
-                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
-              />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Szukaj serwera…"
-                className="w-full rounded-lg border border-white/5 bg-[#1a1f2e] py-2 pl-9 pr-3 text-sm text-white outline-none transition focus:border-white/10 focus:ring-2 focus:ring-[#d4a843]/40"
-              />
-            </div>
-          )}
+          <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
+            {!loading && guilds.length > 6 && (
+              <div className="relative flex-1 sm:w-64 sm:flex-none">
+                <Search
+                  size={16}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-500"
+                />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Szukaj serwera…"
+                  className="w-full rounded-lg border border-white/5 bg-[#1a1f2e] py-2 pl-9 pr-3 text-sm text-white outline-none transition focus:border-white/10 focus:ring-2 focus:ring-[#d4a843]/40"
+                />
+              </div>
+            )}
+            <a
+              href={INVITE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex shrink-0 items-center gap-2 rounded-lg bg-[#d4a843] px-4 py-2 text-sm font-semibold text-black outline-none transition hover:-translate-y-0.5 hover:bg-[#c49b3a] focus-visible:ring-2 focus-visible:ring-[#d4a843]/40"
+            >
+              <Plus size={16} />
+              Dodaj serwer
+            </a>
+          </div>
         </div>
 
         {/* Content */}
@@ -142,6 +158,15 @@ export default function DashboardPage() {
               Nie znaleziono serwerów, na których masz uprawnienia administratora. Dodaj bota
               na serwer lub poproś właściciela o rolę administratora.
             </p>
+            <a
+              href={INVITE_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2 flex items-center gap-2 rounded-lg bg-[#d4a843] px-4 py-2 text-sm font-semibold text-black transition hover:bg-[#c49b3a]"
+            >
+              <Plus size={16} />
+              Dodaj serwer
+            </a>
           </div>
         ) : filtered.length === 0 ? (
           <div className="rounded-xl border border-white/5 bg-[#1a1f2e] px-6 py-12 text-center text-sm text-gray-500">

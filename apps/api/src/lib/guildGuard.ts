@@ -1,6 +1,13 @@
 const DISCORD_API = "https://discord.com/api/v10";
-const ADMIN_PERM = BigInt(0x8);
+const ADMIN_PERM = BigInt(0x8); // ADMINISTRATOR
+const MANAGE_GUILD_PERM = BigInt(0x20); // MANAGE_GUILD ("Manage Server")
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+/** True if the permission bitfield grants Administrator or Manage Server. */
+export function canManageGuild(permissions: string): boolean {
+  const p = BigInt(permissions);
+  return (p & ADMIN_PERM) === ADMIN_PERM || (p & MANAGE_GUILD_PERM) === MANAGE_GUILD_PERM;
+}
 
 export type GuildEntry = { id: string; name: string; icon: string | null; permissions: string };
 type CacheEntry = { guilds: GuildEntry[]; expiresAt: number };
@@ -36,5 +43,5 @@ export async function fetchGuilds(accessToken: string): Promise<GuildEntry[]> {
 export async function isGuildAdmin(accessToken: string, guildId: string): Promise<boolean> {
   const guilds = await fetchGuilds(accessToken);
   const guild = guilds.find((g) => g.id === guildId);
-  return !!guild && (BigInt(guild.permissions) & ADMIN_PERM) === ADMIN_PERM;
+  return !!guild && canManageGuild(guild.permissions);
 }

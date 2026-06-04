@@ -58,7 +58,7 @@ export function CreateChannelButton({
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex w-full flex-wrap items-center gap-2">
       <input
         autoFocus
         value={name}
@@ -68,7 +68,7 @@ export function CreateChannelButton({
           if (e.key === "Escape") setOpen(false);
         }}
         placeholder="nazwa-kanału"
-        className="w-40 rounded-lg bg-[#0f1117] px-3 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]"
+        className="min-w-0 flex-1 rounded-lg bg-[#0f1117] px-3 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]"
       />
       <button
         onClick={submit}
