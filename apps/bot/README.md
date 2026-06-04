@@ -211,6 +211,8 @@ src/
 ├── config/
 │   └── env.ts                      # environment variables
 ├── events/
+│   ├── guildCreate.ts              # bot added — intro message + log
+│   ├── guildDelete.ts              # bot removed — log (config retained)
 │   ├── memberAdd.ts                # member join + auto-role + welcome embed
 │   ├── memberRemove.ts             # member leave + goodbye embed
 │   ├── messageCreate.ts            # XP on message

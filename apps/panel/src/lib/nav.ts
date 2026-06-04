@@ -2,6 +2,7 @@ import {
   DoorOpen,
   LayoutDashboard,
   type LucideIcon,
+  Settings,
   ShieldAlert,
   Ticket,
   TrendingUp,
@@ -59,6 +60,12 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/tickets",
     desc: "Obsługa zgłoszeń użytkowników",
     icon: Ticket,
+  },
+  {
+    label: "Ustawienia",
+    href: "/settings",
+    desc: "Rola admina i kanał logów moderacji",
+    icon: Settings,
   },
 ];
 

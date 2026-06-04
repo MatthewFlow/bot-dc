@@ -2,6 +2,8 @@ import { Client, GatewayIntentBits, Partials } from "discord.js";
 
 import { handleCommand } from "./commands/handlers/handler";
 import { clearGuildCommands, registerCommands } from "./commands/register";
+import { onGuildCreate } from "./events/guildCreate";
+import { onGuildDelete } from "./events/guildDelete";
 import { onMemberAdd } from "./events/memberAdd";
 import { onMemberRemove } from "./events/memberRemove";
 import { onMessageCreate } from "./events/messageCreate";
@@ -42,6 +44,8 @@ export function createBot() {
     }
   });
 
+  client.on("guildCreate", onGuildCreate);
+  client.on("guildDelete", onGuildDelete);
   client.on("guildMemberAdd", onMemberAdd);
   client.on("guildMemberRemove", onMemberRemove);
   client.on("messageCreate", onMessageCreate);

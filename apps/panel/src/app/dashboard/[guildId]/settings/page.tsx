@@ -1,0 +1,157 @@
+"use client";
+
+import { useParams } from "next/navigation";
+import { useState } from "react";
+
+import { ChannelSelect } from "@/components/ChannelSelect";
+import { CreateChannelButton } from "@/components/CreateChannelButton";
+import { CreateRoleButton } from "@/components/CreateRoleButton";
+import { HowItWorks } from "@/components/HowItWorks";
+import { PageHeader } from "@/components/PageHeader";
+import { RoleSelect } from "@/components/RoleSelect";
+import { SaveButton } from "@/components/SaveButton";
+import { Skeleton } from "@/components/Skeleton";
+import { useToast } from "@/components/toast";
+import { useGuildLoad } from "@/hooks/useGuildLoad";
+import type { Channel, GuildConfig, Role } from "@/lib/api";
+import { getChannels, getGuildConfig, getRoles, updateGuildConfig } from "@/lib/api";
+
+function SettingsSkeleton() {
+  return (
+    <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
+      <div>
+        <Skeleton className="mb-2 h-3 w-24" />
+        <Skeleton className="mb-2 h-7 w-48" />
+        <Skeleton className="h-3 w-64" />
+      </div>
+      <Skeleton className="h-64 w-full max-w-xl rounded-xl" />
+    </div>
+  );
+}
+
+export default function SettingsPage() {
+  const params = useParams();
+  const guildId = params.guildId as string;
+  const toast = useToast();
+
+  const [config, setConfig] = useState<GuildConfig>({});
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [channels, setChannels] = useState<Channel[]>([]);
+  const [saving, setSaving] = useState(false);
+
+  const { loading } = useGuildLoad(
+    guildId,
+    (id) => Promise.all([getGuildConfig(id), getRoles(id), getChannels(id)]),
+    ([cfg, r, ch]) => {
+      setConfig(cfg);
+      setRoles(r);
+      setChannels(ch);
+    },
+  );
+
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await updateGuildConfig(guildId, {
+        adminRoleId: config.adminRoleId,
+        modLogChannelId: config.modLogChannelId,
+      });
+      toast("Zapisano zmiany.", "success");
+    } catch {
+      toast("Nie udało się zapisać.", "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) return <SettingsSkeleton />;
+
+  return (
+    <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
+      <PageHeader
+        category="Konfiguracja serwera"
+        title={
+          <>
+            Ustawienia <span className="italic text-[#d4a843]">ogólne</span>
+          </>
+        }
+        description="Uprawnienia do komend bota i kanał logów moderacji."
+        className="mb-0"
+      />
+
+      <div className="flex flex-col gap-6 lg:flex-row">
+        <div className="flex-1 rounded-xl border border-white/5 bg-[#1a1f2e]">
+          <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
+            <p className="text-sm font-semibold text-white">Ogólne</p>
+            <SaveButton onClick={handleSave} saving={saving} className="px-4 py-1.5 text-xs" />
+          </div>
+
+          <div className="flex flex-col gap-5 p-6">
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Rola administratora bota</label>
+              <div className="flex max-w-sm flex-wrap items-center gap-2">
+                <RoleSelect
+                  value={config.adminRoleId ?? ""}
+                  onChange={(v) => setConfig((c) => ({ ...c, adminRoleId: v || undefined }))}
+                  roles={roles}
+                  placeholder="— Nie ustawiono —"
+                  className="min-w-0 flex-1 px-3 py-2.5"
+                />
+                <CreateRoleButton
+                  guildId={guildId}
+                  defaultName="Bot Admin"
+                  onCreated={(role) => {
+                    setRoles((prev) => [...prev, role].sort((a, b) => b.position - a.position));
+                    setConfig((c) => ({ ...c, adminRoleId: role.id }));
+                  }}
+                />
+              </div>
+              <p className="mt-1 text-xs text-gray-600">
+                Dodatkowa rola dopuszczona do komend <code>/cfg_*</code> i <code>/mod_*</code>.
+                Osoby z uprawnieniem Discord <strong>Administrator</strong> lub{" "}
+                <strong>Zarządzanie serwerem</strong> i tak mają dostęp.
+              </p>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs text-gray-500">Kanał logów moderacji</label>
+              <div className="flex max-w-sm flex-wrap items-center gap-2">
+                <ChannelSelect
+                  value={config.modLogChannelId ?? ""}
+                  onChange={(v) => setConfig((c) => ({ ...c, modLogChannelId: v || undefined }))}
+                  channels={channels}
+                  placeholder="— Nie ustawiono —"
+                  className="min-w-0 flex-1 px-3 py-2.5"
+                />
+                <CreateChannelButton
+                  guildId={guildId}
+                  defaultName="mod-logi"
+                  onCreated={(ch) => {
+                    setChannels((prev) =>
+                      [...prev, ch].sort((a, b) => a.name.localeCompare(b.name)),
+                    );
+                    setConfig((c) => ({ ...c, modLogChannelId: ch.id }));
+                  }}
+                />
+              </div>
+              <p className="mt-1 text-xs text-gray-600">
+                Tu trafiają logi akcji moderacyjnych (ostrzeżenia, muty, kicki, bany).
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="w-full lg:w-72">
+          <HowItWorks
+            steps={[
+              "Administratorzy i osoby z Zarządzaniem serwerem zawsze mają dostęp do komend",
+              "Opcjonalnie wskaż dodatkową rolę admina bota dla zaufanej ekipy",
+              "Ustaw kanał logów, aby śledzić wszystkie akcje moderacyjne",
+              "Zapisz — zmiany działają natychmiast, bez restartu bota",
+            ]}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
