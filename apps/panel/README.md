@@ -52,6 +52,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | `/dashboard/[guildId]/reaction-roles` | Reaction role messages with the embed editor            |
 | `/dashboard/[guildId]/moderation`     | Warnings & recent moderation actions                    |
 | `/dashboard/[guildId]/tickets`        | Ticket list + panel embed/button editor + config        |
+| `/dashboard/[guildId]/settings`       | Admin role + moderation log channel                     |
 
 Every server page sits under a sticky **TopBar** (breadcrumb + user menu) and the navigation
 **Sidebar**, both driven by the shared `lib/nav.ts` map.
@@ -77,7 +78,8 @@ src/
 │           ├── levels/page.tsx           # Level → role tiers
 │           ├── reaction-roles/page.tsx   # Reaction roles (embed editor)
 │           ├── moderation/page.tsx       # Warnings + mod-action log
-│           └── tickets/page.tsx          # Tickets + panel embed editor
+│           ├── tickets/page.tsx          # Tickets + panel embed editor
+│           └── settings/page.tsx         # Admin role + mod-log channel
 ├── components/
 │   ├── Sidebar.tsx                       # Navigation sidebar (mobile + desktop)
 │   ├── TopBar.tsx                        # Sticky breadcrumb + user/logout
