@@ -13,6 +13,35 @@ export type TicketPanelButton = {
   emoji?: string;
 };
 
+/** Konfiguracja logów serwera (kanał + przełączniki kategorii). Brak obiektu = wyłączone. */
+export type ServerLogConfig = {
+  enabled: boolean;
+  channelId?: string;
+  messageDelete: boolean;
+  messageEdit: boolean;
+  memberJoin: boolean;
+  memberLeave: boolean;
+  roleChanges: boolean;
+  nicknameChanges: boolean;
+};
+
+export type AutoModAction = "delete" | "warn" | "mute";
+
+/** Konfiguracja auto-moderacji (filtry + akcja). Brak obiektu = wyłączone. */
+export type AutoModConfig = {
+  enabled: boolean;
+  blockInvites: boolean;
+  blockLinks: boolean;
+  bannedWords: string[];
+  spamEnabled: boolean;
+  spamMaxMessages: number;
+  spamWindowSeconds: number;
+  exemptRoleIds: string[];
+  exemptChannelIds: string[];
+  action: AutoModAction;
+  muteDurationSeconds: number;
+};
+
 export type GuildConfigDocument = {
   guildId: string;
   welcomeChannelId?: string;
@@ -32,6 +61,8 @@ export type GuildConfigDocument = {
   goodbyeEmbed?: EmbedConfig;
   ticketPanelEmbed?: EmbedConfig;
   ticketPanelButton?: TicketPanelButton;
+  autoMod?: AutoModConfig;
+  serverLog?: ServerLogConfig;
 };
 
 const roleRewardSchema = new Schema<RoleReward>(
@@ -77,6 +108,37 @@ const ticketPanelButtonSchema = new Schema<TicketPanelButton>(
   { _id: false },
 );
 
+const autoModSchema = new Schema<AutoModConfig>(
+  {
+    enabled: { type: Boolean, default: false },
+    blockInvites: { type: Boolean, default: false },
+    blockLinks: { type: Boolean, default: false },
+    bannedWords: { type: [String], default: [] },
+    spamEnabled: { type: Boolean, default: false },
+    spamMaxMessages: { type: Number, default: 5 },
+    spamWindowSeconds: { type: Number, default: 5 },
+    exemptRoleIds: { type: [String], default: [] },
+    exemptChannelIds: { type: [String], default: [] },
+    action: { type: String, enum: ["delete", "warn", "mute"], default: "delete" },
+    muteDurationSeconds: { type: Number, default: 300 },
+  },
+  { _id: false },
+);
+
+const serverLogSchema = new Schema<ServerLogConfig>(
+  {
+    enabled: { type: Boolean, default: false },
+    channelId: { type: String },
+    messageDelete: { type: Boolean, default: true },
+    messageEdit: { type: Boolean, default: true },
+    memberJoin: { type: Boolean, default: true },
+    memberLeave: { type: Boolean, default: true },
+    roleChanges: { type: Boolean, default: true },
+    nicknameChanges: { type: Boolean, default: true },
+  },
+  { _id: false },
+);
+
 const guildConfigSchema = new Schema<GuildConfigDocument>(
   {
     guildId: { type: String, required: true, unique: true },
@@ -97,6 +159,8 @@ const guildConfigSchema = new Schema<GuildConfigDocument>(
     goodbyeEmbed: { type: embedSchema, default: undefined },
     ticketPanelEmbed: { type: embedSchema, default: undefined },
     ticketPanelButton: { type: ticketPanelButtonSchema, default: undefined },
+    autoMod: { type: autoModSchema, default: undefined },
+    serverLog: { type: serverLogSchema, default: undefined },
   },
   { versionKey: false },
 );

@@ -34,6 +34,33 @@ export type TicketPanelButton = {
   emoji?: string;
 };
 
+export type AutoModAction = "delete" | "warn" | "mute";
+
+export type AutoModConfig = {
+  enabled: boolean;
+  blockInvites: boolean;
+  blockLinks: boolean;
+  bannedWords: string[];
+  spamEnabled: boolean;
+  spamMaxMessages: number;
+  spamWindowSeconds: number;
+  exemptRoleIds: string[];
+  exemptChannelIds: string[];
+  action: AutoModAction;
+  muteDurationSeconds: number;
+};
+
+export type ServerLogConfig = {
+  enabled: boolean;
+  channelId?: string;
+  messageDelete: boolean;
+  messageEdit: boolean;
+  memberJoin: boolean;
+  memberLeave: boolean;
+  roleChanges: boolean;
+  nicknameChanges: boolean;
+};
+
 export type GuildConfig = {
   welcomeChannelId?: string;
   goodbyeChannelId?: string;
@@ -52,6 +79,8 @@ export type GuildConfig = {
   goodbyeEmbed?: EmbedConfig;
   ticketPanelEmbed?: EmbedConfig;
   ticketPanelButton?: TicketPanelButton;
+  autoMod?: AutoModConfig;
+  serverLog?: ServerLogConfig;
 };
 
 export type ModActionType = "warn" | "mute" | "unmute" | "kick" | "ban" | "clearwarns";

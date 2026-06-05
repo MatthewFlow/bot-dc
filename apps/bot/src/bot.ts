@@ -12,6 +12,13 @@ import { onMessageReactionRemove } from "./events/messageReactionRemove";
 import { onThreadDelete } from "./events/threadDelete";
 import { onThreadUpdate } from "./events/threadUpdate";
 import {
+  onGuildMemberUpdateLog,
+  onMemberJoinLog,
+  onMemberLeaveLog,
+  onMessageDeleteLog,
+  onMessageUpdateLog,
+} from "./serverlog/serverlog";
+import {
   handleTicketClaim,
   handleTicketSubmit,
   showTicketModal,
@@ -53,6 +60,13 @@ export function createBot() {
   client.on("messageReactionRemove", onMessageReactionRemove);
   client.on("threadDelete", onThreadDelete);
   client.on("threadUpdate", onThreadUpdate);
+
+  // Server logging (separate listeners so logging stays decoupled).
+  client.on("messageDelete", onMessageDeleteLog);
+  client.on("messageUpdate", onMessageUpdateLog);
+  client.on("guildMemberAdd", onMemberJoinLog);
+  client.on("guildMemberRemove", onMemberLeaveLog);
+  client.on("guildMemberUpdate", onGuildMemberUpdateLog);
 
   client.on("interactionCreate", async (interaction) => {
     if (interaction.isChatInputCommand()) {

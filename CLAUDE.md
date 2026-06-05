@@ -32,6 +32,13 @@ cd apps/bot && bun run dev    # bun --watch
 cd apps/api && bun run dev    # bun --watch
 ```
 
+### Test & Typecheck
+
+```bash
+bun test               # run the unit test suite (bun:test)
+bun run typecheck      # tsc --noEmit for bot, api and panel
+```
+
 ### Lint & Format
 
 ```bash
@@ -40,6 +47,10 @@ bun run lint:fix       # Auto-fix ESLint errors
 bun run format         # Prettier write
 bun run format:check   # Prettier check
 ```
+
+CI (`.github/workflows/ci.yml`) runs lint + typecheck + test on every push to `main` and on PRs.
+Unit tests cover pure logic (XP math, embed converter, config sanitization, permission checks);
+add `*.test.ts` next to the module under test.
 
 > ESLint obejmuje wszystkie workspace'y łącznie z `apps/panel`. Konfiguracja w `eslint.config.ts` (root). `apps/bot` i `apps/api` mają włączone `verbatimModuleSyntax`, więc importy typów **muszą** używać `import type`.
 
@@ -84,6 +95,8 @@ Entry point: `src/index.ts` → `createBot()` in `src/bot.ts`
 - **Events**: `guildCreate`/`guildDelete` (onboarding — intro message on join, config retained on leave), `memberAdd`, `memberRemove`, `messageCreate` (XP), `messageReactionAdd`/`Remove` (reaction roles), `threadUpdate`/`threadDelete` (ticket state sync).
 - **Levels subsystem**: `src/levels/autorole.ts` assigns progression roles; `src/levels/levelUpNotify.ts` posts level-up messages.
 - **Moderation**: `/mod_*` handlers in `src/commands/handlers/mod.ts`; every action persists to `modActionRepository` and is posted via `src/modlog.ts` to `modLogChannelId`.
+- **Auto-moderation**: `src/automod/automod.ts` runs on `messageCreate` (config read through a 15s in-memory cache, `src/utils/configCache.ts`). Filters: invites, links, banned words, anti-spam. Exempts staff (Administrator/Manage Server/Manage Messages) + configured roles/channels. Action `delete`/`warn`/`mute` reuses `sendModLog` with the bot as moderator. Off unless `autoMod.enabled`.
+- **Server logging**: `src/serverlog/serverlog.ts` posts events (message delete/edit, member join/leave, role/nickname changes) to `serverLog.channelId` when `serverLog.enabled` and the per-category toggle is on. Registered as separate listeners in `bot.ts` (decoupled from welcome/XP). Uses the same 15s config cache.
 - **Tickets**: `src/tickets/handler.ts` — `/ticket_setup` posts the panel embed+button (read from `ticketPanelEmbed`/`ticketPanelButton`); the button opens a modal → private thread (`pending`) → support-role ping → "claim" button. `src/tickets/log.ts` logs open/close to `ticketLogChannelId`.
 - **Verification flow**: `joinRoleId` (unverified) is given to every new member; `verifiedRoleId` (verified) is the complement. When a member gains `verifiedRoleId` via reaction roles, the bot removes `joinRoleId`. `cfg_syncverify` assigns `joinRoleId` to members who have neither role.
 - **Welcome/goodbye templates & embeds**: variables `{user}` → mention, `{username}` → plain name, `{server}` → guild name, `{member_count}` → current count, `{avatar}` → avatar URL. Substitution lives in `src/utils/embedVars.ts`. If a `welcomeEmbed`/`goodbyeEmbed` is configured the bot sends that embed (via `toDiscordEmbed`); otherwise the legacy text message.
@@ -118,7 +131,7 @@ Framework: Next.js 16 App Router, all dashboard pages are client components (`"u
 - Auth token stored in `localStorage` as `jh_token`; on 401, clears token and redirects to `/`.
 - All API calls go through `src/lib/api.ts` — a typed client wrapping `fetch` with retry on 429 and `TokenExpiredError` on 401.
 - Routes: `/` (landing), `/auth/success` (OAuth2 callback, saves JWT), `/dashboard` (guild list), `/dashboard/[guildId]/*` (per-server config pages).
-- Dashboard sections: overview (stat cards + quick nav), `welcome` (text **or** full embed), `autorole` (join/verified roles), `levels` (XP role reward tiers), `reaction-roles` (embed editor), `moderation` (warnings + action log), `tickets` (list + panel embed editor + config), `settings` (admin role + mod-log channel).
+- Dashboard sections: overview (stat cards + quick nav), `welcome` (text **or** full embed), `autorole` (join/verified roles), `levels` (XP role reward tiers), `reaction-roles` (embed editor), `moderation` (warnings + action log), `automod` (auto-moderation filters), `serverlog` (event logging), `tickets` (list + panel embed editor + config), `settings` (admin role + mod-log channel).
 - Each server page renders under `TopBar.tsx` (sticky breadcrumb + user menu) and `Sidebar.tsx`; both read the shared nav map in `src/lib/nav.ts` (icons via `lucide-react`).
 - **Embed editor**: `src/components/EmbedEditor.tsx` (full editor) + `EmbedPreview.tsx` (live Discord-style preview), shared across welcome/goodbye, ticket panel and reaction-roles. Helpers in `src/lib/embed.ts` (color hex↔int, variable lists, `previewReplacer`). `EmbedConfig` mirrors the type in `@jurassic-haven/db`.
 - **Create helpers**: `CreateChannelButton.tsx` / `CreateRoleButton.tsx` call the `POST channels`/`roles` endpoints inline next to selects.

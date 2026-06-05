@@ -195,6 +195,24 @@ the ticket-log channel.
 - Multiple emoji → role pairs supported per message
 - Configured via the web dashboard
 
+## Auto-moderation
+
+- Configured per-server from the dashboard (`/automod`); off unless enabled
+- Filters: Discord invites, links, banned words, and anti-spam (N messages / T seconds)
+- Action on a hit: delete the message, optionally **warn** (recorded) or **timeout** the user
+- Exempts staff (Administrator / Manage Server / Manage Messages) plus configured roles/channels
+- Violations are written to the moderation log with the bot as the actor
+- Runs on every message via a 15s-cached guild config to keep DB load low
+
+## Server logging
+
+- Configured per-server from the dashboard (`/serverlog`); off unless enabled
+- Posts events to a chosen channel, each category individually toggleable:
+  deleted messages, edited messages, member joins/leaves, role changes, nickname changes
+- Uses existing intents (no extra setup); deleted/edited content requires the message to be
+  in the bot's cache
+- Reads config through the same 15s cache as auto-moderation
+
 ## Project Structure
 
 ```
@@ -220,6 +238,10 @@ src/
 │   ├── messageReactionRemove.ts    # reaction role removal
 │   ├── threadUpdate.ts             # ticket thread state sync
 │   └── threadDelete.ts             # ticket thread cleanup
+├── automod/
+│   └── automod.ts                  # auto-moderation filters + actions
+├── serverlog/
+│   └── serverlog.ts                # server event logging
 ├── levels/
 │   ├── autorole.ts                 # progression role assignment
 │   └── levelUpNotify.ts            # level-up notifications
@@ -229,6 +251,7 @@ src/
 ├── modlog.ts                       # moderation action logging
 ├── utils/
 │   ├── channels.ts                 # channel type helper
+│   ├── configCache.ts              # short-TTL guild-config cache (hot path)
 │   └── embedVars.ts                # member variable substitution ({user}, {avatar}, …)
 ├── bot.ts                          # Discord client setup
 └── index.ts                        # entry point
