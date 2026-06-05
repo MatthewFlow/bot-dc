@@ -73,6 +73,19 @@ bun run api
 bun run panel
 ```
 
+## Testing & CI
+
+```bash
+# Run the unit test suite (bun:test)
+bun test
+
+# Typecheck all apps (tsc --noEmit)
+bun run typecheck
+```
+
+GitHub Actions (`.github/workflows/ci.yml`) runs lint + typecheck + test on pushes to `main`
+and on pull requests. Unit tests live next to the code as `*.test.ts`.
+
 ## Linting and Formatting
 
 ```bash

@@ -10,6 +10,8 @@
     "bot": "cd apps/bot && bun run start",
     "api": "cd apps/api && bun run start",
     "panel": "cd apps/panel && bun run dev",
+    "test": "bun test",
+    "typecheck": "bunx tsc --noEmit -p apps/bot/tsconfig.json && bunx tsc --noEmit -p apps/api/tsconfig.json && bunx tsc --noEmit -p apps/panel/tsconfig.json",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write",
