@@ -51,6 +51,8 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | `/dashboard/[guildId]/levels`         | XP level → role reward tiers (with "create role")       |
 | `/dashboard/[guildId]/reaction-roles` | Reaction role messages with the embed editor            |
 | `/dashboard/[guildId]/moderation`     | Warnings & recent moderation actions                    |
+| `/dashboard/[guildId]/automod`        | Auto-moderation filters (invites, links, words, spam)   |
+| `/dashboard/[guildId]/serverlog`      | Server event logging (messages, members, roles)         |
 | `/dashboard/[guildId]/tickets`        | Ticket list + panel embed/button editor + config        |
 | `/dashboard/[guildId]/settings`       | Admin role + moderation log channel                     |
 
@@ -78,6 +80,8 @@ src/
 │           ├── levels/page.tsx           # Level → role tiers
 │           ├── reaction-roles/page.tsx   # Reaction roles (embed editor)
 │           ├── moderation/page.tsx       # Warnings + mod-action log
+│           ├── automod/page.tsx          # Auto-moderation filters
+│           ├── serverlog/page.tsx        # Server event logging
 │           ├── tickets/page.tsx          # Tickets + panel embed editor
 │           └── settings/page.tsx         # Admin role + mod-log channel
 ├── components/

@@ -11,7 +11,13 @@ export {
   xpRepository,
 } from "./providers/mongoose/providers";
 export type { ISessionRepository } from "./repositories/sessionRepository";
-export type { GuildConfig, GuildConfigPatch } from "./repositories/guildConfigRepository";
+export type {
+  AutoModConfig,
+  GuildConfig,
+  GuildConfigPatch,
+  ServerLogConfig,
+  TicketPanelButton,
+} from "./repositories/guildConfigRepository";
 export type {
   AddModActionOpts,
   ModAction,

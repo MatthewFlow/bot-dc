@@ -1,10 +1,12 @@
 import type { EmbedConfig } from "../embed";
 import type {
+  AutoModConfig,
   RoleReward,
+  ServerLogConfig,
   TicketPanelButton,
 } from "../providers/mongoose/schemas/guildConfig.schema";
 
-export type { TicketPanelButton };
+export type { AutoModConfig, ServerLogConfig, TicketPanelButton };
 
 export type GuildConfig = {
   guildId: string;
@@ -25,6 +27,8 @@ export type GuildConfig = {
   goodbyeEmbed?: EmbedConfig;
   ticketPanelEmbed?: EmbedConfig;
   ticketPanelButton?: TicketPanelButton;
+  autoMod?: AutoModConfig;
+  serverLog?: ServerLogConfig;
 };
 
 export type GuildConfigPatch = Partial<Omit<GuildConfig, "guildId">>;

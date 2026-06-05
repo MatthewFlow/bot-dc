@@ -79,7 +79,8 @@ Stores per-guild bot configuration.
 `verifiedRoleId`, `welcomeMessage`, `goodbyeMessage`, `roleRewards[]` (`{ level, roleId }`),
 `modLogChannelId`, `adminRoleId`, `ticketSupportRoleId`, `ticketSupportRoleId2`,
 `ticketLogChannelId`, `welcomeEmbed`, `goodbyeEmbed`, `ticketPanelEmbed` (all `EmbedConfig`),
-`ticketPanelButton` (`{ label?, emoji? }`).
+`ticketPanelButton` (`{ label?, emoji? }`), `autoMod` (`AutoModConfig` — filters, action,
+exemptions), `serverLog` (`ServerLogConfig` — channel + per-category event toggles).
 
 ### `xpRepository`
 

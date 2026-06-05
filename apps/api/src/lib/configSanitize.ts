@@ -1,4 +1,4 @@
-import type { EmbedConfig } from "@jurassic-haven/db";
+import type { AutoModConfig, EmbedConfig, ServerLogConfig } from "@jurassic-haven/db";
 
 const ID_FIELDS = new Set([
   "welcomeChannelId",
@@ -95,6 +95,57 @@ function sanitizeButton(v: unknown): { label?: string; emoji?: string } | null |
   return { label: clampStr(o.label, 80), emoji: clampStr(o.emoji, 64) };
 }
 
+function strArray(v: unknown, maxItems: number, itemMax: number): string[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .filter((x): x is string => typeof x === "string")
+    .map((s) => s.trim().slice(0, itemMax))
+    .filter(Boolean)
+    .slice(0, maxItems);
+}
+
+function clampNum(v: unknown, def: number, min: number, max: number): number {
+  const n = Number(v);
+  return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.floor(n))) : def;
+}
+
+function sanitizeAutoMod(v: unknown): AutoModConfig | undefined {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return undefined;
+  const o = v as Record<string, unknown>;
+  const action = o.action === "warn" || o.action === "mute" ? o.action : "delete";
+  return {
+    enabled: o.enabled === true,
+    blockInvites: o.blockInvites === true,
+    blockLinks: o.blockLinks === true,
+    bannedWords: strArray(o.bannedWords, 200, 100),
+    spamEnabled: o.spamEnabled === true,
+    spamMaxMessages: clampNum(o.spamMaxMessages, 5, 2, 50),
+    spamWindowSeconds: clampNum(o.spamWindowSeconds, 5, 1, 60),
+    exemptRoleIds: strArray(o.exemptRoleIds, 50, 32),
+    exemptChannelIds: strArray(o.exemptChannelIds, 50, 32),
+    action,
+    // Discord timeout caps at 28 days.
+    muteDurationSeconds: clampNum(o.muteDurationSeconds, 300, 10, 2_419_200),
+  };
+}
+
+function sanitizeServerLog(v: unknown): ServerLogConfig | undefined {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return undefined;
+  const o = v as Record<string, unknown>;
+  const bool = (x: unknown, def: boolean) => (typeof x === "boolean" ? x : def);
+  return {
+    enabled: o.enabled === true,
+    channelId:
+      typeof o.channelId === "string" && o.channelId.length <= 32 ? o.channelId : undefined,
+    messageDelete: bool(o.messageDelete, true),
+    messageEdit: bool(o.messageEdit, true),
+    memberJoin: bool(o.memberJoin, true),
+    memberLeave: bool(o.memberLeave, true),
+    roleChanges: bool(o.roleChanges, true),
+    nicknameChanges: bool(o.nicknameChanges, true),
+  };
+}
+
 /**
  * Validates and clamps an allowlisted config patch before it reaches the DB.
  * `null` clears a field; malformed values are dropped rather than stored raw.
@@ -122,6 +173,12 @@ export function sanitizeConfigPatch(
     } else if (key === "ticketPanelButton") {
       const b = sanitizeButton(value);
       if (b !== undefined) out[key] = b;
+    } else if (key === "autoMod") {
+      const a = sanitizeAutoMod(value);
+      if (a) out[key] = a;
+    } else if (key === "serverLog") {
+      const s = sanitizeServerLog(value);
+      if (s) out[key] = s;
     }
   }
 
