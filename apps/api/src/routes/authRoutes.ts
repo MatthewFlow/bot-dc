@@ -7,6 +7,14 @@ import { sessions } from "../lib/sessions";
 const DISCORD_API = "https://discord.com/api/v10";
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
+// Ciasteczka Secure działają tylko po HTTPS. Domyślnie wł. w produkcji (wdrożenie z domeną/TLS),
+// ale przy wdrożeniu na samym IP po HTTP trzeba ustawić COOKIE_SECURE=false, inaczej przeglądarka
+// odrzuci ciasteczko logowania i nie da się zalogować.
+const COOKIE_SECURE =
+  process.env.COOKIE_SECURE != null
+    ? process.env.COOKIE_SECURE === "true"
+    : process.env.NODE_ENV === "production";
+
 export const authRoutes = new Hono();
 
 authRoutes.get("/discord", (c) => {
@@ -21,7 +29,7 @@ authRoutes.get("/discord", (c) => {
 
   setCookie(c, "oauth_state", state, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: COOKIE_SECURE,
     path: "/",
     maxAge: 300,
     sameSite: "Lax",
@@ -128,7 +136,7 @@ authRoutes.get("/callback", async (c) => {
 
   setCookie(c, "jh_token", jwt, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: COOKIE_SECURE,
     path: "/",
     maxAge: SESSION_TTL_MS / 1000,
     sameSite: "Lax",

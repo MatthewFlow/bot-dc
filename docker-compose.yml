@@ -43,9 +43,10 @@ services:
       DISCORD_TOKEN: ${DISCORD_TOKEN}
       DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
       DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
-      DISCORD_REDIRECT_URI: "https://${DOMAIN}/api/auth/callback"
-      PANEL_URL: "https://${DOMAIN}"
-      CORS_ORIGINS: "https://${DOMAIN}"
+      DISCORD_REDIRECT_URI: "${PUBLIC_URL}/api/auth/callback"
+      PANEL_URL: "${PUBLIC_URL}"
+      CORS_ORIGINS: "${PUBLIC_URL}"
+      COOKIE_SECURE: "${COOKIE_SECURE:-true}" # ustaw false przy wdrożeniu na samym IP po HTTP
     depends_on:
       mongo:
         condition: service_healthy # start dopiero gdy baza odpowiada
@@ -91,7 +92,8 @@ services:
       - "80:80"
       - "443:443"
     environment:
-      DOMAIN: ${DOMAIN}
+      # Adres, na którym Caddy serwuje: domena/host => auto-HTTPS; ":80" => sam HTTP (IP bez domeny).
+      CADDY_SITE: ${CADDY_SITE}
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy-data:/data

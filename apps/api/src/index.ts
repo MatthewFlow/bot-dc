@@ -4,6 +4,7 @@ import { cors } from "hono/cors";
 
 import { rateLimit } from "./middleware/rateLimit";
 import { authRoutes } from "./routes/authRoutes";
+import { feedbackRoutes } from "./routes/feedback";
 import { guildRoutes } from "./routes/guilds";
 import { moderationRoutes } from "./routes/moderation";
 import { reactionRoleRoutes } from "./routes/reactionRoles";
@@ -36,11 +37,14 @@ app.use(
 // Blanket abuse protection (per IP). Auth endpoints get a stricter limit.
 app.use("*", rateLimit({ windowMs: 10_000, max: 120 }));
 app.use("/auth/*", rateLimit({ windowMs: 60_000, max: 20 }));
+// Antyspam na wysyłkę feedbacku (per IP).
+app.use("/feedback", rateLimit({ windowMs: 60_000, max: 10 }));
 
 app.route("/auth", authRoutes);
 app.route("/guilds", guildRoutes);
 app.route("/guilds", reactionRoleRoutes);
 app.route("/guilds", moderationRoutes);
+app.route("/feedback", feedbackRoutes);
 
 app.get("/health", (c) => c.json({ ok: true }));
 

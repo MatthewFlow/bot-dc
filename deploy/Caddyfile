@@ -1,8 +1,9 @@
-# Reverse proxy z automatycznym HTTPS (Let's Encrypt).
-# {$DOMAIN} jest podstawiane ze zmiennej środowiskowej kontenera Caddy.
-# Wymaga: rekord A domeny wskazujący na IP VPS + otwarte porty 80 i 443.
+# Reverse proxy. {$CADDY_SITE} ze zmiennej środowiskowej kontenera Caddy:
+#   - domena/host (np. twojadomena.pl lub 203-0-113-5.nip.io) => automatyczny HTTPS (Let's Encrypt)
+#   - ":80"                                                    => sam HTTP (VPS na samym IP, bez domeny)
+# HTTPS wymaga hosta wskazującego na IP VPS + otwartych portów 80 i 443.
 
-{$DOMAIN} {
+{$CADDY_SITE} {
 	encode gzip
 
 	# API: /api/* → kontener api (prefiks /api jest usuwany przez handle_path)
@@ -16,6 +17,7 @@
 	}
 }
 
-# ── Lokalny test bez domeny ──────────────────────────────────────────────────
-# Ustaw w .env: DOMAIN=:80  (HTTP, bez certyfikatu). UWAGA: bez HTTPS ciasteczko
-# logowania (Secure) nie zostanie zapisane — logowanie zadziała tylko na HTTPS.
+# ── Tryb bez domeny (sam IP) ─────────────────────────────────────────────────
+# W .env: CADDY_SITE=:80, PUBLIC_URL=http://IP_VPS, COOKIE_SECURE=false.
+# UWAGA: po HTTP logowanie działa tylko z COOKIE_SECURE=false (mniej bezpieczne).
+# Zalecane mimo braku domeny: użyj hosta <IP-z-myślnikami>.nip.io → darmowy HTTPS.
