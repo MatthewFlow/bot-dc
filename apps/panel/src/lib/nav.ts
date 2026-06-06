@@ -2,6 +2,7 @@ import {
   DoorOpen,
   LayoutDashboard,
   type LucideIcon,
+  MessageSquareHeart,
   ScrollText,
   Settings,
   ShieldAlert,
@@ -87,6 +88,12 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/settings",
     desc: "Rola admina i kanał logów moderacji",
     icon: Settings,
+  },
+  {
+    label: "Feedback",
+    href: "/feedback",
+    desc: "Podziel się uwagami i sugestiami",
+    icon: MessageSquareHeart,
   },
 ];
 

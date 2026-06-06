@@ -2,6 +2,7 @@ export { connectDb } from "./client";
 export type { DiscordEmbed, EmbedConfig, EmbedFieldConfig } from "./embed";
 export { isEmbedEmpty, toDiscordEmbed } from "./embed";
 export {
+  feedbackRepository,
   guildConfigRepository,
   modActionRepository,
   reactionRoleRepository,
@@ -10,7 +11,11 @@ export {
   warnRepository,
   xpRepository,
 } from "./providers/mongoose/providers";
-export type { ISessionRepository } from "./repositories/sessionRepository";
+export type {
+  AddFeedbackOpts,
+  Feedback,
+  FeedbackCategory,
+} from "./repositories/feedbackRepository";
 export type {
   AutoModConfig,
   GuildConfig,
@@ -28,6 +33,7 @@ export type {
   ReactionRole,
   ReactionRoleEntry,
 } from "./repositories/reactionRoleRepository";
+export type { ISessionRepository } from "./repositories/sessionRepository";
 export type {
   CreateTicketOpts,
   Ticket,

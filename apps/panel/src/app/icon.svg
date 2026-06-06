@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1f2535"/>
+      <stop offset="1" stop-color="#12151f"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <rect x="1.75" y="1.75" width="60.5" height="60.5" rx="12.25" fill="none"
+        stroke="#d4a843" stroke-opacity="0.3" stroke-width="1.5"/>
+  <text x="32" y="34" text-anchor="middle" dominant-baseline="central"
+        font-family="'Segoe UI', system-ui, -apple-system, Arial, sans-serif"
+        font-size="33" font-weight="700" letter-spacing="-1.5" fill="#d4a843">JH</text>
+</svg>

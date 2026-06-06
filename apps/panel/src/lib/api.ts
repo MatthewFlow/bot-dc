@@ -200,6 +200,26 @@ export type LeaderboardEntry = {
   level: number;
 };
 
+export type FeedbackCategory = "bug" | "suggestion" | "other";
+
+export type Feedback = {
+  id: string;
+  userId: string;
+  username: string;
+  guildId?: string;
+  category: FeedbackCategory;
+  message: string;
+  rating?: number;
+  createdAt: string;
+};
+
+export type FeedbackInput = {
+  category: FeedbackCategory;
+  message: string;
+  rating?: number;
+  guildId?: string;
+};
+
 export class TokenExpiredError extends Error {
   constructor() {
     super("Token expired");
@@ -517,4 +537,20 @@ export async function getGuildStats(guildId: string): Promise<GuildStats> {
   const data = (await res.json()) as GuildStats;
   setCached(key, data);
   return data;
+}
+
+export async function submitFeedback(input: FeedbackInput): Promise<Feedback> {
+  const res = await fetchWithRetry(`${API_URL}/feedback`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error("Failed to submit feedback");
+  return res.json();
+}
+
+export async function getMyFeedback(): Promise<Feedback[]> {
+  const res = await fetchWithRetry(`${API_URL}/feedback/mine`);
+  if (!res.ok) throw new Error("Failed to fetch feedback");
+  return res.json();
 }
