@@ -23,6 +23,17 @@ export type ServerLogConfig = {
   memberLeave: boolean;
   roleChanges: boolean;
   nicknameChanges: boolean;
+  exemptRoleIds: string[];
+  exemptChannelIds: string[];
+};
+
+/** Dodatkowe ustawienia systemu poziomów. Brak obiektu = wartości domyślne. */
+export type LevelingConfig = {
+  xpMultiplier: number;
+  noXpChannelIds: string[];
+  noXpRoleIds: string[];
+  levelUpEnabled: boolean;
+  levelUpDm: boolean;
 };
 
 export type AutoModAction = "delete" | "warn" | "mute";
@@ -61,8 +72,12 @@ export type GuildConfigDocument = {
   goodbyeEmbed?: EmbedConfig;
   ticketPanelEmbed?: EmbedConfig;
   ticketPanelButton?: TicketPanelButton;
+  levelUpEmbed?: EmbedConfig;
   autoMod?: AutoModConfig;
   serverLog?: ServerLogConfig;
+  leveling?: LevelingConfig;
+  /** Nazwy komend wyłączonych na tym serwerze (egzekwowane w runtime przez bota). */
+  disabledCommands?: string[];
 };
 
 const roleRewardSchema = new Schema<RoleReward>(
@@ -125,6 +140,17 @@ const autoModSchema = new Schema<AutoModConfig>(
   { _id: false },
 );
 
+const levelingSchema = new Schema<LevelingConfig>(
+  {
+    xpMultiplier: { type: Number, default: 1 },
+    noXpChannelIds: { type: [String], default: [] },
+    noXpRoleIds: { type: [String], default: [] },
+    levelUpEnabled: { type: Boolean, default: true },
+    levelUpDm: { type: Boolean, default: false },
+  },
+  { _id: false },
+);
+
 const serverLogSchema = new Schema<ServerLogConfig>(
   {
     enabled: { type: Boolean, default: false },
@@ -135,6 +161,8 @@ const serverLogSchema = new Schema<ServerLogConfig>(
     memberLeave: { type: Boolean, default: true },
     roleChanges: { type: Boolean, default: true },
     nicknameChanges: { type: Boolean, default: true },
+    exemptRoleIds: { type: [String], default: [] },
+    exemptChannelIds: { type: [String], default: [] },
   },
   { _id: false },
 );
@@ -159,8 +187,11 @@ const guildConfigSchema = new Schema<GuildConfigDocument>(
     goodbyeEmbed: { type: embedSchema, default: undefined },
     ticketPanelEmbed: { type: embedSchema, default: undefined },
     ticketPanelButton: { type: ticketPanelButtonSchema, default: undefined },
+    levelUpEmbed: { type: embedSchema, default: undefined },
     autoMod: { type: autoModSchema, default: undefined },
     serverLog: { type: serverLogSchema, default: undefined },
+    leveling: { type: levelingSchema, default: undefined },
+    disabledCommands: { type: [String], default: undefined },
   },
   { versionKey: false },
 );

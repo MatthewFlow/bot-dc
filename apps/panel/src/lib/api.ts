@@ -59,6 +59,16 @@ export type ServerLogConfig = {
   memberLeave: boolean;
   roleChanges: boolean;
   nicknameChanges: boolean;
+  exemptRoleIds: string[];
+  exemptChannelIds: string[];
+};
+
+export type LevelingConfig = {
+  xpMultiplier: number;
+  noXpChannelIds: string[];
+  noXpRoleIds: string[];
+  levelUpEnabled: boolean;
+  levelUpDm: boolean;
 };
 
 export type GuildConfig = {
@@ -79,8 +89,12 @@ export type GuildConfig = {
   goodbyeEmbed?: EmbedConfig;
   ticketPanelEmbed?: EmbedConfig;
   ticketPanelButton?: TicketPanelButton;
+  levelUpEmbed?: EmbedConfig;
   autoMod?: AutoModConfig;
   serverLog?: ServerLogConfig;
+  leveling?: LevelingConfig;
+  /** Nazwy komend wyłączonych na tym serwerze. */
+  disabledCommands?: string[];
 };
 
 export type ModActionType = "warn" | "mute" | "unmute" | "kick" | "ban" | "clearwarns";
@@ -221,6 +235,64 @@ async function fetchWithRetry(
   return res;
 }
 
+// ── Client-side read cache (per session) ────────────────────────────────────
+// Config/roles/channels rarely change and roles/channels proxy to Discord (slow),
+// so caching them makes switching dashboard pages instant. Invalidated on writes.
+// Config/role/channel rzadko się zmieniają, a role/channels proxują do Discorda
+// (wolno). 5 min TTL sprawia, że przełączanie między stronami serwera jest
+// natychmiastowe; mutacje (tworzenie kanału/roli, zapis configu) i tak czyszczą cache.
+const READ_CACHE_TTL = 300_000;
+const readCache = new Map<string, { data: unknown; at: number }>();
+// Dedup równoległych żądań tego samego klucza (np. hover-prefetch + mount strony).
+const inflight = new Map<string, Promise<unknown>>();
+
+function getCached<T>(key: string): T | undefined {
+  const hit = readCache.get(key);
+  if (hit && Date.now() - hit.at < READ_CACHE_TTL) return hit.data as T;
+  return undefined;
+}
+function setCached(key: string, data: unknown): void {
+  readCache.set(key, { data, at: Date.now() });
+}
+
+/**
+ * Cache + dedup: zwraca świeży cache, dołącza do trwającego żądania, albo startuje
+ * nowe. Dzięki temu prefetch z sidebaru i fetch przy wejściu na stronę nie dublują
+ * tego samego zapytania do (wolnego) proxy Discorda.
+ */
+function cachedFetch<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
+  const cached = getCached<T>(key);
+  if (cached !== undefined) return Promise.resolve(cached);
+
+  const existing = inflight.get(key) as Promise<T> | undefined;
+  if (existing) return existing;
+
+  const p = (async () => {
+    try {
+      const data = await fetcher();
+      setCached(key, data);
+      return data;
+    } finally {
+      inflight.delete(key);
+    }
+  })();
+  inflight.set(key, p);
+  return p;
+}
+
+/** Drops cached reads for a guild (one kind, or all). Call after mutations. */
+export function invalidateGuildCache(
+  guildId: string,
+  kind?: "config" | "channels" | "roles",
+): void {
+  if (kind) readCache.delete(`${kind}:${guildId}`);
+  else {
+    readCache.delete(`config:${guildId}`);
+    readCache.delete(`channels:${guildId}`);
+    readCache.delete(`roles:${guildId}`);
+  }
+}
+
 export async function getMe(): Promise<User> {
   const res = await fetch(`${API_URL}/auth/me`, BASE);
   handleUnauthorized(res);
@@ -241,21 +313,31 @@ export async function getGuilds(): Promise<Guild[]> {
   return res.json();
 }
 
-export async function getGuildConfig(guildId: string): Promise<GuildConfig> {
-  const res = await fetch(`${API_URL}/guilds/${guildId}/config`, BASE);
-  handleUnauthorized(res);
-  if (!res.ok) throw new Error("Failed to fetch config");
-  return res.json();
+export function getGuildConfig(guildId: string): Promise<GuildConfig> {
+  return cachedFetch(`config:${guildId}`, async () => {
+    const res = await fetch(`${API_URL}/guilds/${guildId}/config`, BASE);
+    handleUnauthorized(res);
+    if (!res.ok) throw new Error("Failed to fetch config");
+    return (await res.json()) as GuildConfig;
+  });
 }
 
 /** Patch konfiguracji — embedy mogą być `null`, by je wyczyścić (powrót do trybu tekstowego). */
 export type GuildConfigUpdate = Partial<
-  Omit<GuildConfig, "welcomeEmbed" | "goodbyeEmbed" | "ticketPanelEmbed" | "ticketPanelButton">
+  Omit<
+    GuildConfig,
+    | "welcomeEmbed"
+    | "goodbyeEmbed"
+    | "ticketPanelEmbed"
+    | "ticketPanelButton"
+    | "levelUpEmbed"
+  >
 > & {
   welcomeEmbed?: EmbedConfig | null;
   goodbyeEmbed?: EmbedConfig | null;
   ticketPanelEmbed?: EmbedConfig | null;
   ticketPanelButton?: TicketPanelButton | null;
+  levelUpEmbed?: EmbedConfig | null;
 };
 
 export async function updateGuildConfig(
@@ -270,18 +352,34 @@ export async function updateGuildConfig(
   });
   handleUnauthorized(res);
   if (!res.ok) throw new Error("Failed to update config");
+  invalidateGuildCache(guildId, "config");
 }
 
-export async function getChannels(guildId: string): Promise<Channel[]> {
-  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/channels`);
-  if (!res.ok) throw new Error("Failed to fetch channels");
-  return res.json();
+export function getChannels(guildId: string): Promise<Channel[]> {
+  return cachedFetch(`channels:${guildId}`, async () => {
+    const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/channels`);
+    if (!res.ok) throw new Error("Failed to fetch channels");
+    return (await res.json()) as Channel[];
+  });
 }
 
-export async function getRoles(guildId: string): Promise<Role[]> {
-  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/roles`);
-  if (!res.ok) throw new Error("Failed to fetch roles");
-  return res.json();
+export function getRoles(guildId: string): Promise<Role[]> {
+  return cachedFetch(`roles:${guildId}`, async () => {
+    const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/roles`);
+    if (!res.ok) throw new Error("Failed to fetch roles");
+    return (await res.json()) as Role[];
+  });
+}
+
+/**
+ * Rozgrzewa cache współdzielony (config + role + kanały) dla serwera, żeby kolejne
+ * wejścia na podstrony były natychmiastowe. Fire-and-forget — błędy ujawnią się
+ * dopiero, gdy dana strona faktycznie poprosi o te dane.
+ */
+export function prefetchGuildData(guildId: string): void {
+  void getGuildConfig(guildId).catch(() => {});
+  void getChannels(guildId).catch(() => {});
+  void getRoles(guildId).catch(() => {});
 }
 
 export async function createChannel(guildId: string, name: string): Promise<Channel> {
@@ -291,6 +389,7 @@ export async function createChannel(guildId: string, name: string): Promise<Chan
     body: JSON.stringify({ name }),
   });
   if (!res.ok) throw new Error("Failed to create channel");
+  invalidateGuildCache(guildId, "channels");
   return res.json();
 }
 
@@ -301,18 +400,27 @@ export async function createRole(guildId: string, name: string): Promise<Role> {
     body: JSON.stringify({ name }),
   });
   if (!res.ok) throw new Error("Failed to create role");
+  invalidateGuildCache(guildId, "roles");
   return res.json();
 }
 
 export async function getLeaderboard(
   guildId: string,
   limit = 10,
+  force = false,
 ): Promise<LeaderboardEntry[]> {
+  const key = `leaderboard:${guildId}:${limit}`;
+  if (!force) {
+    const cached = getCached<LeaderboardEntry[]>(key);
+    if (cached) return cached;
+  }
   const res = await fetchWithRetry(
     `${API_URL}/guilds/${guildId}/leaderboard?limit=${limit}`,
   );
   if (!res.ok) throw new Error("Failed to fetch leaderboard");
-  return res.json();
+  const data = (await res.json()) as LeaderboardEntry[];
+  setCached(key, data);
+  return data;
 }
 
 export async function getReactionRoles(guildId: string): Promise<ReactionRole[]> {
@@ -401,7 +509,12 @@ export async function reopenTicket(guildId: string, threadId: string): Promise<v
 }
 
 export async function getGuildStats(guildId: string): Promise<GuildStats> {
+  const key = `stats:${guildId}`;
+  const cached = getCached<GuildStats>(key);
+  if (cached) return cached;
   const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/stats`);
   if (!res.ok) throw new Error("Failed to fetch guild stats");
-  return res.json();
+  const data = (await res.json()) as GuildStats;
+  setCached(key, data);
+  return data;
 }

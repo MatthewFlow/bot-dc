@@ -1,4 +1,9 @@
-import type { AutoModConfig, EmbedConfig, ServerLogConfig } from "@jurassic-haven/db";
+import type {
+  AutoModConfig,
+  EmbedConfig,
+  LevelingConfig,
+  ServerLogConfig,
+} from "@jurassic-haven/db";
 
 const ID_FIELDS = new Set([
   "welcomeChannelId",
@@ -16,7 +21,12 @@ const TEXT_FIELDS: Record<string, number> = {
   welcomeMessage: 2000,
   goodbyeMessage: 2000,
 };
-const EMBED_FIELDS = new Set(["welcomeEmbed", "goodbyeEmbed", "ticketPanelEmbed"]);
+const EMBED_FIELDS = new Set([
+  "welcomeEmbed",
+  "goodbyeEmbed",
+  "ticketPanelEmbed",
+  "levelUpEmbed",
+]);
 
 function clampStr(v: unknown, max: number): string | undefined {
   if (typeof v !== "string") return undefined;
@@ -129,6 +139,24 @@ function sanitizeAutoMod(v: unknown): AutoModConfig | undefined {
   };
 }
 
+function clampMultiplier(v: unknown): number {
+  const n = Number(v);
+  if (!Number.isFinite(n)) return 1;
+  return Math.min(10, Math.max(0.1, Math.round(n * 10) / 10));
+}
+
+function sanitizeLeveling(v: unknown): LevelingConfig | undefined {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return undefined;
+  const o = v as Record<string, unknown>;
+  return {
+    xpMultiplier: clampMultiplier(o.xpMultiplier),
+    noXpChannelIds: strArray(o.noXpChannelIds, 100, 32),
+    noXpRoleIds: strArray(o.noXpRoleIds, 100, 32),
+    levelUpEnabled: o.levelUpEnabled !== false,
+    levelUpDm: o.levelUpDm === true,
+  };
+}
+
 function sanitizeServerLog(v: unknown): ServerLogConfig | undefined {
   if (!v || typeof v !== "object" || Array.isArray(v)) return undefined;
   const o = v as Record<string, unknown>;
@@ -143,6 +171,8 @@ function sanitizeServerLog(v: unknown): ServerLogConfig | undefined {
     memberLeave: bool(o.memberLeave, true),
     roleChanges: bool(o.roleChanges, true),
     nicknameChanges: bool(o.nicknameChanges, true),
+    exemptRoleIds: strArray(o.exemptRoleIds, 50, 32),
+    exemptChannelIds: strArray(o.exemptChannelIds, 50, 32),
   };
 }
 
@@ -179,6 +209,12 @@ export function sanitizeConfigPatch(
     } else if (key === "serverLog") {
       const s = sanitizeServerLog(value);
       if (s) out[key] = s;
+    } else if (key === "leveling") {
+      const l = sanitizeLeveling(value);
+      if (l) out[key] = l;
+    } else if (key === "disabledCommands") {
+      // Lista nazw wyłączonych komend; nazwy slash-komend to [a-z0-9_], do 32 znaków.
+      out[key] = strArray(value, 100, 32);
     }
   }
 

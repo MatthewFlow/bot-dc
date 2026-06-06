@@ -15,6 +15,7 @@ import { RoleSelect } from "@/components/RoleSelect";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton, SkeletonRow } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
+import { useAutoSave } from "@/hooks/useAutoSave";
 import { useGuildLoad } from "@/hooks/useGuildLoad";
 import type { Channel, GuildConfig, Role, Ticket, TicketStatus } from "@/lib/api";
 import {
@@ -210,6 +211,18 @@ export default function TicketsPage() {
   const visibleTickets =
     filter === "all" ? tickets : tickets.filter((t) => t.status === filter);
 
+  const { status: autoSaveStatus } = useAutoSave(
+    JSON.stringify({
+      ticketSupportRoleId: config.ticketSupportRoleId,
+      ticketSupportRoleId2: config.ticketSupportRoleId2,
+      ticketLogChannelId: config.ticketLogChannelId,
+      ticketPanelEmbed: config.ticketPanelEmbed,
+      ticketPanelButton: config.ticketPanelButton,
+    }),
+    handleSave,
+    !loading,
+  );
+
   if (loading) return <TicketsSkeleton />;
 
   return (
@@ -245,7 +258,12 @@ export default function TicketsPage() {
               Embed i przycisk wysyłane przez „Wyślij panel" oraz /ticket_setup.
             </p>
           </div>
-          <SaveButton onClick={handleSave} saving={saving} className="px-4 py-1.5 text-xs" />
+          <SaveButton
+            onClick={handleSave}
+            saving={saving}
+            autoSaveStatus={autoSaveStatus}
+            className="px-4 py-1.5 text-xs"
+          />
         </div>
         <div className="grid grid-cols-1 gap-6 p-6 lg:grid-cols-2">
           <div>
@@ -256,13 +274,18 @@ export default function TicketsPage() {
             />
             <div className="mt-4 grid grid-cols-[1fr_auto] gap-3 border-t border-white/5 pt-4">
               <div>
-                <label className="mb-1 block text-xs text-gray-500">Etykieta przycisku</label>
+                <label className="mb-1 block text-xs text-gray-500">
+                  Etykieta przycisku
+                </label>
                 <input
                   value={config.ticketPanelButton?.label ?? ""}
                   onChange={(e) =>
                     setConfig((c) => ({
                       ...c,
-                      ticketPanelButton: { ...c.ticketPanelButton, label: e.target.value },
+                      ticketPanelButton: {
+                        ...c.ticketPanelButton,
+                        label: e.target.value,
+                      },
                     }))
                   }
                   maxLength={80}
@@ -277,7 +300,10 @@ export default function TicketsPage() {
                   onChange={(e) =>
                     setConfig((c) => ({
                       ...c,
-                      ticketPanelButton: { ...c.ticketPanelButton, emoji: e.target.value },
+                      ticketPanelButton: {
+                        ...c.ticketPanelButton,
+                        emoji: e.target.value,
+                      },
                     }))
                   }
                   maxLength={8}
@@ -322,11 +348,18 @@ export default function TicketsPage() {
           <div className="rounded-xl bg-[#1a1f2e]">
             <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
               <p className="text-sm font-semibold text-white">Konfiguracja</p>
-              <SaveButton onClick={handleSave} saving={saving} className="px-4 py-1.5 text-xs" />
+              <SaveButton
+                onClick={handleSave}
+                saving={saving}
+                autoSaveStatus={autoSaveStatus}
+                className="px-4 py-1.5 text-xs"
+              />
             </div>
             <div className="flex flex-col gap-4 p-6">
               <div>
-                <label className="mb-1 block text-xs text-gray-500">Rola obsługi #1</label>
+                <label className="mb-1 block text-xs text-gray-500">
+                  Rola obsługi #1
+                </label>
                 <RoleSelect
                   value={config.ticketSupportRoleId ?? ""}
                   onChange={(v) => setConfig((c) => ({ ...c, ticketSupportRoleId: v }))}
@@ -348,7 +381,9 @@ export default function TicketsPage() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs text-gray-500">Rola obsługi #2</label>
+                <label className="mb-1 block text-xs text-gray-500">
+                  Rola obsługi #2
+                </label>
                 <RoleSelect
                   value={config.ticketSupportRoleId2 ?? ""}
                   onChange={(v) => setConfig((c) => ({ ...c, ticketSupportRoleId2: v }))}
@@ -362,7 +397,9 @@ export default function TicketsPage() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs text-gray-500">Kanał logów ticketów</label>
+                <label className="mb-1 block text-xs text-gray-500">
+                  Kanał logów ticketów
+                </label>
                 <div className="flex flex-wrap items-center gap-2">
                   <ChannelSelect
                     value={config.ticketLogChannelId ?? ""}
@@ -375,7 +412,9 @@ export default function TicketsPage() {
                     guildId={guildId}
                     defaultName="ticket-logi"
                     onCreated={(ch) => {
-                      setChannels((prev) => [...prev, ch].sort((a, b) => a.name.localeCompare(b.name)));
+                      setChannels((prev) =>
+                        [...prev, ch].sort((a, b) => a.name.localeCompare(b.name)),
+                      );
                       setConfig((c) => ({ ...c, ticketLogChannelId: ch.id }));
                     }}
                   />
@@ -444,7 +483,9 @@ export default function TicketsPage() {
             <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
               <p className="text-sm font-semibold text-white">
                 Tickety
-                <span className="ml-2 text-xs text-gray-500">{visibleTickets.length}</span>
+                <span className="ml-2 text-xs text-gray-500">
+                  {visibleTickets.length}
+                </span>
               </p>
               <div className="flex gap-1">
                 {(["all", "pending", "open", "closed"] as StatusFilter[]).map((s) => (
@@ -484,7 +525,10 @@ export default function TicketsPage() {
                     {/* Nagłówek: status + autor */}
                     <div className="flex flex-wrap items-center gap-2">
                       <StatusBadge status={ticket.status} />
-                      <Avatar src={ticket.avatar} name={ticket.username ?? ticket.userId} />
+                      <Avatar
+                        src={ticket.avatar}
+                        name={ticket.username ?? ticket.userId}
+                      />
                       <span className="text-sm">
                         <UserName name={ticket.username} id={ticket.userId} />
                       </span>
@@ -500,7 +544,10 @@ export default function TicketsPage() {
                       {ticket.assignedTo ? (
                         <span>
                           Przejął:{" "}
-                          <UserName name={ticket.assignedToUsername} id={ticket.assignedTo} />
+                          <UserName
+                            name={ticket.assignedToUsername}
+                            id={ticket.assignedTo}
+                          />
                         </span>
                       ) : ticket.status === "pending" ? (
                         <span className="text-yellow-500/80">

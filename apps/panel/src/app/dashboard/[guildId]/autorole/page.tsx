@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { RoleSelect } from "@/components/RoleSelect";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
+import { useAutoSave } from "@/hooks/useAutoSave";
 import { useGuildLoad } from "@/hooks/useGuildLoad";
 import type { GuildConfig, Role } from "@/lib/api";
 import { getGuildConfig, getRoles, updateGuildConfig } from "@/lib/api";
@@ -50,7 +51,9 @@ export default function AutoRolePage() {
 
   const [config, setConfig] = useState<GuildConfig>({});
   const [savedRoleId, setSavedRoleId] = useState<string | undefined>(undefined);
-  const [savedVerifiedRoleId, setSavedVerifiedRoleId] = useState<string | undefined>(undefined);
+  const [savedVerifiedRoleId, setSavedVerifiedRoleId] = useState<string | undefined>(
+    undefined,
+  );
   const [roles, setRoles] = useState<Role[]>([]);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -86,6 +89,15 @@ export default function AutoRolePage() {
     }
   }
 
+  const { status: autoSaveStatus } = useAutoSave(
+    JSON.stringify({
+      joinRoleId: config.joinRoleId,
+      verifiedRoleId: config.verifiedRoleId,
+    }),
+    handleSave,
+    !loading,
+  );
+
   const hasChanges =
     config.joinRoleId !== savedRoleId || config.verifiedRoleId !== savedVerifiedRoleId;
   const activeRole = roles.find((r) => r.id === savedRoleId);
@@ -112,14 +124,17 @@ export default function AutoRolePage() {
               <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                 Nadawane automatycznie nowym członkom
               </p>
-              <p className="text-base font-semibold text-white">Auto-role przy dołączeniu</p>
+              <p className="text-base font-semibold text-white">
+                Auto-role przy dołączeniu
+              </p>
             </div>
             <label className="relative inline-flex cursor-pointer items-center">
               <input
                 type="checkbox"
                 checked={!!config.joinRoleId}
                 onChange={(e) => {
-                  if (!e.target.checked) setConfig((c) => ({ ...c, joinRoleId: undefined }));
+                  if (!e.target.checked)
+                    setConfig((c) => ({ ...c, joinRoleId: undefined }));
                 }}
                 className="peer sr-only"
               />
@@ -147,7 +162,9 @@ export default function AutoRolePage() {
                 guildId={guildId}
                 defaultName="Niezweryfikowany"
                 onCreated={(role) => {
-                  setRoles((prev) => [...prev, role].sort((a, b) => b.position - a.position));
+                  setRoles((prev) =>
+                    [...prev, role].sort((a, b) => b.position - a.position),
+                  );
                   setConfig((c) => ({ ...c, joinRoleId: role.id }));
                 }}
               />
@@ -156,7 +173,9 @@ export default function AutoRolePage() {
               <div className="mt-4 flex items-center gap-3 rounded-lg bg-[#0f1117] px-4 py-3">
                 <span className="h-2.5 w-2.5 rounded-full bg-[#5865F2]" />
                 <span className="text-sm text-white">@{activeRole.name}</span>
-                <span className="ml-auto text-xs text-gray-500">Aktywna rola przy dołączeniu</span>
+                <span className="ml-auto text-xs text-gray-500">
+                  Aktywna rola przy dołączeniu
+                </span>
               </div>
             )}
           </div>
@@ -166,13 +185,15 @@ export default function AutoRolePage() {
               Rola zweryfikowanego
             </p>
             <p className="mb-3 text-sm text-gray-400">
-              Gdy użytkownik zareaguje emoji w systemie Reaction Roles i ta rola zostanie mu
-              nadana — bot automatycznie odbierze rolę niezweryfikowanego.
+              Gdy użytkownik zareaguje emoji w systemie Reaction Roles i ta rola zostanie
+              mu nadana — bot automatycznie odbierze rolę niezweryfikowanego.
             </p>
             <div className="flex max-w-sm flex-wrap items-center gap-2">
               <RoleSelect
                 value={config.verifiedRoleId ?? ""}
-                onChange={(v) => setConfig((c) => ({ ...c, verifiedRoleId: v || undefined }))}
+                onChange={(v) =>
+                  setConfig((c) => ({ ...c, verifiedRoleId: v || undefined }))
+                }
                 roles={roles}
                 placeholder="— Nie ustawiono —"
                 className="min-w-0 flex-1 px-4 py-2.5"
@@ -181,7 +202,9 @@ export default function AutoRolePage() {
                 guildId={guildId}
                 defaultName="Zweryfikowany"
                 onCreated={(role) => {
-                  setRoles((prev) => [...prev, role].sort((a, b) => b.position - a.position));
+                  setRoles((prev) =>
+                    [...prev, role].sort((a, b) => b.position - a.position),
+                  );
                   setConfig((c) => ({ ...c, verifiedRoleId: role.id }));
                 }}
               />
@@ -206,6 +229,7 @@ export default function AutoRolePage() {
                 onClick={handleSave}
                 saving={saving}
                 saved={saved}
+                autoSaveStatus={autoSaveStatus}
                 disabled={!hasChanges}
                 className="px-6 py-2.5"
               />

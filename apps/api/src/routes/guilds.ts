@@ -38,8 +38,11 @@ const CONFIG_ALLOWED_FIELDS = [
   "goodbyeEmbed",
   "ticketPanelEmbed",
   "ticketPanelButton",
+  "levelUpEmbed",
   "autoMod",
   "serverLog",
+  "leveling",
+  "disabledCommands",
 ] as const;
 
 // Domyślny embed panelu ticketów, gdy guild nie skonfigurował własnego.

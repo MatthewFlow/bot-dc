@@ -25,6 +25,7 @@ import {
 import { handleCfgAddXp, handleTestGoodbye, handleTestWelcome } from "./test";
 import { handleTicketAdd, handleTicketClose, handleTicketSetup } from "../../tickets/handler";
 import { handleLeaderboard, handleLevel, handleProfile } from "./user";
+import { getCachedGuildConfig } from "../../utils/configCache";
 
 type Handler = (interaction: ChatInputCommandInteraction) => Promise<void>;
 
@@ -62,6 +63,17 @@ export async function handleCommand(interaction: ChatInputCommandInteraction) {
   if (!guildId || !interaction.guild) {
     await interaction.reply({
       content: "Ta komenda działa tylko na serwerze.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  // Komendy wyłączone na serwerze z panelu — odrzucamy zanim trafią do handlera.
+  // Config czytany przez 15s cache (ten sam co auto-mod), więc bez kosztu DB per komenda.
+  const cfg = await getCachedGuildConfig(guildId);
+  if (cfg?.disabledCommands?.includes(interaction.commandName)) {
+    await interaction.reply({
+      content: "Ta komenda jest wyłączona na tym serwerze.",
       ephemeral: true,
     });
     return;

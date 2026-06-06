@@ -3,6 +3,7 @@
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 
+import { prefetchGuildData } from "@/lib/api";
 import { NAV_ITEMS } from "@/lib/nav";
 
 export function Sidebar({ guildName }: { guildName: string }) {
@@ -47,6 +48,10 @@ export function Sidebar({ guildName }: { guildName: string }) {
             <button
               key={item.href}
               onClick={() => navigate(href)}
+              onMouseEnter={() => {
+                router.prefetch(href); // JS trasy
+                prefetchGuildData(guildId); // dane (jeśli cache wygasł)
+              }}
               className={`mb-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition outline-none focus-visible:ring-2 focus-visible:ring-[#d4a843]/40 ${
                 isActive
                   ? "bg-[#1a1f2e] text-[#d4a843]"

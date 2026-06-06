@@ -5,6 +5,20 @@ body {
   min-width: 320px;
 }
 
+/* Tailwind v4 no longer sets pointer cursor on buttons — restore it app-wide. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  label:has(input[type="checkbox"]:not(:disabled)),
+  summary {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
 @keyframes toast-in {
   from {
     opacity: 0;

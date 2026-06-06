@@ -1,5 +1,6 @@
 "use client";
 
+import { RotateCw, Search, Trash2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -152,33 +153,42 @@ export default function ModerationPage() {
       <div className="flex flex-col gap-6 lg:flex-row">
         {/* Config */}
         <div className="flex flex-col gap-4 lg:w-80">
-          <div className="rounded-xl bg-[#1a1f2e]">
+          <div className="rounded-xl border border-white/5 bg-[#1a1f2e]">
             <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
               <p className="text-sm font-semibold text-white">Konfiguracja</p>
-              <SaveButton onClick={handleSave} saving={saving} className="px-4 py-1.5 text-xs" />
+              <SaveButton
+                onClick={handleSave}
+                saving={saving}
+                className="px-4 py-1.5 text-xs"
+              />
             </div>
             <div className="flex flex-col gap-4 p-6">
               <div>
-                <label className="mb-1 block text-xs text-gray-500">Kanał logów moderacji</label>
-                <div className="flex items-center gap-2">
+                <label className="mb-1 block text-xs text-gray-500">
+                  Kanał logów moderacji
+                </label>
+                <div className="flex flex-wrap items-center gap-2">
                   <ChannelSelect
                     value={config.modLogChannelId ?? ""}
                     onChange={(v) => setConfig((c) => ({ ...c, modLogChannelId: v }))}
                     channels={channels}
                     placeholder="— Wybierz kanał —"
-                    className="flex-1 px-3 py-2.5"
+                    className="min-w-0 flex-1 px-3 py-2.5"
                   />
                   <CreateChannelButton
                     guildId={guildId}
                     defaultName="mod-logi"
                     onCreated={(ch) => {
-                      setChannels((prev) => [...prev, ch].sort((a, b) => a.name.localeCompare(b.name)));
+                      setChannels((prev) =>
+                        [...prev, ch].sort((a, b) => a.name.localeCompare(b.name)),
+                      );
                       setConfig((c) => ({ ...c, modLogChannelId: ch.id }));
                     }}
                   />
                 </div>
                 <p className="mt-1 text-xs text-gray-600">
-                  Tutaj trafiają logi: warn, mute, kick, ban. Audyt zapisuje się też do bazy.
+                  Tutaj trafiają logi: warn, mute, kick, ban. Audyt zapisuje się też do
+                  bazy.
                 </p>
               </div>
             </div>
@@ -196,7 +206,7 @@ export default function ModerationPage() {
 
         {/* Warnings */}
         <div className="flex-1">
-          <div className="rounded-xl bg-[#1a1f2e]">
+          <div className="rounded-xl border border-white/5 bg-[#1a1f2e]">
             <div className="border-b border-white/5 px-6 py-4">
               <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
                 Wyszukaj po Discord User ID
@@ -216,9 +226,12 @@ export default function ModerationPage() {
                 <button
                   onClick={handleSearch}
                   disabled={!searchId.trim() || warnsLoading}
-                  className="rounded-lg bg-[#d4a843] px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-[#c49b3a] disabled:opacity-40"
+                  className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[#d4a843] px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-[#c49b3a] disabled:opacity-40"
                 >
-                  {warnsLoading ? "…" : "Szukaj"}
+                  <Search className="h-4 w-4" />
+                  <span className="hidden sm:inline">
+                    {warnsLoading ? "Szukam…" : "Szukaj"}
+                  </span>
                 </button>
               </div>
 
@@ -232,8 +245,9 @@ export default function ModerationPage() {
                     {warns.length > 0 && (
                       <button
                         onClick={() => setPendingClear(true)}
-                        className="rounded-lg bg-red-500/10 px-3 py-1 text-xs font-semibold text-red-400 hover:bg-red-500/20"
+                        className="flex shrink-0 items-center gap-1.5 rounded-lg bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-400 transition hover:bg-red-500/20"
                       >
+                        <Trash2 className="h-3.5 w-3.5" />
                         Wyczyść wszystkie
                       </button>
                     )}
@@ -280,8 +294,8 @@ export default function ModerationPage() {
       </div>
 
       {/* Audit log — trwała historia wszystkich akcji moderacyjnych */}
-      <div className="rounded-xl bg-[#1a1f2e]">
-        <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
+      <div className="rounded-xl border border-white/5 bg-[#1a1f2e]">
+        <div className="flex items-center justify-between gap-3 border-b border-white/5 px-4 py-4 sm:px-6">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
               Trwały zapis w bazie · ostatnie 25
@@ -291,9 +305,10 @@ export default function ModerationPage() {
           <button
             onClick={() => fetchActions()}
             disabled={actionsLoading}
-            className="rounded-lg bg-[#0f1117] px-3 py-1.5 text-xs text-gray-400 transition hover:text-white disabled:opacity-50"
+            className="flex shrink-0 items-center gap-1.5 rounded-lg bg-[#0f1117] px-3 py-1.5 text-xs text-gray-400 transition hover:text-white disabled:opacity-50"
           >
-            {actionsLoading ? "Ładowanie..." : "↻ Odśwież"}
+            <RotateCw className={`h-3.5 w-3.5 ${actionsLoading ? "animate-spin" : ""}`} />
+            {actionsLoading ? "Ładowanie…" : "Odśwież"}
           </button>
         </div>
 
@@ -313,22 +328,26 @@ export default function ModerationPage() {
             return (
               <div
                 key={a.id}
-                className="flex items-center gap-3 border-b border-white/5 px-6 py-3 last:border-0"
+                className="flex flex-col gap-2 border-b border-white/5 px-4 py-3 last:border-0 sm:flex-row sm:items-center sm:gap-3 sm:px-6"
               >
-                <span
-                  className={`w-16 shrink-0 rounded px-2 py-0.5 text-center text-xs font-bold ${meta.cls}`}
-                >
-                  {meta.label}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm text-white">{a.reason}</p>
-                  <p className="text-xs text-gray-500">
-                    <span className="font-mono">{a.userId}</span>
-                    {a.extra ? <span className="text-gray-600"> · {a.extra}</span> : null}
-                  </p>
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <span
+                    className={`w-16 shrink-0 rounded px-2 py-0.5 text-center text-xs font-bold ${meta.cls}`}
+                  >
+                    {meta.label}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm text-white">{a.reason}</p>
+                    <p className="truncate text-xs text-gray-500">
+                      <span className="font-mono">{a.userId}</span>
+                      {a.extra ? (
+                        <span className="text-gray-600"> · {a.extra}</span>
+                      ) : null}
+                    </p>
+                  </div>
                 </div>
-                <div className="shrink-0 text-right text-xs text-gray-600">
-                  <p className="font-mono">{a.moderatorId}</p>
+                <div className="shrink-0 pl-[4.75rem] text-xs text-gray-600 sm:pl-0 sm:text-right">
+                  <p className="truncate font-mono">{a.moderatorId}</p>
                   <p>{new Date(a.createdAt).toLocaleString("pl-PL")}</p>
                 </div>
               </div>

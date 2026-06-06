@@ -1,0 +1,106 @@
+# Produkcyjny stack: MongoDB + API + Bot + Panel + Caddy (reverse proxy z auto‑HTTPS).
+# Konfiguracja przez plik `.env` w tym katalogu (skopiuj z `.env.production.example`).
+#
+# Start:   docker compose up -d --build
+# Logi:    docker compose logs -f api
+# Restart: docker compose restart api
+# Stop:    docker compose down            (dane Mongo zostają w wolumenie)
+
+# Rotacja logów — bez tego logi Dockera potrafią zapchać dysk VPS.
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    logging: *default-logging
+    volumes:
+      - mongo-data:/data/db
+    # Brak `ports:` — Mongo jest dostępne tylko w sieci compose, nie z internetu.
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  api:
+    build:
+      context: .
+      target: api
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      NODE_ENV: production
+      API_PORT: "3002"
+      TRUST_PROXY: "true" # za Caddy — czyta prawdziwe IP z X-Forwarded-For
+      MONGODB_URI: ${MONGODB_URI}
+      JWT_SECRET: ${JWT_SECRET}
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
+      DISCORD_REDIRECT_URI: "https://${DOMAIN}/api/auth/callback"
+      PANEL_URL: "https://${DOMAIN}"
+      CORS_ORIGINS: "https://${DOMAIN}"
+    depends_on:
+      mongo:
+        condition: service_healthy # start dopiero gdy baza odpowiada
+
+  bot:
+    build:
+      context: .
+      target: bot
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      NODE_ENV: production
+      MONGODB_URI: ${MONGODB_URI}
+      DISCORD_TOKEN: ${DISCORD_TOKEN}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      GUILD_ID: ${GUILD_ID}
+      CFG_ADMIN_ROLE_ID: ${CFG_ADMIN_ROLE_ID}
+      WELCOME_CHANNEL_ID: ${WELCOME_CHANNEL_ID}
+      GOODBYE_CHANNEL_ID: ${GOODBYE_CHANNEL_ID}
+      LEVEL_UP_CHANNEL_ID: ${LEVEL_UP_CHANNEL_ID}
+      RESET_COMMANDS: ${RESET_COMMANDS:-false}
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+  panel:
+    build:
+      context: .
+      target: panel
+      args:
+        # Same-origin za reverse proxy — panel wywołuje API pod /api
+        NEXT_PUBLIC_API_URL: /api
+    restart: unless-stopped
+    logging: *default-logging
+    depends_on:
+      - api
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    logging: *default-logging
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - panel
+      - api
+
+volumes:
+  mongo-data:
+  caddy-data:
+  caddy-config:

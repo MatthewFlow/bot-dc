@@ -12,6 +12,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
+import { useAutoSave } from "@/hooks/useAutoSave";
 import { useGuildLoad } from "@/hooks/useGuildLoad";
 import type { Channel, EmbedConfig, GuildConfig } from "@/lib/api";
 import { getChannels, getGuildConfig, updateGuildConfig } from "@/lib/api";
@@ -145,7 +146,8 @@ export default function WelcomePage() {
   const field = tab === "welcome" ? "welcomeMessage" : "goodbyeMessage";
 
   const embedField = tab === "welcome" ? "welcomeEmbed" : "goodbyeEmbed";
-  const activeEmbed = (tab === "welcome" ? config.welcomeEmbed : config.goodbyeEmbed) ?? undefined;
+  const activeEmbed =
+    (tab === "welcome" ? config.welcomeEmbed : config.goodbyeEmbed) ?? undefined;
   const useEmbed = Boolean(activeEmbed);
 
   function setActiveEmbed(embed: EmbedConfig | undefined) {
@@ -154,6 +156,19 @@ export default function WelcomePage() {
   function toggleEmbed(on: boolean) {
     setActiveEmbed(on ? seedEmbed(tab, message) : undefined);
   }
+
+  const { status: autoSaveStatus } = useAutoSave(
+    JSON.stringify({
+      welcomeChannelId: config.welcomeChannelId,
+      goodbyeChannelId: config.goodbyeChannelId,
+      welcomeMessage: config.welcomeMessage,
+      goodbyeMessage: config.goodbyeMessage,
+      welcomeEmbed: config.welcomeEmbed ?? null,
+      goodbyeEmbed: config.goodbyeEmbed ?? null,
+    }),
+    handleSave,
+    !loading,
+  );
 
   if (loading) return <WelcomeSkeleton />;
 
@@ -278,6 +293,7 @@ export default function WelcomePage() {
           <SaveButton
             onClick={handleSave}
             saving={saving}
+            autoSaveStatus={autoSaveStatus}
             className="w-full px-6 py-3 font-semibold"
           />
         </div>
@@ -297,13 +313,19 @@ export default function WelcomePage() {
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-white">Jurassic Haven</span>
-                      <span className="rounded bg-[#5865F2] px-1 py-0.5 text-xs text-white">APP</span>
+                      <span className="text-sm font-semibold text-white">
+                        Jurassic Haven
+                      </span>
+                      <span className="rounded bg-[#5865F2] px-1 py-0.5 text-xs text-white">
+                        APP
+                      </span>
                       <span className="text-xs text-gray-500">— dziś</span>
                     </div>
                     <div className="mt-2 rounded-lg border-l-4 border-[#d4a843] bg-[#1a1f2e] p-3">
                       <p className="text-sm font-semibold text-white">
-                        {tab === "welcome" ? "🎉 Witamy na serwerze!" : "👋 Do zobaczenia!"}
+                        {tab === "welcome"
+                          ? "🎉 Witamy na serwerze!"
+                          : "👋 Do zobaczenia!"}
                       </p>
                       <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-300">
                         {resolvePreview(message)}
@@ -320,7 +342,9 @@ export default function WelcomePage() {
               <div className="flex flex-col gap-2">
                 {VARIABLES.map((v) => (
                   <div key={v.label} className="flex items-center gap-3">
-                    <span className="w-32 font-mono text-xs text-[#d4a843]">{v.label}</span>
+                    <span className="w-32 font-mono text-xs text-[#d4a843]">
+                      {v.label}
+                    </span>
                     <span className="text-xs text-gray-400">{v.desc}</span>
                   </div>
                 ))}

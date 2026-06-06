@@ -13,6 +13,14 @@ type RateLimitOptions = {
 };
 
 /**
+ * When the API runs behind a reverse proxy (nginx on the VPS), the socket peer
+ * is the proxy — so every client shares one bucket unless we read the real IP
+ * from X-Forwarded-For. Only trust that header when TRUST_PROXY=true, otherwise
+ * a direct client could spoof it to evade the limit.
+ */
+const TRUST_PROXY = process.env.TRUST_PROXY === "true";
+
+/**
  * Lightweight in-memory fixed-window rate limiter. Per-instance only — for a
  * horizontally-scaled deployment back it with a shared store (e.g. Redis).
  */
@@ -21,6 +29,10 @@ export function rateLimit({ windowMs, max, key }: RateLimitOptions) {
 
   function resolveKey(c: Context): string {
     if (key) return key(c);
+    if (TRUST_PROXY) {
+      const xff = c.req.header("x-forwarded-for")?.split(",")[0]?.trim();
+      if (xff) return xff;
+    }
     try {
       return getConnInfo(c).remote.address ?? "unknown";
     } catch {

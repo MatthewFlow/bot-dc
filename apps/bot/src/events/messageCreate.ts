@@ -21,11 +21,20 @@ export async function onMessageCreate(message: Message) {
     if (handled) return;
   }
 
+  const lvl = cfg?.leveling;
+
+  // No-XP channels / roles.
+  if (lvl?.noXpChannelIds?.includes(message.channelId)) return;
+  if (lvl?.noXpRoleIds?.some((id) => member.roles.cache.has(id))) return;
+
+  const multiplier = lvl?.xpMultiplier && lvl.xpMultiplier > 0 ? lvl.xpMultiplier : 1;
+  const amount = Math.max(1, Math.round(XP_PER_MESSAGE * multiplier));
+
   const res = await xpRepository.addXpWithCooldown({
     guildId: message.guild.id,
     userId: message.author.id,
     now: Date.now(),
-    amount: XP_PER_MESSAGE,
+    amount,
     cooldownMs: XP_COOLDOWN_MS,
   });
 
@@ -34,12 +43,20 @@ export async function onMessageCreate(message: Message) {
   await applyAutoRole(member, res.newLevel).catch(() => {});
 
   if (res.newLevel > res.oldLevel) {
-    const target = cfg?.roleRewards
-      ?.slice()
-      .sort((a, b) => a.level - b.level)
-      .filter((r) => r.level <= res.newLevel)
-      .at(-1);
+    const channelOn = lvl?.levelUpEnabled !== false; // default on
+    const dm = lvl?.levelUpDm === true;
 
-    await notifyLevelUp(member, res.newLevel, target ? `<@&${target.roleId}>` : undefined);
+    if (channelOn || dm) {
+      const target = cfg?.roleRewards
+        ?.slice()
+        .sort((a, b) => a.level - b.level)
+        .filter((r) => r.level <= res.newLevel)
+        .at(-1);
+
+      await notifyLevelUp(member, res.newLevel, target ? `<@&${target.roleId}>` : undefined, {
+        dm,
+        suppressChannel: !channelOn,
+      });
+    }
   }
 }

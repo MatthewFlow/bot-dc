@@ -1,0 +1,21 @@
+# Reverse proxy z automatycznym HTTPS (Let's Encrypt).
+# {$DOMAIN} jest podstawiane ze zmiennej środowiskowej kontenera Caddy.
+# Wymaga: rekord A domeny wskazujący na IP VPS + otwarte porty 80 i 443.
+
+{$DOMAIN} {
+	encode gzip
+
+	# API: /api/* → kontener api (prefiks /api jest usuwany przez handle_path)
+	handle_path /api/* {
+		reverse_proxy api:3002
+	}
+
+	# Panel (Next.js): cała reszta ruchu
+	handle {
+		reverse_proxy panel:3000
+	}
+}
+
+# ── Lokalny test bez domeny ──────────────────────────────────────────────────
+# Ustaw w .env: DOMAIN=:80  (HTTP, bez certyfikatu). UWAGA: bez HTTPS ciasteczko
+# logowania (Secure) nie zostanie zapisane — logowanie zadziała tylko na HTTPS.

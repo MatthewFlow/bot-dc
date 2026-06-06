@@ -1,19 +1,25 @@
-import { guildConfigRepository } from "@jurassic-haven/db";
+import { type EmbedConfig, guildConfigRepository, toDiscordEmbed } from "@jurassic-haven/db";
 import { EmbedBuilder, type GuildMember } from "discord.js";
 
-export async function notifyLevelUp(
+function buildLevelUpEmbed(
   member: GuildMember,
   level: number,
-  roleMention?: string,
+  roleMention: string | undefined,
+  embedCfg: EmbedConfig | undefined,
 ) {
-  const cfg = await guildConfigRepository.get(member.guild.id);
-  const channelId = cfg?.levelUpChannelId ?? process.env.LEVEL_UP_CHANNEL_ID;
-  if (!channelId) return;
+  if (embedCfg) {
+    const replace = (s: string) =>
+      s
+        .replace(/{user}/g, `<@${member.id}>`)
+        .replace(/{username}/g, member.user.username)
+        .replace(/{server}/g, member.guild.name)
+        .replace(/{level}/g, String(level))
+        .replace(/{role}/g, roleMention ?? "")
+        .replace(/{avatar}/g, member.user.displayAvatarURL({ size: 256 }));
+    return toDiscordEmbed(embedCfg, replace);
+  }
 
-  const channel = member.guild.channels.cache.get(channelId);
-  if (!channel || !channel.isTextBased()) return;
-
-  const embed = new EmbedBuilder()
+  return new EmbedBuilder()
     .setTitle("📈 Nowy level!")
     .setDescription(
       `${member} wbił **level ${level}** 🎉` +
@@ -21,6 +27,28 @@ export async function notifyLevelUp(
     )
     .setThumbnail(member.user.displayAvatarURL({ size: 256 }))
     .setTimestamp();
+}
+
+export async function notifyLevelUp(
+  member: GuildMember,
+  level: number,
+  roleMention?: string,
+  opts?: { dm?: boolean; suppressChannel?: boolean },
+) {
+  const cfg = await guildConfigRepository.get(member.guild.id);
+  const embed = buildLevelUpEmbed(member, level, roleMention, cfg?.levelUpEmbed);
+
+  if (opts?.dm) {
+    await member.send({ embeds: [embed] }).catch(() => {});
+  }
+
+  if (opts?.suppressChannel) return;
+
+  const channelId = cfg?.levelUpChannelId ?? process.env.LEVEL_UP_CHANNEL_ID;
+  if (!channelId) return;
+
+  const channel = member.guild.channels.cache.get(channelId);
+  if (!channel || !channel.isTextBased()) return;
 
   try {
     await channel.send({ embeds: [embed] });
