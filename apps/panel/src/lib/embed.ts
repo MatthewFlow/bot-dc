@@ -25,6 +25,9 @@ export const WELCOME_VARS = [
 /** Zmienne dostępne w statycznym panelu ticketów (kontekst serwera). */
 export const TICKET_VARS = ["{server}", "{member_count}"];
 
+/** Zmienne dostępne w embedzie awansu (level-up). */
+export const LEVEL_VARS = ["{user}", "{username}", "{server}", "{level}", "{role}", "{avatar}"];
+
 /** Opisy zmiennych (do listy „Dostępne zmienne"). */
 export const VARIABLE_INFO: Record<string, string> = {
   "{user}": "Oznaczenie użytkownika",
@@ -32,6 +35,8 @@ export const VARIABLE_INFO: Record<string, string> = {
   "{server}": "Nazwa serwera",
   "{member_count}": "Liczba członków",
   "{avatar}": "Awatar użytkownika (URL)",
+  "{level}": "Nowy poziom",
+  "{role}": "Nadana ranga (jeśli jest)",
 };
 
 /** Podgląd podstawienia zmiennych szablonu wartościami przykładowymi. */
@@ -41,6 +46,8 @@ export function previewReplacer(template: string): string {
     .replace(/{username}/g, "nowy_użytkownik")
     .replace(/{server}/g, "Jurassic Haven")
     .replace(/{member_count}/g, "1 337")
+    .replace(/{level}/g, "5")
+    .replace(/{role}/g, "@Weteran")
     .replace(/{avatar}/g, "https://cdn.discordapp.com/embed/avatars/0.png");
 }
 

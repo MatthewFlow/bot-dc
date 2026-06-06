@@ -15,6 +15,7 @@ export type {
   AutoModConfig,
   GuildConfig,
   GuildConfigPatch,
+  LevelingConfig,
   ServerLogConfig,
   TicketPanelButton,
 } from "./repositories/guildConfigRepository";

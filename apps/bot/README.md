@@ -160,10 +160,11 @@ the ticket-log channel.
 
 ## XP and Leveling System
 
-- Every message grants **15 XP** (5-second cooldown per user)
+- Every message grants **15 XP** (5-second cooldown per user), scaled by the per-server XP multiplier
 - Level formula: `level = floor(xp / 100) + 1`
-- On level-up, the bot sends a notification to the configured channel
-- Role thresholds are configured with `/cfg_addreward`
+- On level-up, the bot posts to the configured channel and/or DMs the user (dashboard toggles)
+- No-XP channels and roles can be excluded from earning XP (dashboard `levels` page)
+- Role thresholds are configured with `/cfg_addreward` or the dashboard
 
 ## Welcome & Goodbye Messages
 

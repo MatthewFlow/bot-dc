@@ -21,6 +21,7 @@ authRoutes.get("/discord", (c) => {
 
   setCookie(c, "oauth_state", state, {
     httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 300,
     sameSite: "Lax",
@@ -169,7 +170,8 @@ authRoutes.get("/me", async (c) => {
 authRoutes.post("/logout", async (c) => {
   // Best-effort: also drop the server-side session so the access token is revoked.
   const header = c.req.header("authorization") ?? "";
-  const token = (header.startsWith("Bearer ") ? header.slice(7) : null) ?? getCookie(c, "jh_token");
+  const token =
+    (header.startsWith("Bearer ") ? header.slice(7) : null) ?? getCookie(c, "jh_token");
   const jwtSecret = process.env.JWT_SECRET;
   if (token && jwtSecret) {
     try {

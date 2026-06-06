@@ -46,6 +46,30 @@ app.get("/health", (c) => c.json({ ok: true }));
 
 const port = Number(process.env.API_PORT ?? 3002);
 
+// Fail-fast w produkcji: brak sekretu = brak startu (zamiast cichego 500 przy logowaniu).
+if (process.env.NODE_ENV === "production") {
+  const required = [
+    "JWT_SECRET",
+    "MONGODB_URI",
+    "DISCORD_CLIENT_ID",
+    "DISCORD_CLIENT_SECRET",
+    "DISCORD_REDIRECT_URI",
+    "DISCORD_TOKEN",
+    "PANEL_URL",
+  ];
+  const missing = required.filter((k) => !process.env[k]);
+  if (missing.length > 0) {
+    console.error(
+      `[api] Brak wymaganych zmiennych środowiskowych: ${missing.join(", ")}`,
+    );
+    process.exit(1);
+  }
+  if ((process.env.JWT_SECRET ?? "").length < 32) {
+    console.error("[api] JWT_SECRET jest za krótki — użyj min. 32 losowych znaków.");
+    process.exit(1);
+  }
+}
+
 await connectDb();
 
 Bun.serve({ port, fetch: app.fetch });

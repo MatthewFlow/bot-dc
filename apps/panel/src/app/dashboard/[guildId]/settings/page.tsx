@@ -12,6 +12,7 @@ import { RoleSelect } from "@/components/RoleSelect";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
+import { useAutoSave } from "@/hooks/useAutoSave";
 import { useGuildLoad } from "@/hooks/useGuildLoad";
 import type { Channel, GuildConfig, Role } from "@/lib/api";
 import { getChannels, getGuildConfig, getRoles, updateGuildConfig } from "@/lib/api";
@@ -64,6 +65,15 @@ export default function SettingsPage() {
     }
   }
 
+  const { status: autoSaveStatus } = useAutoSave(
+    JSON.stringify({
+      adminRoleId: config.adminRoleId,
+      modLogChannelId: config.modLogChannelId,
+    }),
+    handleSave,
+    !loading,
+  );
+
   if (loading) return <SettingsSkeleton />;
 
   return (
@@ -83,16 +93,25 @@ export default function SettingsPage() {
         <div className="flex-1 rounded-xl border border-white/5 bg-[#1a1f2e]">
           <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
             <p className="text-sm font-semibold text-white">Ogólne</p>
-            <SaveButton onClick={handleSave} saving={saving} className="px-4 py-1.5 text-xs" />
+            <SaveButton
+              onClick={handleSave}
+              saving={saving}
+              autoSaveStatus={autoSaveStatus}
+              className="px-4 py-1.5 text-xs"
+            />
           </div>
 
           <div className="flex flex-col gap-5 p-6">
             <div>
-              <label className="mb-1 block text-xs text-gray-500">Rola administratora bota</label>
+              <label className="mb-1 block text-xs text-gray-500">
+                Rola administratora bota
+              </label>
               <div className="flex max-w-sm flex-wrap items-center gap-2">
                 <RoleSelect
                   value={config.adminRoleId ?? ""}
-                  onChange={(v) => setConfig((c) => ({ ...c, adminRoleId: v || undefined }))}
+                  onChange={(v) =>
+                    setConfig((c) => ({ ...c, adminRoleId: v || undefined }))
+                  }
                   roles={roles}
                   placeholder="— Nie ustawiono —"
                   className="min-w-0 flex-1 px-3 py-2.5"
@@ -101,24 +120,31 @@ export default function SettingsPage() {
                   guildId={guildId}
                   defaultName="Bot Admin"
                   onCreated={(role) => {
-                    setRoles((prev) => [...prev, role].sort((a, b) => b.position - a.position));
+                    setRoles((prev) =>
+                      [...prev, role].sort((a, b) => b.position - a.position),
+                    );
                     setConfig((c) => ({ ...c, adminRoleId: role.id }));
                   }}
                 />
               </div>
               <p className="mt-1 text-xs text-gray-600">
-                Dodatkowa rola dopuszczona do komend <code>/cfg_*</code> i <code>/mod_*</code>.
-                Osoby z uprawnieniem Discord <strong>Administrator</strong> lub{" "}
-                <strong>Zarządzanie serwerem</strong> i tak mają dostęp.
+                Dodatkowa rola dopuszczona do komend <code>/cfg_*</code> i{" "}
+                <code>/mod_*</code>. Osoby z uprawnieniem Discord{" "}
+                <strong>Administrator</strong> lub <strong>Zarządzanie serwerem</strong> i
+                tak mają dostęp.
               </p>
             </div>
 
             <div>
-              <label className="mb-1 block text-xs text-gray-500">Kanał logów moderacji</label>
+              <label className="mb-1 block text-xs text-gray-500">
+                Kanał logów moderacji
+              </label>
               <div className="flex max-w-sm flex-wrap items-center gap-2">
                 <ChannelSelect
                   value={config.modLogChannelId ?? ""}
-                  onChange={(v) => setConfig((c) => ({ ...c, modLogChannelId: v || undefined }))}
+                  onChange={(v) =>
+                    setConfig((c) => ({ ...c, modLogChannelId: v || undefined }))
+                  }
                   channels={channels}
                   placeholder="— Nie ustawiono —"
                   className="min-w-0 flex-1 px-3 py-2.5"

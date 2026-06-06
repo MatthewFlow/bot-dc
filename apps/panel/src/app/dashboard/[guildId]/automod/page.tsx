@@ -10,6 +10,7 @@ import { RoleSelect } from "@/components/RoleSelect";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
+import { useAutoSave } from "@/hooks/useAutoSave";
 import { useGuildLoad } from "@/hooks/useGuildLoad";
 import type { AutoModConfig, Channel, GuildConfig, Role } from "@/lib/api";
 import { getChannels, getGuildConfig, getRoles, updateGuildConfig } from "@/lib/api";
@@ -102,9 +103,10 @@ export default function AutoModPage() {
     },
   );
 
-  const am = config.autoMod ?? DEFAULT_AUTOMOD;
+  // Scalenie z defaultami wypełnia pola brakujące w starszych zapisach.
+  const am = { ...DEFAULT_AUTOMOD, ...config.autoMod };
   const setAm = (patch: Partial<AutoModConfig>) =>
-    setConfig((c) => ({ ...c, autoMod: { ...(c.autoMod ?? DEFAULT_AUTOMOD), ...patch } }));
+    setConfig((c) => ({ ...c, autoMod: { ...DEFAULT_AUTOMOD, ...c.autoMod, ...patch } }));
 
   async function handleSave() {
     setSaving(true);
@@ -121,6 +123,12 @@ export default function AutoModPage() {
   const roleName = (id: string) => roles.find((r) => r.id === id)?.name ?? id;
   const channelName = (id: string) => channels.find((c) => c.id === id)?.name ?? id;
 
+  const { status: autoSaveStatus } = useAutoSave(
+    JSON.stringify(config.autoMod ?? DEFAULT_AUTOMOD),
+    handleSave,
+    !loading,
+  );
+
   if (loading) return <AutoModSkeleton />;
 
   return (
@@ -136,7 +144,12 @@ export default function AutoModPage() {
           description="Automatyczne wykrywanie i usuwanie niepożądanych wiadomości."
           className="mb-0"
         />
-        <SaveButton onClick={handleSave} saving={saving} className="px-5 py-2" />
+        <SaveButton
+          onClick={handleSave}
+          saving={saving}
+          autoSaveStatus={autoSaveStatus}
+          className="px-5 py-2"
+        />
       </div>
 
       {/* Master switch */}
@@ -276,7 +289,9 @@ export default function AutoModPage() {
               <p className={SECTION_HEAD}>Wyjątki</p>
               <div className="flex flex-col gap-4 p-6">
                 <div>
-                  <label className="mb-1 block text-xs text-gray-500">Pomijane role</label>
+                  <label className="mb-1 block text-xs text-gray-500">
+                    Pomijane role
+                  </label>
                   <RoleSelect
                     value=""
                     onChange={(v) =>
@@ -293,7 +308,9 @@ export default function AutoModPage() {
                       <button
                         key={id}
                         onClick={() =>
-                          setAm({ exemptRoleIds: am.exemptRoleIds.filter((x) => x !== id) })
+                          setAm({
+                            exemptRoleIds: am.exemptRoleIds.filter((x) => x !== id),
+                          })
                         }
                         className="rounded-full bg-[#0f1117] px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
                       >
@@ -304,7 +321,9 @@ export default function AutoModPage() {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs text-gray-500">Pomijane kanały</label>
+                  <label className="mb-1 block text-xs text-gray-500">
+                    Pomijane kanały
+                  </label>
                   <ChannelSelect
                     value=""
                     onChange={(v) =>

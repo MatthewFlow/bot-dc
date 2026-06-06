@@ -1,0 +1,51 @@
+# Zależności i artefakty buildu — instalowane/budowane w obrazie
+node_modules
+**/node_modules
+.next
+**/.next
+dist
+out
+coverage
+*.lcov
+*.tsbuildinfo
+*.tgz
+
+# Sekrety — NIGDY nie kopiujemy .env do obrazu (env podaje docker-compose).
+.env
+**/.env
+**/.env.*
+
+# Dokumentacja — README, CLAUDE.md, DEPLOYMENT.md itp. (root + wszystkie katalogi)
+*.md
+**/*.md
+LICENSE
+
+# Testy — niepotrzebne w obrazie produkcyjnym
+**/*.test.ts
+
+# Konfiguracja dev / narzędzia (nieużywane w runtime ani przy buildzie apek)
+eslint.config.*
+.prettierrc
+.prettierignore
+.gitattributes
+.editorconfig
+.github
+
+# VCS / IDE / logi / OS
+.git
+.gitignore
+.idea
+.vscode
+.claude
+*.log
+.DS_Store
+
+# Pliki Dockera / deploymentu — nie są potrzebne wewnątrz obrazu
+deploy
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# UWAGA — celowo NIE wykluczamy (potrzebne do buildu/runtime):
+#   bun.lock, package.json, tsconfig.json,
+#   apps/panel/next.config.ts, apps/panel/postcss.config.mjs, kod źródłowy

@@ -78,9 +78,11 @@ Stores per-guild bot configuration.
 **Schema fields:** `welcomeChannelId`, `goodbyeChannelId`, `levelUpChannelId`, `joinRoleId`,
 `verifiedRoleId`, `welcomeMessage`, `goodbyeMessage`, `roleRewards[]` (`{ level, roleId }`),
 `modLogChannelId`, `adminRoleId`, `ticketSupportRoleId`, `ticketSupportRoleId2`,
-`ticketLogChannelId`, `welcomeEmbed`, `goodbyeEmbed`, `ticketPanelEmbed` (all `EmbedConfig`),
-`ticketPanelButton` (`{ label?, emoji? }`), `autoMod` (`AutoModConfig` — filters, action,
-exemptions), `serverLog` (`ServerLogConfig` — channel + per-category event toggles).
+`ticketLogChannelId`, `welcomeEmbed`, `goodbyeEmbed`, `ticketPanelEmbed`, `levelUpEmbed` (all
+`EmbedConfig`), `ticketPanelButton` (`{ label?, emoji? }`), `autoMod` (`AutoModConfig` — filters, action,
+exemptions), `serverLog` (`ServerLogConfig` — channel + per-category event toggles),
+`leveling` (`LevelingConfig` — XP multiplier, no-XP channels/roles, level-up toggles). The
+`serverLog` config also carries `exemptRoleIds`/`exemptChannelIds`.
 
 ### `xpRepository`
 

@@ -6,6 +6,7 @@ import {
   Settings,
   ShieldAlert,
   ShieldBan,
+  SlidersHorizontal,
   Ticket,
   TrendingUp,
   UserPlus,
@@ -74,6 +75,12 @@ export const NAV_ITEMS: NavItem[] = [
     href: "/tickets",
     desc: "Obsługa zgłoszeń użytkowników",
     icon: Ticket,
+  },
+  {
+    label: "Komendy",
+    href: "/commands",
+    desc: "Włączanie i wyłączanie komend bota",
+    icon: SlidersHorizontal,
   },
   {
     label: "Ustawienia",

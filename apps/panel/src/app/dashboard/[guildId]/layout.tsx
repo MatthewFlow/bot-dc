@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 
 import { Sidebar } from "@/components/Sidebar";
 import { TopBar } from "@/components/TopBar";
-import { getGuilds } from "@/lib/api";
+import { getGuilds, prefetchGuildData } from "@/lib/api";
 
 export default function GuildLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -14,6 +14,10 @@ export default function GuildLayout({ children }: { children: React.ReactNode })
   const [guildName, setGuildName] = useState("...");
 
   useEffect(() => {
+    // Rozgrzej cache (config/role/kanały) raz przy wejściu na serwer — wtedy
+    // przełączanie między podstronami jest natychmiastowe (trafia w cache).
+    prefetchGuildData(guildId);
+
     getGuilds()
       .then((guilds) => {
         const guild = guilds.find((g) => g.id === guildId);

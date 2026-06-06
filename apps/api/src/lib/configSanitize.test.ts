@@ -70,4 +70,22 @@ describe("sanitizeConfigPatch", () => {
     expect(out.autoMod?.spamMaxMessages).toBe(50);
     expect(out.autoMod?.muteDurationSeconds).toBe(10);
   });
+
+  test("filters disabledCommands to a clean string array", () => {
+    const out = sanitizeConfigPatch({
+      disabledCommands: ["level", 5, "  profile  ", "", "leaderboard"],
+    }) as { disabledCommands?: string[] };
+    expect(out.disabledCommands).toEqual(["level", "profile", "leaderboard"]);
+  });
+
+  test("clamps the xp multiplier and filters leveling arrays", () => {
+    const out = sanitizeConfigPatch({
+      leveling: { xpMultiplier: 99, levelUpEnabled: false, noXpRoleIds: ["a", 5, "b"] },
+    }) as {
+      leveling?: { xpMultiplier: number; levelUpEnabled: boolean; noXpRoleIds: string[] };
+    };
+    expect(out.leveling?.xpMultiplier).toBe(10);
+    expect(out.leveling?.levelUpEnabled).toBe(false);
+    expect(out.leveling?.noXpRoleIds).toEqual(["a", "b"]);
+  });
 });
