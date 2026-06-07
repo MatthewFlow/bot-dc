@@ -20,6 +20,7 @@ export type GuildConfig = {
   goodbyeMessage?: string;
   roleRewards: RoleReward[];
   modLogChannelId?: string;
+  feedbackChannelId?: string;
   adminRoleId?: string;
   ticketSupportRoleId?: string;
   ticketSupportRoleId2?: string;

@@ -19,7 +19,7 @@ function fmt(n: number | null | undefined): string {
 }
 
 const CARD_BASE =
-  "rounded-xl border border-white/5 bg-[#1a1f2e] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4a843]/40";
+  "surface-raised rounded-xl border border-border bg-card transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40";
 
 function StatCard({
   icon: Icon,
@@ -42,8 +42,8 @@ function StatCard({
         <Icon size={20} />
       </div>
       <p className="mt-3 text-3xl font-bold text-white">{value}</p>
-      <p className="text-sm text-gray-400">{label}</p>
-      {sub && <p className="mt-1 text-xs text-gray-600">{sub}</p>}
+      <p className="text-sm text-gray-300">{label}</p>
+      {sub && <p className="mt-1 text-xs text-gray-400">{sub}</p>}
     </>
   );
 
@@ -51,7 +51,7 @@ function StatCard({
     return (
       <button
         onClick={onClick}
-        className={`${CARD_BASE} block p-5 text-left hover:-translate-y-0.5 hover:border-white/10 hover:bg-[#222838]`}
+        className={`${CARD_BASE} block p-5 text-left hover:-translate-y-0.5 hover:border-white/10 hover:bg-elevated`}
       >
         {inner}
       </button>
@@ -103,7 +103,7 @@ export default function GuildOverviewPage() {
               sub={
                 stats.onlineCount != null ? `${fmt(stats.onlineCount)} online` : undefined
               }
-              accent="bg-[#5865f2]/15 text-[#8b93f8]"
+              accent="bg-discord/15 text-[#8b93f8]"
             />
             <StatCard
               icon={Gavel}
@@ -129,7 +129,7 @@ export default function GuildOverviewPage() {
               label="Tickety"
               value={fmt(stats.tickets.total)}
               sub={`${fmt(stats.tickets.pending)} oczekuje · ${fmt(stats.tickets.open)} w trakcie`}
-              accent="bg-[#d4a843]/15 text-[#d4a843]"
+              accent="bg-primary/15 text-primary"
               onClick={() => go("/tickets")}
             />
           </>
@@ -142,7 +142,7 @@ export default function GuildOverviewPage() {
           const GroupIcon = group.icon;
           return (
             <div key={group.id}>
-              <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-600">
+              <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
                 <GroupIcon size={13} className="shrink-0" />
                 {group.label}
               </p>
@@ -153,13 +153,13 @@ export default function GuildOverviewPage() {
                     <button
                       key={item.href}
                       onClick={() => go(item.href)}
-                      className={`${CARD_BASE} flex flex-col gap-2 p-6 text-left hover:-translate-y-0.5 hover:border-white/10 hover:bg-[#222838]`}
+                      className={`${CARD_BASE} flex flex-col gap-2 p-6 text-left hover:-translate-y-0.5 hover:border-white/10 hover:bg-elevated`}
                     >
-                      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 text-[#d4a843]">
+                      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 text-primary">
                         <Icon size={18} />
                       </span>
                       <p className="mt-1 font-semibold text-white">{item.label}</p>
-                      <p className="text-sm text-gray-400">{item.desc}</p>
+                      <p className="text-sm text-gray-300">{item.desc}</p>
                     </button>
                   );
                 })}

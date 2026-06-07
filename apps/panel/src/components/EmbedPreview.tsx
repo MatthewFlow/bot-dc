@@ -24,7 +24,12 @@ export function EmbedPreview({
   const fields = (embed.fields ?? []).filter((f) => f.name?.trim() || f.value?.trim());
 
   const isEmpty =
-    !title && !description && !authorName && !footerText && fields.length === 0 && !embed.imageUrl;
+    !title &&
+    !description &&
+    !authorName &&
+    !footerText &&
+    fields.length === 0 &&
+    !embed.imageUrl;
 
   return (
     <div className="rounded-lg bg-[#313338] p-4">
@@ -37,7 +42,11 @@ export function EmbedPreview({
             {authorName && (
               <div className="mb-1 flex items-center gap-2">
                 {embed.authorIconUrl && (
-                  <img src={embed.authorIconUrl} alt="" className="h-6 w-6 rounded-full" />
+                  <img
+                    src={embed.authorIconUrl}
+                    alt=""
+                    className="h-6 w-6 rounded-full"
+                  />
                 )}
                 <span className="text-sm font-semibold text-white">{authorName}</span>
               </div>
@@ -87,7 +96,11 @@ export function EmbedPreview({
             {(footerText || embed.timestamp) && (
               <div className="mt-2 flex items-center gap-2">
                 {embed.footerIconUrl && (
-                  <img src={embed.footerIconUrl} alt="" className="h-5 w-5 rounded-full" />
+                  <img
+                    src={embed.footerIconUrl}
+                    alt=""
+                    className="h-5 w-5 rounded-full"
+                  />
                 )}
                 <span className="text-xs text-[#949ba4]">
                   {footerText}
@@ -116,7 +129,7 @@ export function EmbedPreview({
 
       {buttonLabel !== undefined && (
         <div className="mt-2">
-          <span className="inline-flex items-center gap-1.5 rounded bg-[#5865f2] px-4 py-1.5 text-sm font-medium text-white">
+          <span className="inline-flex items-center gap-1.5 rounded bg-discord px-4 py-1.5 text-sm font-medium text-white">
             {buttonEmoji && <span>{buttonEmoji}</span>}
             {buttonLabel || "Przycisk"}
           </span>

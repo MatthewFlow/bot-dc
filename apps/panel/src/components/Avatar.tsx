@@ -17,7 +17,7 @@ export function Avatar({ src, name, size = "sm", className = "" }: AvatarProps) 
   }
   return (
     <div
-      className={`flex ${s.box} items-center justify-center rounded-full bg-[#2a2f3e] ${s.text} font-bold text-gray-300 ${className}`}
+      className={`flex ${s.box} items-center justify-center rounded-full bg-elevated ${s.text} font-bold text-gray-300 ${className}`}
     >
       {name[0]?.toUpperCase()}
     </div>

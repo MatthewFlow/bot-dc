@@ -23,8 +23,8 @@ function AutoRoleSkeleton() {
         <Skeleton className="h-3 w-64" />
       </div>
       <div className="flex flex-col gap-6 lg:flex-row">
-        <div className="flex-1 rounded-xl bg-[#1a1f2e]">
-          <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
+        <div className="flex-1 surface-raised rounded-xl bg-card">
+          <div className="flex items-center justify-between border-b border-border px-6 py-4">
             <div className="space-y-2">
               <Skeleton className="h-3 w-48" />
               <Skeleton className="h-4 w-36" />
@@ -111,7 +111,7 @@ export default function AutoRolePage() {
         category="Assignment Grid"
         title={
           <>
-            Auto-role <span className="italic text-[#d4a843]">& reakcje</span>
+            Auto-role <span className="italic text-primary">& reakcje</span>
           </>
         }
         description="Automatyczne nadawanie roli przy wejściu na serwer."
@@ -128,10 +128,10 @@ export default function AutoRolePage() {
       />
 
       <div className="flex flex-col gap-6 lg:flex-row">
-        <div className="flex-1 rounded-xl bg-[#1a1f2e]">
-          <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
+        <div className="flex-1 surface-raised rounded-xl bg-card">
+          <div className="flex items-center justify-between border-b border-border px-6 py-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
                 Nadawane automatycznie nowym członkom
               </p>
               <p className="text-base font-semibold text-white">
@@ -148,15 +148,15 @@ export default function AutoRolePage() {
                 }}
                 className="peer sr-only"
               />
-              <div className="peer h-6 w-11 rounded-full bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-[#d4a843] peer-checked:after:translate-x-full" />
+              <div className="peer h-6 w-11 rounded-full bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full" />
             </label>
           </div>
 
-          <div className="border-b border-white/5 p-6">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-500">
+          <div className="border-b border-border p-6">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-400">
               Rola niezweryfikowanego
             </p>
-            <p className="mb-3 text-sm text-gray-400">
+            <p className="mb-3 text-sm text-gray-300">
               Nadawana każdemu nowemu członkowi przy dołączeniu. Zazwyczaj{" "}
               <span className="text-white">@Niezweryfikowany</span>.
             </p>
@@ -180,10 +180,10 @@ export default function AutoRolePage() {
               />
             </div>
             {activeRole && (
-              <div className="mt-4 flex items-center gap-3 rounded-lg bg-[#0f1117] px-4 py-3">
-                <span className="h-2.5 w-2.5 rounded-full bg-[#5865F2]" />
+              <div className="mt-4 flex items-center gap-3 rounded-lg bg-background px-4 py-3">
+                <span className="h-2.5 w-2.5 rounded-full bg-discord" />
                 <span className="text-sm text-white">@{activeRole.name}</span>
-                <span className="ml-auto text-xs text-gray-500">
+                <span className="ml-auto text-xs text-gray-400">
                   Aktywna rola przy dołączeniu
                 </span>
               </div>
@@ -191,10 +191,10 @@ export default function AutoRolePage() {
           </div>
 
           <div className="p-6">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-500">
+            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-400">
               Rola zweryfikowanego
             </p>
-            <p className="mb-3 text-sm text-gray-400">
+            <p className="mb-3 text-sm text-gray-300">
               Gdy użytkownik zareaguje emoji w systemie Reaction Roles i ta rola zostanie
               mu nadana — bot automatycznie odbierze rolę niezweryfikowanego.
             </p>
@@ -220,20 +220,20 @@ export default function AutoRolePage() {
               />
             </div>
             {activeVerifiedRole && (
-              <div className="mt-4 flex items-center gap-3 rounded-lg bg-[#0f1117] px-4 py-3">
-                <span className="h-2.5 w-2.5 rounded-full bg-[#57F287]" />
+              <div className="mt-4 flex items-center gap-3 rounded-lg bg-background px-4 py-3">
+                <span className="h-2.5 w-2.5 rounded-full bg-success" />
                 <span className="text-sm text-white">@{activeVerifiedRole.name}</span>
-                <span className="ml-auto text-xs text-gray-500">
+                <span className="ml-auto text-xs text-gray-400">
                   Aktywna rola zweryfikowanego
                 </span>
               </div>
             )}
             {hasChanges && (
-              <p className="mt-3 text-xs text-[#d4a843]">● Masz niezapisane zmiany</p>
+              <p className="mt-3 text-xs text-primary">● Masz niezapisane zmiany</p>
             )}
           </div>
 
-          <div className="border-t border-white/5 px-6 py-4">
+          <div className="border-t border-border px-6 py-4">
             <div className="flex items-center gap-4">
               <SaveButton
                 onClick={handleSave}

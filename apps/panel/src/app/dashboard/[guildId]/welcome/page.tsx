@@ -54,7 +54,7 @@ function seedEmbed(tab: Tab, message: string): EmbedConfig {
 function WelcomeSkeleton() {
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-white/5 px-8 py-6">
+      <div className="border-b border-border px-8 py-6">
         <Skeleton className="mb-2 h-3 w-24" />
         <Skeleton className="mb-2 h-7 w-48" />
         <Skeleton className="h-3 w-64" />
@@ -62,11 +62,11 @@ function WelcomeSkeleton() {
       <div className="flex flex-1 flex-col gap-6 p-4 sm:p-6 lg:p-8 xl:flex-row">
         <div className="flex w-full max-w-lg flex-col gap-4">
           <Skeleton className="h-10 w-full rounded-lg" />
-          <div className="space-y-3 rounded-xl bg-[#1a1f2e] p-5">
+          <div className="space-y-3 surface-raised rounded-xl bg-card p-5">
             <Skeleton className="h-3 w-16" />
             <Skeleton className="h-10 w-full rounded-lg" />
           </div>
-          <div className="space-y-3 rounded-xl bg-[#1a1f2e] p-5">
+          <div className="space-y-3 surface-raised rounded-xl bg-card p-5">
             <Skeleton className="h-3 w-24" />
             <Skeleton className="h-24 w-full rounded-lg" />
             <div className="flex gap-2">
@@ -174,12 +174,12 @@ export default function WelcomePage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-white/5 px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
+      <div className="border-b border-border px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
         <PageHeader
           category="First Contact"
           title={
             <>
-              Welcome <span className="text-[#d4a843]">&</span> Goodbye
+              Welcome <span className="text-primary">&</span> Goodbye
             </>
           }
           description="Wiadomości powitalne i pożegnalne na Twoim serwerze."
@@ -198,20 +198,20 @@ export default function WelcomePage() {
         />
         <div className="flex flex-col gap-6 xl:flex-row">
           <div className="flex w-full max-w-lg flex-col gap-4">
-            <div className="flex gap-1 rounded-lg bg-[#1a1f2e] p-1">
+            <div className="flex gap-1 rounded-lg bg-card p-1">
               {(["welcome", "goodbye"] as Tab[]).map((t) => (
                 <button
                   key={t}
                   onClick={() => setTab(t)}
-                  className={`flex-1 rounded-md py-2 text-sm font-medium transition ${tab === t ? "bg-[#d4a843] text-black" : "text-gray-400 hover:text-white"}`}
+                  className={`flex-1 rounded-md py-2 text-sm font-medium transition ${tab === t ? "bg-primary text-black" : "text-gray-300 hover:text-white"}`}
                 >
                   {t === "welcome" ? "👋 Welcome" : "👋 Goodbye"}
                 </button>
               ))}
             </div>
 
-            <div className="rounded-xl bg-[#1a1f2e] p-5">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+            <div className="surface-raised rounded-xl bg-card p-5">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
                 Kanał
               </p>
               <div className="flex flex-wrap items-center gap-2">
@@ -246,23 +246,23 @@ export default function WelcomePage() {
             </div>
 
             {/* Tryb: prosty tekst vs embed */}
-            <div className="flex gap-1 rounded-lg bg-[#1a1f2e] p-1">
+            <div className="flex gap-1 rounded-lg bg-card p-1">
               <button
                 onClick={() => toggleEmbed(false)}
-                className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${!useEmbed ? "bg-[#0f1117] text-white" : "text-gray-500 hover:text-gray-300"}`}
+                className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${!useEmbed ? "bg-background text-white" : "text-gray-400 hover:text-gray-300"}`}
               >
                 Prosty tekst
               </button>
               <button
                 onClick={() => toggleEmbed(true)}
-                className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${useEmbed ? "bg-[#0f1117] text-[#d4a843]" : "text-gray-500 hover:text-gray-300"}`}
+                className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${useEmbed ? "bg-background text-primary" : "text-gray-400 hover:text-gray-300"}`}
               >
                 Embed (zaawansowany)
               </button>
             </div>
 
             {useEmbed && activeEmbed ? (
-              <div className="rounded-xl bg-[#1a1f2e] p-5">
+              <div className="surface-raised rounded-xl bg-card p-5">
                 <EmbedEditor
                   value={activeEmbed}
                   onChange={setActiveEmbed}
@@ -270,8 +270,8 @@ export default function WelcomePage() {
                 />
               </div>
             ) : (
-              <div className="rounded-xl bg-[#1a1f2e] p-5">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+              <div className="surface-raised rounded-xl bg-card p-5">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
                   Treść (Markdown + zmienne)
                 </p>
                 <textarea
@@ -279,10 +279,10 @@ export default function WelcomePage() {
                   value={message}
                   onChange={(e) => setConfig((c) => ({ ...c, [field]: e.target.value }))}
                   rows={4}
-                  className="w-full resize-none rounded-lg bg-[#0f1117] px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]"
+                  className="w-full resize-none rounded-lg bg-background px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
                 />
                 <div className="mt-3">
-                  <p className="mb-2 text-xs text-gray-500">
+                  <p className="mb-2 text-xs text-gray-400">
                     Kliknij zmienną aby wstawić:
                   </p>
                   <div className="flex flex-wrap gap-2">
@@ -291,7 +291,7 @@ export default function WelcomePage() {
                         key={v.label}
                         onClick={() => insertVariable(v.label)}
                         title={v.desc}
-                        className="rounded bg-[#0f1117] px-2.5 py-1 text-xs font-mono text-[#d4a843] transition hover:bg-[#d4a843] hover:text-black"
+                        className="rounded bg-background px-2.5 py-1 text-xs font-mono text-primary transition hover:bg-primary hover:text-black"
                       >
                         {v.label}
                       </button>
@@ -310,16 +310,16 @@ export default function WelcomePage() {
           </div>
 
           <div className="flex flex-1 flex-col gap-4">
-            <div className="rounded-xl bg-[#1a1f2e] p-6">
-              <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-500">
+            <div className="surface-raised rounded-xl bg-card p-6">
+              <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
                 Tak będzie to wyglądać w Discord
               </p>
               {useEmbed && activeEmbed ? (
                 <EmbedPreview embed={activeEmbed} replace={previewReplacer} />
               ) : (
-                <div className="rounded-lg bg-[#0d1117] p-4">
+                <div className="rounded-lg bg-sidebar p-4">
                   <div className="flex items-start gap-3">
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#d4a843] text-sm font-bold text-black">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-black">
                       JH
                     </div>
                     <div className="min-w-0">
@@ -327,12 +327,12 @@ export default function WelcomePage() {
                         <span className="text-sm font-semibold text-white">
                           Jurassic Haven
                         </span>
-                        <span className="rounded bg-[#5865F2] px-1 py-0.5 text-xs text-white">
+                        <span className="rounded bg-discord px-1 py-0.5 text-xs text-white">
                           APP
                         </span>
-                        <span className="text-xs text-gray-500">— dziś</span>
+                        <span className="text-xs text-gray-400">— dziś</span>
                       </div>
-                      <div className="mt-2 rounded-lg border-l-4 border-[#d4a843] bg-[#1a1f2e] p-3">
+                      <div className="mt-2 rounded-lg border-l-4 border-primary bg-card p-3">
                         <p className="text-sm font-semibold text-white">
                           {tab === "welcome"
                             ? "🎉 Witamy na serwerze!"
@@ -347,16 +347,16 @@ export default function WelcomePage() {
                 </div>
               )}
               <div className="mt-6">
-                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
                   Dostępne zmienne
                 </p>
                 <div className="flex flex-col gap-2">
                   {VARIABLES.map((v) => (
                     <div key={v.label} className="flex items-center gap-3">
-                      <span className="w-32 font-mono text-xs text-[#d4a843]">
+                      <span className="w-32 font-mono text-xs text-primary">
                         {v.label}
                       </span>
-                      <span className="text-xs text-gray-400">{v.desc}</span>
+                      <span className="text-xs text-gray-300">{v.desc}</span>
                     </div>
                   ))}
                 </div>

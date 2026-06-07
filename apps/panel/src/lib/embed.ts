@@ -26,7 +26,14 @@ export const WELCOME_VARS = [
 export const TICKET_VARS = ["{server}", "{member_count}"];
 
 /** Zmienne dostępne w embedzie awansu (level-up). */
-export const LEVEL_VARS = ["{user}", "{username}", "{server}", "{level}", "{role}", "{avatar}"];
+export const LEVEL_VARS = [
+  "{user}",
+  "{username}",
+  "{server}",
+  "{level}",
+  "{role}",
+  "{avatar}",
+];
 
 /** Opisy zmiennych (do listy „Dostępne zmienne"). */
 export const VARIABLE_INFO: Record<string, string> = {

@@ -65,7 +65,7 @@ function Toggle({
     <label className="flex cursor-pointer items-start justify-between gap-4">
       <div className="min-w-0">
         <p className="text-sm text-white">{label}</p>
-        {desc && <p className="text-xs text-gray-500">{desc}</p>}
+        {desc && <p className="text-xs text-gray-400">{desc}</p>}
       </div>
       <span className="relative inline-flex shrink-0">
         <input
@@ -74,7 +74,7 @@ function Toggle({
           onChange={(e) => onChange(e.target.checked)}
           className="peer sr-only"
         />
-        <span className="h-6 w-11 rounded-full bg-gray-700 transition after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-[#d4a843] peer-checked:after:translate-x-full" />
+        <span className="h-6 w-11 rounded-full bg-gray-700 transition after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full" />
       </span>
     </label>
   );
@@ -93,8 +93,8 @@ function ServerLogSkeleton() {
   );
 }
 
-const CARD = "rounded-xl border border-white/5 bg-[#1a1f2e]";
-const SECTION_HEAD = "border-b border-white/5 px-6 py-4 text-sm font-semibold text-white";
+const CARD = "surface-raised rounded-xl border border-border bg-card";
+const SECTION_HEAD = "border-b border-border px-6 py-4 text-sm font-semibold text-white";
 
 export default function ServerLogPage() {
   const params = useParams();
@@ -155,7 +155,7 @@ export default function ServerLogPage() {
           category="Audyt serwera"
           title={
             <>
-              Logi <span className="italic text-[#d4a843]">serwera</span>
+              Logi <span className="italic text-primary">serwera</span>
             </>
           }
           description="Zapisuj zdarzenia serwera na wybranym kanale."
@@ -229,7 +229,7 @@ export default function ServerLogPage() {
                     }}
                   />
                 </div>
-                <p className="mt-2 text-xs text-gray-600">
+                <p className="mt-2 text-xs text-gray-400">
                   Tu trafiają wszystkie włączone zdarzenia.
                 </p>
               </div>
@@ -239,7 +239,7 @@ export default function ServerLogPage() {
               <p className={SECTION_HEAD}>Wyjątki</p>
               <div className="flex flex-col gap-4 p-6">
                 <div>
-                  <label className="mb-1 block text-xs text-gray-500">
+                  <label className="mb-1 block text-xs text-gray-400">
                     Pomijane role
                   </label>
                   <RoleSelect
@@ -262,7 +262,7 @@ export default function ServerLogPage() {
                             exemptRoleIds: sl.exemptRoleIds.filter((x) => x !== id),
                           })
                         }
-                        className="rounded-full bg-[#0f1117] px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
+                        className="rounded-full bg-background px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
                       >
                         @{roleName(id)} ✕
                       </button>
@@ -270,7 +270,7 @@ export default function ServerLogPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs text-gray-500">
+                  <label className="mb-1 block text-xs text-gray-400">
                     Pomijane kanały
                   </label>
                   <ChannelSelect
@@ -293,7 +293,7 @@ export default function ServerLogPage() {
                             exemptChannelIds: sl.exemptChannelIds.filter((x) => x !== id),
                           })
                         }
-                        className="rounded-full bg-[#0f1117] px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
+                        className="rounded-full bg-background px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
                       >
                         #{channelName(id)} ✕
                       </button>

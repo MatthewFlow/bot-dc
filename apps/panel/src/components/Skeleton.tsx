@@ -18,7 +18,7 @@ export function SkeletonRow() {
 
 export function SkeletonCard() {
   return (
-    <div className="rounded-xl bg-[#1a1f2e] p-6 space-y-3">
+    <div className="rounded-xl bg-card p-6 space-y-3">
       <Skeleton className="h-4 w-1/4" />
       <Skeleton className="h-8 w-3/4" />
       <Skeleton className="h-3 w-1/2" />
@@ -28,12 +28,12 @@ export function SkeletonCard() {
 
 export function SkeletonTable({ rows = 5 }: { rows?: number }) {
   return (
-    <div className="rounded-xl bg-[#1a1f2e]">
-      <div className="border-b border-white/5 px-6 py-4">
+    <div className="rounded-xl bg-card">
+      <div className="border-b border-border px-6 py-4">
         <Skeleton className="h-4 w-32" />
       </div>
       {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="border-b border-white/5 last:border-0">
+        <div key={i} className="border-b border-border last:border-0">
           <SkeletonRow />
         </div>
       ))}
@@ -43,7 +43,7 @@ export function SkeletonTable({ rows = 5 }: { rows?: number }) {
 
 export function SkeletonForm() {
   return (
-    <div className="rounded-xl bg-[#1a1f2e] p-6 space-y-4">
+    <div className="rounded-xl bg-card p-6 space-y-4">
       <Skeleton className="h-4 w-24" />
       <div className="space-y-3">
         <div>

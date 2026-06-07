@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 
+import { Button } from "@/components/ui/button";
 import type { AutoSaveStatus } from "@/hooks/useAutoSave";
+import { cn } from "@/lib/cn";
 
 interface SaveButtonProps {
   onClick: () => void | Promise<void>;
@@ -43,14 +45,16 @@ export function SaveButton({
   const saved = extSaved || status === "saved" || autoSaveStatus === "saved";
 
   return (
-    <button
+    <Button
       onClick={handleClick}
       disabled={saving || disabled}
-      className={`cursor-pointer rounded-lg text-sm font-semibold text-black transition disabled:cursor-not-allowed ${
-        saved ? "bg-green-500" : "bg-[#d4a843] hover:bg-[#c49b3a]"
-      } disabled:opacity-60 ${className}`}
+      className={cn(
+        "h-auto disabled:opacity-60",
+        saved && "bg-success text-black hover:bg-success",
+        className,
+      )}
     >
       {saving ? "Zapisywanie…" : saved ? "Zapisano ✓" : label}
-    </button>
+    </Button>
   );
 }

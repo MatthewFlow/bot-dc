@@ -27,7 +27,7 @@ export default function GuildLayout({ children }: { children: React.ReactNode })
   }, [guildId, router]);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#0f1117]">
+    <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar guildName={guildName} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar guildName={guildName} />

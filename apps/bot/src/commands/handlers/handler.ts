@@ -23,8 +23,12 @@ import {
   handleModWarnings,
 } from "./mod";
 import { handleCfgAddXp, handleTestGoodbye, handleTestWelcome } from "./test";
-import { handleTicketAdd, handleTicketClose, handleTicketSetup } from "../../tickets/handler";
-import { handleLeaderboard, handleLevel, handleProfile } from "./user";
+import {
+  handleTicketAdd,
+  handleTicketClose,
+  handleTicketSetup,
+} from "../../tickets/handler";
+import { handleFeedback, handleLeaderboard, handleLevel, handleProfile } from "./user";
 import { getCachedGuildConfig } from "../../utils/configCache";
 
 type Handler = (interaction: ChatInputCommandInteraction) => Promise<void>;
@@ -33,6 +37,7 @@ const handlers: Record<string, Handler> = {
   level: handleLevel,
   leaderboard: handleLeaderboard,
   profile: handleProfile,
+  feedback: handleFeedback,
   cfg_setwelcome: handleCfgSetWelcome,
   cfg_setgoodbye: handleCfgSetGoodbye,
   cfg_addreward: handleCfgAddReward,

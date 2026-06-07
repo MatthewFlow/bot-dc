@@ -50,7 +50,7 @@ function Toggle({
     <label className="flex cursor-pointer items-start justify-between gap-4">
       <div className="min-w-0">
         <p className="text-sm text-white">{label}</p>
-        {desc && <p className="text-xs text-gray-500">{desc}</p>}
+        {desc && <p className="text-xs text-gray-400">{desc}</p>}
       </div>
       <span className="relative inline-flex shrink-0">
         <input
@@ -59,7 +59,7 @@ function Toggle({
           onChange={(e) => onChange(e.target.checked)}
           className="peer sr-only"
         />
-        <span className="h-6 w-11 rounded-full bg-gray-700 transition after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-[#d4a843] peer-checked:after:translate-x-full" />
+        <span className="h-6 w-11 rounded-full bg-gray-700 transition after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full" />
       </span>
     </label>
   );
@@ -78,10 +78,10 @@ function AutoModSkeleton() {
   );
 }
 
-const CARD = "rounded-xl border border-white/5 bg-[#1a1f2e]";
-const SECTION_HEAD = "border-b border-white/5 px-6 py-4 text-sm font-semibold text-white";
+const CARD = "surface-raised rounded-xl border border-border bg-card";
+const SECTION_HEAD = "border-b border-border px-6 py-4 text-sm font-semibold text-white";
 const NUM_INPUT =
-  "w-20 rounded-lg bg-[#0f1117] px-2 py-1.5 text-center text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]";
+  "w-20 rounded-lg bg-background px-2 py-1.5 text-center text-sm text-white outline-none focus:ring-2 focus:ring-primary";
 
 export default function AutoModPage() {
   const params = useParams();
@@ -138,7 +138,7 @@ export default function AutoModPage() {
           category="Ochrona automatyczna"
           title={
             <>
-              Auto-<span className="italic text-[#d4a843]">moderacja</span>
+              Auto-<span className="italic text-primary">moderacja</span>
             </>
           }
           description="Automatyczne wykrywanie i usuwanie niepożądanych wiadomości."
@@ -192,7 +192,7 @@ export default function AutoModPage() {
                 />
 
                 <div>
-                  <label className="mb-1 block text-xs text-gray-500">
+                  <label className="mb-1 block text-xs text-gray-400">
                     Niedozwolone słowa (jedno na linię)
                   </label>
                   <textarea
@@ -207,11 +207,11 @@ export default function AutoModPage() {
                     }
                     rows={4}
                     placeholder="np. spamword"
-                    className="w-full resize-y rounded-lg bg-[#0f1117] px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]"
+                    className="w-full resize-y rounded-lg bg-background px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
 
-                <div className="border-t border-white/5 pt-4">
+                <div className="border-t border-border pt-4">
                   <Toggle
                     checked={am.spamEnabled}
                     onChange={(v) => setAm({ spamEnabled: v })}
@@ -219,7 +219,7 @@ export default function AutoModPage() {
                     desc="Reaguj, gdy użytkownik wysyła zbyt wiele wiadomości w krótkim czasie."
                   />
                   {am.spamEnabled && (
-                    <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-gray-400">
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-gray-300">
                       <span>Maks.</span>
                       <input
                         type="number"
@@ -260,8 +260,8 @@ export default function AutoModPage() {
                       onClick={() => setAm({ action: a.value })}
                       className={`rounded-lg px-4 py-2 text-sm transition ${
                         am.action === a.value
-                          ? "bg-[#d4a843] font-semibold text-black"
-                          : "bg-[#0f1117] text-gray-400 hover:text-white"
+                          ? "bg-primary font-semibold text-black"
+                          : "bg-background text-gray-300 hover:text-white"
                       }`}
                     >
                       {a.label}
@@ -269,7 +269,7 @@ export default function AutoModPage() {
                   ))}
                 </div>
                 {am.action === "mute" && (
-                  <div className="flex flex-wrap items-center gap-2 text-sm text-gray-400">
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-gray-300">
                     <span>Czas timeoutu:</span>
                     <input
                       type="number"
@@ -284,7 +284,7 @@ export default function AutoModPage() {
                     <span>sekund.</span>
                   </div>
                 )}
-                <p className="text-xs text-gray-600">
+                <p className="text-xs text-gray-400">
                   Każda akcja usuwa wiadomość. „Ostrzeż" zapisuje warn, „Timeout" wycisza
                   użytkownika. Obie trafiają do logów moderacji.
                 </p>
@@ -298,7 +298,7 @@ export default function AutoModPage() {
               <p className={SECTION_HEAD}>Wyjątki</p>
               <div className="flex flex-col gap-4 p-6">
                 <div>
-                  <label className="mb-1 block text-xs text-gray-500">
+                  <label className="mb-1 block text-xs text-gray-400">
                     Pomijane role
                   </label>
                   <RoleSelect
@@ -321,7 +321,7 @@ export default function AutoModPage() {
                             exemptRoleIds: am.exemptRoleIds.filter((x) => x !== id),
                           })
                         }
-                        className="rounded-full bg-[#0f1117] px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
+                        className="rounded-full bg-background px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
                       >
                         @{roleName(id)} ✕
                       </button>
@@ -330,7 +330,7 @@ export default function AutoModPage() {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-xs text-gray-500">
+                  <label className="mb-1 block text-xs text-gray-400">
                     Pomijane kanały
                   </label>
                   <ChannelSelect
@@ -353,7 +353,7 @@ export default function AutoModPage() {
                             exemptChannelIds: am.exemptChannelIds.filter((x) => x !== id),
                           })
                         }
-                        className="rounded-full bg-[#0f1117] px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
+                        className="rounded-full bg-background px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
                       >
                         #{channelName(id)} ✕
                       </button>

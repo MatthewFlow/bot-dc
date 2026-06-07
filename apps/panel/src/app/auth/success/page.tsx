@@ -14,7 +14,7 @@ function AuthSuccessInner() {
 
   return (
     <main className="flex min-h-screen items-center justify-center">
-      <p className="text-gray-400">Logging in...</p>
+      <p className="text-gray-300">Logging in...</p>
     </main>
   );
 }
@@ -24,7 +24,7 @@ export default function AuthSuccessPage() {
     <Suspense
       fallback={
         <main className="flex min-h-screen items-center justify-center">
-          <p className="text-gray-400">Logging in...</p>
+          <p className="text-gray-300">Logging in...</p>
         </main>
       }
     >

@@ -1,3 +1,10 @@
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { Role } from "@/lib/api";
 
 interface RoleSelectProps {
@@ -8,6 +15,9 @@ interface RoleSelectProps {
   className?: string;
 }
 
+/** Sentinel dla opcji „wyczyść" — Radix Select nie dopuszcza pustej wartości. */
+const NONE = "__none__";
+
 export function RoleSelect({
   value,
   onChange,
@@ -16,17 +26,21 @@ export function RoleSelect({
   className = "",
 }: RoleSelectProps) {
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className={`rounded-lg bg-[#0f1117] text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843] ${className}`}
+    <Select
+      value={value || undefined}
+      onValueChange={(v) => onChange(v === NONE ? "" : v)}
     >
-      <option value="">{placeholder}</option>
-      {roles.map((r) => (
-        <option key={r.id} value={r.id}>
-          {r.name}
-        </option>
-      ))}
-    </select>
+      <SelectTrigger className={className}>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value={NONE}>{placeholder}</SelectItem>
+        {roles.map((r) => (
+          <SelectItem key={r.id} value={r.id}>
+            {r.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

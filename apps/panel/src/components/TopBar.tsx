@@ -34,7 +34,7 @@ export function TopBar({ guildName }: { guildName: string }) {
   }
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-white/5 bg-[#0f1117]/80 px-4 py-3 backdrop-blur sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-border bg-background/80 px-4 py-3 backdrop-blur sm:px-6 lg:px-8">
       {/* Breadcrumb (pl-9 na mobile robi miejsce na przycisk hamburger) */}
       <nav className="flex min-w-0 items-center gap-1.5 pl-9 text-sm md:pl-0">
         <button
@@ -47,14 +47,14 @@ export function TopBar({ guildName }: { guildName: string }) {
           <>
             {group && (
               <>
-                <ChevronRight size={14} className="shrink-0 text-gray-600" />
-                <span className="hidden shrink-0 text-gray-500 sm:inline">
+                <ChevronRight size={14} className="shrink-0 text-gray-400" />
+                <span className="hidden shrink-0 text-gray-400 sm:inline">
                   {group.label}
                 </span>
               </>
             )}
-            <ChevronRight size={14} className="shrink-0 text-gray-600" />
-            <span className="truncate text-[#d4a843]">{section.label}</span>
+            <ChevronRight size={14} className="shrink-0 text-gray-400" />
+            <span className="truncate text-primary">{section.label}</span>
           </>
         )}
       </nav>
@@ -82,7 +82,7 @@ export function TopBar({ guildName }: { guildName: string }) {
         <button
           onClick={handleLogout}
           title="Wyloguj"
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 outline-none transition hover:bg-white/5 hover:text-gray-200 focus-visible:ring-2 focus-visible:ring-[#d4a843]/40"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 outline-none transition hover:bg-white/5 hover:text-gray-200 focus-visible:ring-2 focus-visible:ring-primary/40"
         >
           <LogOut size={16} />
         </button>

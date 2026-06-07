@@ -4,13 +4,13 @@ import type { EmbedConfig, EmbedFieldConfig } from "@/lib/api";
 import { DEFAULT_EMBED_COLOR, hexToNumber, numberToHex } from "@/lib/embed";
 
 const INPUT =
-  "w-full rounded-lg bg-[#0f1117] px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]";
-const LABEL = "mb-1 block text-xs text-gray-500";
+  "w-full rounded-lg bg-background px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-primary";
+const LABEL = "mb-1 block text-xs text-gray-400";
 
 function Group({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="border-t border-white/5 pt-4">
-      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-500">
+    <div className="border-t border-border pt-4">
+      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
         {title}
       </p>
       <div className="flex flex-col gap-3">{children}</div>
@@ -60,10 +60,10 @@ export function EmbedEditor({
             className={`${INPUT} resize-y`}
           />
           {variables && variables.length > 0 && (
-            <p className="mt-1 text-xs text-gray-600">
+            <p className="mt-1 text-xs text-gray-400">
               Zmienne:{" "}
               {variables.map((v) => (
-                <span key={v} className="mr-1 font-mono text-[#d4a843]">
+                <span key={v} className="mr-1 font-mono text-primary">
                   {v}
                 </span>
               ))}
@@ -151,7 +151,7 @@ export function EmbedEditor({
             type="checkbox"
             checked={Boolean(value.timestamp)}
             onChange={(e) => set({ timestamp: e.target.checked })}
-            className="h-4 w-4 accent-[#d4a843]"
+            className="h-4 w-4 accent-primary"
           />
           Pokaż datę/godzinę wysłania
         </label>
@@ -160,13 +160,13 @@ export function EmbedEditor({
       {/* Pola */}
       <Group title={`Pola (${fields.length}/25)`}>
         {fields.map((f, i) => (
-          <div key={i} className="rounded-lg border border-white/5 bg-[#0f1117] p-3">
+          <div key={i} className="rounded-lg border border-border bg-background p-3">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-xs text-gray-500">Pole #{i + 1}</span>
+              <span className="text-xs text-gray-400">Pole #{i + 1}</span>
               <button
                 type="button"
                 onClick={() => setFields(fields.filter((_, idx) => idx !== i))}
-                className="text-xs text-gray-600 hover:text-red-400"
+                className="text-xs text-gray-400 hover:text-red-400"
               >
                 Usuń
               </button>
@@ -186,12 +186,12 @@ export function EmbedEditor({
               placeholder="Wartość pola"
               className={`${INPUT} resize-y`}
             />
-            <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs text-gray-400">
+            <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs text-gray-300">
               <input
                 type="checkbox"
                 checked={Boolean(f.inline)}
                 onChange={(e) => updateField(i, { inline: e.target.checked })}
-                className="h-3.5 w-3.5 accent-[#d4a843]"
+                className="h-3.5 w-3.5 accent-primary"
               />
               W jednej linii (inline)
             </label>
@@ -201,7 +201,7 @@ export function EmbedEditor({
           <button
             type="button"
             onClick={() => setFields([...fields, { name: "", value: "", inline: false }])}
-            className="rounded-lg border border-dashed border-white/10 py-2 text-sm text-gray-400 transition hover:border-white/20 hover:text-white"
+            className="rounded-lg border border-dashed border-white/10 py-2 text-sm text-gray-300 transition hover:border-white/20 hover:text-white"
           >
             + Dodaj pole
           </button>
