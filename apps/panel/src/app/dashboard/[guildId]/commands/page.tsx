@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 
 import { CommandsBoard } from "@/components/CommandsBoard";
+import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
@@ -86,6 +87,15 @@ export default function CommandsPage() {
           className="px-5 py-2"
         />
       </div>
+
+      <HowItWorks
+        steps={[
+          "Suwak włączony = komenda działa na tym serwerze.",
+          "Wyłącz suwak, by ją zablokować — bot odrzuci próbę użycia.",
+          "„Włącz / Wyłącz wszystkie” przełącza całą kategorię naraz.",
+          "Zmiany działają w ~15 s, bez restartu bota.",
+        ]}
+      />
 
       <CommandsBoard disabled={disabled} onChange={setDisabled} />
     </div>

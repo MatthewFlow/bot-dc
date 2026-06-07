@@ -11,6 +11,8 @@ import {
   Ticket,
   TrendingUp,
   UserPlus,
+  Users,
+  Wrench,
   Zap,
 } from "lucide-react";
 
@@ -22,79 +24,125 @@ export type NavItem = {
   icon: LucideIcon;
 };
 
-export const NAV_ITEMS: NavItem[] = [
+export type NavGroup = {
+  /** Etykieta sekcji (nagłówek w sidebarze / na overview). */
+  label: string;
+  /** Stabilny identyfikator sekcji (klucz stanu zwinięcia w localStorage). */
+  id: string;
+  icon: LucideIcon;
+  items: NavItem[];
+};
+
+/** Strona przeglądu — zawsze na górze, poza grupami. */
+export const NAV_OVERVIEW: NavItem = {
+  label: "Dashboard",
+  href: "",
+  desc: "Przegląd serwera",
+  icon: LayoutDashboard,
+};
+
+/** Pozycje nawigacji pogrupowane w sekcje. */
+export const NAV_GROUPS: NavGroup[] = [
   {
-    label: "Dashboard",
-    href: "",
-    desc: "Przegląd serwera",
-    icon: LayoutDashboard,
-  },
-  {
-    label: "Welcome / Goodbye",
-    href: "/welcome",
-    desc: "Kanały i wiadomości powitalne",
+    label: "Onboarding",
+    id: "onboarding",
     icon: DoorOpen,
+    items: [
+      {
+        label: "Welcome / Goodbye",
+        href: "/welcome",
+        desc: "Kanały i wiadomości powitalne",
+        icon: DoorOpen,
+      },
+      {
+        label: "Auto-role",
+        href: "/autorole",
+        desc: "Rola nadawana po wejściu",
+        icon: UserPlus,
+      },
+      {
+        label: "Reaction Roles",
+        href: "/reaction-roles",
+        desc: "Role za reakcje pod wiadomością",
+        icon: Zap,
+      },
+    ],
   },
   {
-    label: "Auto-role",
-    href: "/autorole",
-    desc: "Rola nadawana po wejściu",
-    icon: UserPlus,
+    label: "Społeczność",
+    id: "community",
+    icon: Users,
+    items: [
+      {
+        label: "Levelowanie",
+        href: "/levels",
+        desc: "System XP, poziomów i nagród",
+        icon: TrendingUp,
+      },
+      {
+        label: "Tickety",
+        href: "/tickets",
+        desc: "Obsługa zgłoszeń użytkowników",
+        icon: Ticket,
+      },
+    ],
   },
   {
-    label: "Reaction Roles",
-    href: "/reaction-roles",
-    desc: "Role za reakcje pod wiadomością",
-    icon: Zap,
-  },
-  {
-    label: "Levelowanie",
-    href: "/levels",
-    desc: "System XP, poziomów i nagród",
-    icon: TrendingUp,
-  },
-  {
-    label: "Moderacja",
-    href: "/moderation",
-    desc: "Ostrzeżenia, bany, logi akcji",
+    label: "Bezpieczeństwo",
+    id: "security",
     icon: ShieldAlert,
+    items: [
+      {
+        label: "Moderacja",
+        href: "/moderation",
+        desc: "Ostrzeżenia, bany, logi akcji",
+        icon: ShieldAlert,
+      },
+      {
+        label: "Auto-moderacja",
+        href: "/automod",
+        desc: "Filtry spamu, linków i słów",
+        icon: ShieldBan,
+      },
+      {
+        label: "Logi serwera",
+        href: "/serverlog",
+        desc: "Logi wiadomości, wejść i ról",
+        icon: ScrollText,
+      },
+    ],
   },
   {
-    label: "Auto-moderacja",
-    href: "/automod",
-    desc: "Filtry spamu, linków i słów",
-    icon: ShieldBan,
+    label: "System",
+    id: "system",
+    icon: Wrench,
+    items: [
+      {
+        label: "Komendy",
+        href: "/commands",
+        desc: "Włączanie i wyłączanie komend bota",
+        icon: SlidersHorizontal,
+      },
+      {
+        label: "Ustawienia",
+        href: "/settings",
+        desc: "Rola admina i kanał logów moderacji",
+        icon: Settings,
+      },
+      {
+        label: "Feedback",
+        href: "/feedback",
+        desc: "Podziel się uwagami i sugestiami",
+        icon: MessageSquareHeart,
+      },
+    ],
   },
-  {
-    label: "Logi serwera",
-    href: "/serverlog",
-    desc: "Logi wiadomości, wejść i ról",
-    icon: ScrollText,
-  },
-  {
-    label: "Tickety",
-    href: "/tickets",
-    desc: "Obsługa zgłoszeń użytkowników",
-    icon: Ticket,
-  },
-  {
-    label: "Komendy",
-    href: "/commands",
-    desc: "Włączanie i wyłączanie komend bota",
-    icon: SlidersHorizontal,
-  },
-  {
-    label: "Ustawienia",
-    href: "/settings",
-    desc: "Rola admina i kanał logów moderacji",
-    icon: Settings,
-  },
-  {
-    label: "Feedback",
-    href: "/feedback",
-    desc: "Podziel się uwagami i sugestiami",
-    icon: MessageSquareHeart,
-  },
+];
+
+/** Płaska lista wszystkich pozycji (overview + grupy) — overview pierwszy. */
+export const NAV_ITEMS: NavItem[] = [
+  NAV_OVERVIEW,
+  ...NAV_GROUPS.flatMap((group) => group.items),
 ];
 
 /** Dopasowuje pozycję nawigacji do bieżącej ścieżki (do breadcrumbów/topbara). */
@@ -105,4 +153,10 @@ export function findNavItem(pathname: string, guildId: string): NavItem | undefi
   return sorted.find((item) =>
     item.href === "" ? pathname === base : pathname.startsWith(base + item.href),
   );
+}
+
+/** Grupa, do której należy dana pozycja (do kategorii w breadcrumbie). */
+export function findNavGroup(item: NavItem | undefined): NavGroup | undefined {
+  if (!item || item.href === "") return undefined;
+  return NAV_GROUPS.find((group) => group.items.some((i) => i.href === item.href));
 }

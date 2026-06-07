@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/Skeleton";
 import { useGuildLoad } from "@/hooks/useGuildLoad";
 import type { GuildStats } from "@/lib/api";
 import { getGuildStats } from "@/lib/api";
-import { NAV_ITEMS } from "@/lib/nav";
+import { NAV_GROUPS } from "@/lib/nav";
 
 const NF = new Intl.NumberFormat("pl-PL");
 
@@ -80,7 +80,6 @@ export default function GuildOverviewPage() {
   const { loading } = useGuildLoad(guildId, (id) => getGuildStats(id), setStats);
 
   const go = (href: string) => router.push(`/dashboard/${guildId}${href}`);
-  const navCards = NAV_ITEMS.filter((item) => item.href !== "");
 
   return (
     <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
@@ -101,7 +100,9 @@ export default function GuildOverviewPage() {
               icon={Users}
               label="Członkowie"
               value={fmt(stats.memberCount)}
-              sub={stats.onlineCount != null ? `${fmt(stats.onlineCount)} online` : undefined}
+              sub={
+                stats.onlineCount != null ? `${fmt(stats.onlineCount)} online` : undefined
+              }
               accent="bg-[#5865f2]/15 text-[#8b93f8]"
             />
             <StatCard
@@ -135,29 +136,37 @@ export default function GuildOverviewPage() {
         )}
       </div>
 
-      {/* Szybka nawigacja */}
-      <div>
-        <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-600">
-          Zarządzanie
-        </p>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {navCards.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.href}
-                onClick={() => go(item.href)}
-                className={`${CARD_BASE} flex flex-col gap-2 p-6 text-left hover:-translate-y-0.5 hover:border-white/10 hover:bg-[#222838]`}
-              >
-                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 text-[#d4a843]">
-                  <Icon size={18} />
-                </span>
-                <p className="mt-1 font-semibold text-white">{item.label}</p>
-                <p className="text-sm text-gray-400">{item.desc}</p>
-              </button>
-            );
-          })}
-        </div>
+      {/* Szybka nawigacja — pogrupowana w sekcje */}
+      <div className="flex flex-col gap-8">
+        {NAV_GROUPS.map((group) => {
+          const GroupIcon = group.icon;
+          return (
+            <div key={group.id}>
+              <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-gray-600">
+                <GroupIcon size={13} className="shrink-0" />
+                {group.label}
+              </p>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.href}
+                      onClick={() => go(item.href)}
+                      className={`${CARD_BASE} flex flex-col gap-2 p-6 text-left hover:-translate-y-0.5 hover:border-white/10 hover:bg-[#222838]`}
+                    >
+                      <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/5 text-[#d4a843]">
+                        <Icon size={18} />
+                      </span>
+                      <p className="mt-1 font-semibold text-white">{item.label}</p>
+                      <p className="text-sm text-gray-400">{item.desc}</p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

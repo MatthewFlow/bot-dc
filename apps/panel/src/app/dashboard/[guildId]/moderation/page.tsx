@@ -150,6 +150,15 @@ export default function ModerationPage() {
         className="mb-0"
       />
 
+      <HowItWorks
+        steps={[
+          "Ustaw kanał logów — trafia tam każda akcja moderacyjna.",
+          "Moderatorzy używają komend /mod_warn, /mod_mute, /mod_kick i /mod_ban.",
+          "Każda akcja i ostrzeżenie zapisują się w bazie danych.",
+          "Ostrzeżenia przejrzysz i wyczyścisz wprost z tego panelu.",
+        ]}
+      />
+
       <div className="flex flex-col gap-6 lg:flex-row">
         {/* Config */}
         <div className="flex flex-col gap-4 lg:w-80">
@@ -193,15 +202,6 @@ export default function ModerationPage() {
               </div>
             </div>
           </div>
-
-          <HowItWorks
-            steps={[
-              "Ustaw kanał logów — tam bot zapisuje każdą akcję moderacyjną",
-              "Komendy /mod_warn /mod_mute /mod_kick /mod_ban dostępne dla adminów",
-              "Historia ostrzeżeń przechowywana w bazie danych",
-              "Możesz przeglądać i czyścić warny z tego panelu",
-            ]}
-          />
         </div>
 
         {/* Warnings */}

@@ -238,6 +238,15 @@ export default function TicketsPage() {
         className="mb-0"
       />
 
+      <HowItWorks
+        steps={[
+          "Ustaw rolę obsługi i wyślij panel na kanał (lub użyj /ticket_setup).",
+          "Użytkownik klika „Złóż ticket” i opisuje sprawę — powstaje prywatny wątek.",
+          "Ekipa dostaje ping i przejmuje zgłoszenie przyciskiem „Przejmij”.",
+          "Po rozwiązaniu /ticket_close zamyka wątek; tu masz podgląd i historię.",
+        ]}
+      />
+
       {!config.ticketSupportRoleId && !config.ticketSupportRoleId2 && (
         <div className="flex items-start gap-3 rounded-xl border border-yellow-500/30 bg-yellow-500/10 px-5 py-4 text-sm text-yellow-200">
           <span className="text-lg leading-none">⚠️</span>
@@ -466,15 +475,6 @@ export default function TicketsPage() {
               <p className="text-xs text-gray-500">Zamknięte</p>
             </div>
           </div>
-
-          <HowItWorks
-            steps={[
-              "Ustaw rolę supportu i użyj /ticket_setup na wybranym kanale",
-              "User klika przycisk Złóż ticket, opisuje problem w formularzu i wysyła",
-              "Zgłoszenie trafia do oczekujących — ekipa dostaje ping z przyciskiem Przejmij",
-              "Moderator lub admin przejmuje zgłoszenie i pomaga; /ticket_close kończy sprawę",
-            ]}
-          />
         </div>
 
         {/* Tickets list */}

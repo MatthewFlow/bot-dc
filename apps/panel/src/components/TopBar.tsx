@@ -8,7 +8,7 @@ import { Avatar } from "@/components/Avatar";
 import { Skeleton } from "@/components/Skeleton";
 import type { User } from "@/lib/api";
 import { getMe, logout } from "@/lib/api";
-import { findNavItem } from "@/lib/nav";
+import { findNavGroup, findNavItem } from "@/lib/nav";
 
 export function TopBar({ guildName }: { guildName: string }) {
   const router = useRouter();
@@ -25,6 +25,7 @@ export function TopBar({ guildName }: { guildName: string }) {
   }, []);
 
   const section = findNavItem(pathname, guildId);
+  const group = findNavGroup(section);
   const isOverview = !section || section.href === "";
 
   async function handleLogout() {
@@ -44,6 +45,14 @@ export function TopBar({ guildName }: { guildName: string }) {
         </button>
         {!isOverview && section && (
           <>
+            {group && (
+              <>
+                <ChevronRight size={14} className="shrink-0 text-gray-600" />
+                <span className="hidden shrink-0 text-gray-500 sm:inline">
+                  {group.label}
+                </span>
+              </>
+            )}
             <ChevronRight size={14} className="shrink-0 text-gray-600" />
             <span className="truncate text-[#d4a843]">{section.label}</span>
           </>
@@ -63,7 +72,9 @@ export function TopBar({ guildName }: { guildName: string }) {
               name={user.username}
               size="sm"
             />
-            <span className="hidden text-sm text-gray-300 sm:inline">{user.username}</span>
+            <span className="hidden text-sm text-gray-300 sm:inline">
+              {user.username}
+            </span>
           </>
         ) : (
           <Skeleton className="h-8 w-8 rounded-full" />

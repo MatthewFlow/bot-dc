@@ -152,6 +152,15 @@ export default function AutoModPage() {
         />
       </div>
 
+      <HowItWorks
+        steps={[
+          "Włącz auto-moderację i zaznacz filtry: zaproszenia, linki, słowa, spam.",
+          "Ustaw akcję przy wykryciu: usunięcie, ostrzeżenie lub timeout.",
+          "Dodaj wyjątki dla zaufanych ról i kanałów — staff jest pomijany automatycznie.",
+          "Bot potrzebuje uprawnienia Zarządzanie wiadomościami (oraz Moderuj członków dla mute).",
+        ]}
+      />
+
       {/* Master switch */}
       <div className={`${CARD} p-6`}>
         <Toggle
@@ -353,15 +362,6 @@ export default function AutoModPage() {
                 </div>
               </div>
             </div>
-
-            <HowItWorks
-              steps={[
-                "Włącz auto-moderację i wybierz filtry",
-                "Ustaw akcję: usunięcie, ostrzeżenie lub timeout",
-                "Dodaj wyjątki dla zaufanych ról i kanałów",
-                "Bot wymaga uprawnień Zarządzanie wiadomościami (i Timeout dla mute)",
-              ]}
-            />
           </div>
         </div>
       </div>

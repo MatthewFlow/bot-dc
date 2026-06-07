@@ -1,6 +1,5 @@
 "use client";
 
-import { HowItWorks } from "@/components/HowItWorks";
 import { COMMAND_CATALOG } from "@/lib/commands";
 
 function Toggle({
@@ -126,15 +125,6 @@ export function CommandsBoard({
             <p className="text-xs text-gray-500">wyłączonych</p>
           </div>
         </div>
-
-        <HowItWorks
-          steps={[
-            "Suwak włączony = komenda działa na serwerze",
-            "Wyłącz suwak, by zablokować komendę — bot odrzuci jej użycie",
-            "„Włącz / Wyłącz wszystkie” przełącza całą kategorię naraz",
-            "Zmiany działają w ~15 s, bez restartu bota",
-          ]}
-        />
       </div>
     </div>
   );

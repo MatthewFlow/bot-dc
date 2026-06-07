@@ -1,20 +1,36 @@
+import { Lightbulb } from "lucide-react";
+
 interface HowItWorksProps {
   steps: string[];
   title?: string;
+  className?: string;
 }
 
-export function HowItWorks({ steps, title = "Jak to działa?" }: HowItWorksProps) {
+/**
+ * Baner „Jak to działa?" — kroki w responsywnej siatce (1/2/4 kolumny).
+ * Domyślnie ląduje u góry lewej kolumny strony, nad kontrolkami.
+ */
+export function HowItWorks({
+  steps,
+  title = "Jak to działa?",
+  className = "",
+}: HowItWorksProps) {
   return (
-    <div className="rounded-xl bg-[#1a1f2e] p-6">
-      <p className="mb-3 text-sm font-semibold text-white">{title}</p>
-      <div className="flex flex-col gap-3 text-sm text-gray-400">
+    <div className={`rounded-xl border border-white/5 bg-[#1a1f2e] p-5 ${className}`}>
+      <p className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
+        <Lightbulb size={16} className="shrink-0 text-[#d4a843]" />
+        {title}
+      </p>
+      <ol className="grid gap-x-5 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
         {steps.map((text, i) => (
-          <div key={i} className="flex gap-2">
-            <span className="mt-0.5 shrink-0 text-[#d4a843]">{i + 1}.</span>
-            <p>{text}</p>
-          </div>
+          <li key={i} className="flex gap-2.5">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#d4a843]/15 text-xs font-semibold text-[#d4a843]">
+              {i + 1}
+            </span>
+            <p className="text-sm leading-snug text-gray-400">{text}</p>
+          </li>
         ))}
-      </div>
+      </ol>
     </div>
   );
 }

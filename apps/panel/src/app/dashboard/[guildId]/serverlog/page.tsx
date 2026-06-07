@@ -169,6 +169,15 @@ export default function ServerLogPage() {
         />
       </div>
 
+      <HowItWorks
+        steps={[
+          "Wybierz kanał logów i włącz logowanie zdarzeń serwera.",
+          "Zaznacz kategorie zdarzeń: wiadomości, wejścia/wyjścia, role, nicki.",
+          "Dodaj wyjątki dla ról i kanałów, których nie chcesz logować.",
+          "„Kto usunął” wymaga uprawnienia bota Wyświetlanie dziennika audytu.",
+        ]}
+      />
+
       <div className={`${CARD} p-6`}>
         <Toggle
           checked={sl.enabled}
@@ -293,15 +302,6 @@ export default function ServerLogPage() {
                 </div>
               </div>
             </div>
-
-            <HowItWorks
-              steps={[
-                "Wybierz kanał i włącz logi serwera",
-                "Zaznacz kategorie zdarzeń, które chcesz śledzić",
-                "Dodaj wyjątki dla ról/kanałów, których nie chcesz logować",
-                "„Kto usunął” wymaga uprawnienia bota Wyświetlanie dziennika audytu",
-              ]}
-            />
           </div>
         </div>
       </div>

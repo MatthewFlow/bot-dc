@@ -243,6 +243,15 @@ export default function LevelsPage() {
         className="mb-0"
       />
 
+      <HowItWorks
+        steps={[
+          "Za pisanie na czacie członkowie zdobywają XP (z cooldownem antyspamowym).",
+          "Po przekroczeniu progu levela bot automatycznie nadaje przypisaną rolę.",
+          "Wyższy level = wyższy tier z listy; opcjonalnie powiadomienie o awansie.",
+          "Leaderboard pokazuje ranking najaktywniejszych członków serwera.",
+        ]}
+      />
+
       <div className="flex flex-col gap-6 lg:flex-row">
         <div className="flex-1 rounded-xl bg-[#1a1f2e]">
           <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
@@ -348,14 +357,6 @@ export default function LevelsPage() {
               </button>
             </div>
           </div>
-          <HowItWorks
-            steps={[
-              "Użytkownik wysyła wiadomości na serwerze i zdobywa XP",
-              "Po osiągnięciu progu level bot automatycznie nadaje rolę",
-              "Wyższy level = wyższa rola z listy tierów",
-              "Leaderboard pokazuje ranking wszystkich aktywnych członków",
-            ]}
-          />
         </div>
       </div>
 
