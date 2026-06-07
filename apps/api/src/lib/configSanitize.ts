@@ -12,6 +12,7 @@ const ID_FIELDS = new Set([
   "joinRoleId",
   "verifiedRoleId",
   "modLogChannelId",
+  "feedbackChannelId",
   "adminRoleId",
   "ticketSupportRoleId",
   "ticketSupportRoleId2",
@@ -98,7 +99,9 @@ function sanitizeRoleRewards(v: unknown): Array<{ level: number; roleId: string 
     );
 }
 
-function sanitizeButton(v: unknown): { label?: string; emoji?: string } | null | undefined {
+function sanitizeButton(
+  v: unknown,
+): { label?: string; emoji?: string } | null | undefined {
   if (v === null) return null;
   if (!v || typeof v !== "object") return undefined;
   const o = v as Record<string, unknown>;
@@ -164,7 +167,9 @@ function sanitizeServerLog(v: unknown): ServerLogConfig | undefined {
   return {
     enabled: o.enabled === true,
     channelId:
-      typeof o.channelId === "string" && o.channelId.length <= 32 ? o.channelId : undefined,
+      typeof o.channelId === "string" && o.channelId.length <= 32
+        ? o.channelId
+        : undefined,
     messageDelete: bool(o.messageDelete, true),
     messageEdit: bool(o.messageEdit, true),
     memberJoin: bool(o.memberJoin, true),

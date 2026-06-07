@@ -22,6 +22,36 @@ export const commands = [
         .setRequired(false),
     ),
 
+  new SlashCommandBuilder()
+    .setName("feedback")
+    .setDescription("Podziel się opinią o bocie")
+    .addStringOption((opt) =>
+      opt
+        .setName("message")
+        .setDescription("Twoja opinia, sugestia lub opis błędu")
+        .setRequired(true)
+        .setMaxLength(2000),
+    )
+    .addStringOption((opt) =>
+      opt
+        .setName("category")
+        .setDescription("Kategoria (domyślnie: Inne)")
+        .setRequired(false)
+        .addChoices(
+          { name: "🐛 Błąd", value: "bug" },
+          { name: "💡 Sugestia", value: "suggestion" },
+          { name: "💬 Inne", value: "other" },
+        ),
+    )
+    .addIntegerOption((opt) =>
+      opt
+        .setName("rating")
+        .setDescription("Ocena 1–5 (opcjonalnie)")
+        .setRequired(false)
+        .setMinValue(1)
+        .setMaxValue(5),
+    ),
+
   // ===== CONFIG: WELCOME / GOODBYE =====
   new SlashCommandBuilder()
     .setName("cfg_setwelcome")

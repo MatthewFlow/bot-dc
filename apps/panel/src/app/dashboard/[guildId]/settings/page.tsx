@@ -56,6 +56,7 @@ export default function SettingsPage() {
       await updateGuildConfig(guildId, {
         adminRoleId: config.adminRoleId,
         modLogChannelId: config.modLogChannelId,
+        feedbackChannelId: config.feedbackChannelId,
       });
       toast("Zapisano zmiany.", "success");
     } catch {
@@ -69,6 +70,7 @@ export default function SettingsPage() {
     JSON.stringify({
       adminRoleId: config.adminRoleId,
       modLogChannelId: config.modLogChannelId,
+      feedbackChannelId: config.feedbackChannelId,
     }),
     handleSave,
     !loading,
@@ -82,7 +84,7 @@ export default function SettingsPage() {
         category="Konfiguracja serwera"
         title={
           <>
-            Ustawienia <span className="italic text-[#d4a843]">ogólne</span>
+            Ustawienia <span className="italic text-primary">ogólne</span>
           </>
         }
         description="Uprawnienia do komend bota i kanał logów moderacji."
@@ -99,8 +101,8 @@ export default function SettingsPage() {
       />
 
       <div className="flex flex-col gap-6 lg:flex-row">
-        <div className="flex-1 rounded-xl border border-white/5 bg-[#1a1f2e]">
-          <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
+        <div className="flex-1 surface-raised rounded-xl border border-border bg-card">
+          <div className="flex items-center justify-between border-b border-border px-6 py-4">
             <p className="text-sm font-semibold text-white">Ogólne</p>
             <SaveButton
               onClick={handleSave}
@@ -112,7 +114,7 @@ export default function SettingsPage() {
 
           <div className="flex flex-col gap-5 p-6">
             <div>
-              <label className="mb-1 block text-xs text-gray-500">
+              <label className="mb-1 block text-xs text-gray-400">
                 Rola administratora bota
               </label>
               <div className="flex max-w-sm flex-wrap items-center gap-2">
@@ -136,7 +138,7 @@ export default function SettingsPage() {
                   }}
                 />
               </div>
-              <p className="mt-1 text-xs text-gray-600">
+              <p className="mt-1 text-xs text-gray-400">
                 Dodatkowa rola dopuszczona do komend <code>/cfg_*</code> i{" "}
                 <code>/mod_*</code>. Osoby z uprawnieniem Discord{" "}
                 <strong>Administrator</strong> lub <strong>Zarządzanie serwerem</strong> i
@@ -145,7 +147,7 @@ export default function SettingsPage() {
             </div>
 
             <div>
-              <label className="mb-1 block text-xs text-gray-500">
+              <label className="mb-1 block text-xs text-gray-400">
                 Kanał logów moderacji
               </label>
               <div className="flex max-w-sm flex-wrap items-center gap-2">
@@ -169,8 +171,36 @@ export default function SettingsPage() {
                   }}
                 />
               </div>
-              <p className="mt-1 text-xs text-gray-600">
+              <p className="mt-1 text-xs text-gray-400">
                 Tu trafiają logi akcji moderacyjnych (ostrzeżenia, muty, kicki, bany).
+              </p>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs text-gray-400">Kanał feedbacku</label>
+              <div className="flex max-w-sm flex-wrap items-center gap-2">
+                <ChannelSelect
+                  value={config.feedbackChannelId ?? ""}
+                  onChange={(v) =>
+                    setConfig((c) => ({ ...c, feedbackChannelId: v || undefined }))
+                  }
+                  channels={channels}
+                  placeholder="— Nie ustawiono —"
+                  className="min-w-0 flex-1 px-3 py-2.5"
+                />
+                <CreateChannelButton
+                  guildId={guildId}
+                  defaultName="feedback"
+                  onCreated={(ch) => {
+                    setChannels((prev) =>
+                      [...prev, ch].sort((a, b) => a.name.localeCompare(b.name)),
+                    );
+                    setConfig((c) => ({ ...c, feedbackChannelId: ch.id }));
+                  }}
+                />
+              </div>
+              <p className="mt-1 text-xs text-gray-400">
+                Zgłoszenia z komendy <code>/feedback</code> trafiają tu jako embed.
               </p>
             </div>
           </div>

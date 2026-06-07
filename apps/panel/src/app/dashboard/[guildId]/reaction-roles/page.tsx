@@ -148,7 +148,7 @@ export default function ReactionRolesPage() {
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-gray-400">Loading...</p>
+        <p className="text-gray-300">Loading...</p>
       </div>
     );
   }
@@ -159,7 +159,7 @@ export default function ReactionRolesPage() {
         category="Assignment Grid"
         title={
           <>
-            Reaction <span className="italic text-[#d4a843]">Roles</span>
+            Reaction <span className="italic text-primary">Roles</span>
           </>
         }
         description="Bot publikuje embed z emoji — reakcja nadaje rolę."
@@ -178,15 +178,15 @@ export default function ReactionRolesPage() {
       <div className="flex flex-col gap-8 lg:flex-row">
         {/* Form */}
         <div className="w-full lg:w-96">
-          <div className="rounded-xl bg-[#1a1f2e]">
-            <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
+          <div className="surface-raised rounded-xl bg-card">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
               <p className="text-sm font-semibold text-white">
                 {editingMessageId ? "Edytuj wiadomość" : "Nowa wiadomość"}
               </p>
               {editingMessageId && (
                 <button
                   onClick={cancelEdit}
-                  className="text-xs text-gray-500 hover:text-gray-300"
+                  className="text-xs text-gray-400 hover:text-gray-300"
                 >
                   Anuluj
                 </button>
@@ -195,7 +195,7 @@ export default function ReactionRolesPage() {
 
             <div className="flex flex-col gap-4 p-6">
               <div>
-                <label className="mb-1 block text-xs text-gray-500">Kanał</label>
+                <label className="mb-1 block text-xs text-gray-400">Kanał</label>
                 <ChannelSelect
                   value={form.channelId}
                   onChange={(v) => setForm((f) => ({ ...f, channelId: v }))}
@@ -211,13 +211,14 @@ export default function ReactionRolesPage() {
               />
 
               <div>
-                <label className="mb-1 block text-xs text-gray-500">
+                <label className="mb-1 block text-xs text-gray-400">
                   Pary emoji → rola
                 </label>
-                <p className="mb-2 text-xs text-gray-600">
+                <p className="mb-2 text-xs text-gray-400">
                   Standardowe emoji wpisz wprost (np. ✅). Custom emoji z serwera podaj
-                  jako <code className="text-gray-400">&lt;:nazwa:id&gt;</code> — w
-                  Discordzie uzyskasz ten zapis wpisując <code className="text-gray-400">\:nazwa:</code>.
+                  jako <code className="text-gray-300">&lt;:nazwa:id&gt;</code> — w
+                  Discordzie uzyskasz ten zapis wpisując{" "}
+                  <code className="text-gray-300">\:nazwa:</code>.
                 </p>
                 <div className="flex flex-col gap-2">
                   {form.entries.map((entry, idx) => (
@@ -226,7 +227,7 @@ export default function ReactionRolesPage() {
                         value={entry.emoji}
                         onChange={(e) => updateEntry(idx, "emoji", e.target.value)}
                         placeholder="emoji"
-                        className="w-16 rounded-lg bg-[#0f1117] px-2 py-2 text-center text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]"
+                        className="w-16 rounded-lg bg-background px-2 py-2 text-center text-sm text-white outline-none focus:ring-2 focus:ring-primary"
                       />
                       <RoleSelect
                         value={entry.roleId}
@@ -238,7 +239,7 @@ export default function ReactionRolesPage() {
                       {form.entries.length > 1 && (
                         <button
                           onClick={() => removeEntry(idx)}
-                          className="text-gray-600 hover:text-red-400"
+                          className="text-gray-400 hover:text-red-400"
                         >
                           ✕
                         </button>
@@ -248,21 +249,21 @@ export default function ReactionRolesPage() {
                 </div>
                 <button
                   onClick={addEntry}
-                  className="mt-2 text-xs text-[#d4a843] hover:text-[#c49b3a]"
+                  className="mt-2 text-xs text-primary hover:text-primary-hover"
                 >
                   + Dodaj kolejną parę
                 </button>
               </div>
 
               <div>
-                <p className="mb-2 text-xs text-gray-500">Podgląd</p>
+                <p className="mb-2 text-xs text-gray-400">Podgląd</p>
                 <EmbedPreview embed={form.embed} />
               </div>
 
               <button
                 onClick={handlePublish}
                 disabled={publishing || !isFormValid}
-                className="mt-2 rounded-lg bg-[#d4a843] py-2.5 text-sm font-semibold text-black transition hover:bg-[#c49b3a] disabled:opacity-40"
+                className="mt-2 rounded-lg bg-primary py-2.5 text-sm font-semibold text-black transition hover:bg-primary-hover disabled:opacity-40"
               >
                 {publishing
                   ? "Publikowanie..."
@@ -276,23 +277,23 @@ export default function ReactionRolesPage() {
 
         {/* List */}
         <div className="flex flex-1 flex-col gap-4">
-          <div className="rounded-xl bg-[#1a1f2e]">
-            <div className="border-b border-white/5 px-6 py-4">
+          <div className="surface-raised rounded-xl bg-card">
+            <div className="border-b border-border px-6 py-4">
               <p className="text-sm font-semibold text-white">
                 Opublikowane wiadomości
-                <span className="ml-2 text-xs text-gray-500">{list.length}</span>
+                <span className="ml-2 text-xs text-gray-400">{list.length}</span>
               </p>
             </div>
 
             {list.length === 0 ? (
-              <div className="px-6 py-8 text-center text-sm text-gray-500">
+              <div className="px-6 py-8 text-center text-sm text-gray-400">
                 Brak wiadomości. Opublikuj pierwszą po lewej.
               </div>
             ) : (
               list.map((rr) => (
                 <div
                   key={rr.messageId}
-                  className={`border-b border-white/5 px-6 py-4 last:border-0 ${editingMessageId === rr.messageId ? "bg-[#d4a843]/5" : ""}`}
+                  className={`border-b border-border px-6 py-4 last:border-0 ${editingMessageId === rr.messageId ? "bg-primary/5" : ""}`}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
@@ -303,17 +304,17 @@ export default function ReactionRolesPage() {
                             style={{ backgroundColor: rr.color }}
                           />
                         )}
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-gray-400">
                           # {channelName(rr.channelId)}
                         </p>
                       </div>
                       <p className="mt-1 text-sm font-semibold text-white">{rr.title}</p>
-                      <p className="truncate text-xs text-gray-400">{rr.content}</p>
+                      <p className="truncate text-xs text-gray-300">{rr.content}</p>
                       <div className="mt-2 flex flex-wrap gap-2">
                         {rr.entries.map((e, i) => (
                           <span
                             key={i}
-                            className="flex items-center gap-1.5 rounded-full bg-[#0f1117] px-2.5 py-1 text-xs text-gray-300"
+                            className="flex items-center gap-1.5 rounded-full bg-background px-2.5 py-1 text-xs text-gray-300"
                           >
                             <span>{e.emoji}</span>
                             <span>@{roleName(e.roleId)}</span>
@@ -324,13 +325,13 @@ export default function ReactionRolesPage() {
                     <div className="flex shrink-0 gap-2">
                       <button
                         onClick={() => startEdit(rr)}
-                        className="rounded-lg bg-[#0f1117] px-3 py-1.5 text-xs text-gray-400 hover:text-white"
+                        className="rounded-lg bg-background px-3 py-1.5 text-xs text-gray-300 hover:text-white"
                       >
                         Edytuj
                       </button>
                       <button
                         onClick={() => setPendingDelete(rr.messageId)}
-                        className="rounded-lg bg-[#0f1117] px-3 py-1.5 text-xs text-red-400 hover:bg-red-400/10"
+                        className="rounded-lg bg-background px-3 py-1.5 text-xs text-red-400 hover:bg-red-400/10"
                       >
                         Usuń
                       </button>

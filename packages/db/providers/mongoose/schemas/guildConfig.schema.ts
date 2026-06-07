@@ -64,6 +64,7 @@ export type GuildConfigDocument = {
   goodbyeMessage?: string;
   roleRewards: RoleReward[];
   modLogChannelId?: string;
+  feedbackChannelId?: string;
   adminRoleId?: string;
   ticketSupportRoleId?: string;
   ticketSupportRoleId2?: string;
@@ -179,6 +180,7 @@ const guildConfigSchema = new Schema<GuildConfigDocument>(
     goodbyeMessage: { type: String },
     roleRewards: { type: [roleRewardSchema], default: [] },
     modLogChannelId: { type: String },
+    feedbackChannelId: { type: String },
     adminRoleId: { type: String },
     ticketSupportRoleId: { type: String },
     ticketSupportRoleId2: { type: String },

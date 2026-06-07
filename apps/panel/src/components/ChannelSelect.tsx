@@ -1,3 +1,10 @@
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { Channel } from "@/lib/api";
 
 interface ChannelSelectProps {
@@ -8,6 +15,9 @@ interface ChannelSelectProps {
   className?: string;
 }
 
+/** Sentinel dla opcji „wyczyść" — Radix Select nie dopuszcza pustej wartości. */
+const NONE = "__none__";
+
 export function ChannelSelect({
   value,
   onChange,
@@ -16,17 +26,21 @@ export function ChannelSelect({
   className = "",
 }: ChannelSelectProps) {
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className={`rounded-lg bg-[#0f1117] text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843] ${className}`}
+    <Select
+      value={value || undefined}
+      onValueChange={(v) => onChange(v === NONE ? "" : v)}
     >
-      <option value="">{placeholder}</option>
-      {channels.map((ch) => (
-        <option key={ch.id} value={ch.id}>
-          # {ch.name}
-        </option>
-      ))}
-    </select>
+      <SelectTrigger className={className}>
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value={NONE}>{placeholder}</SelectItem>
+        {channels.map((ch) => (
+          <SelectItem key={ch.id} value={ch.id}>
+            # {ch.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

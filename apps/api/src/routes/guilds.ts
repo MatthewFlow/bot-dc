@@ -30,6 +30,7 @@ const CONFIG_ALLOWED_FIELDS = [
   "goodbyeMessage",
   "roleRewards",
   "modLogChannelId",
+  "feedbackChannelId",
   "adminRoleId",
   "ticketSupportRoleId",
   "ticketSupportRoleId2",
@@ -96,7 +97,10 @@ guildRoutes.put("/:guildId/config", async (c) => {
   );
   const patch = sanitizeConfigPatch(allowlisted);
 
-  await guildConfigRepository.set(guildId, patch as Parameters<typeof guildConfigRepository.set>[1]);
+  await guildConfigRepository.set(
+    guildId,
+    patch as Parameters<typeof guildConfigRepository.set>[1],
+  );
   return c.json({ ok: true });
 });
 
@@ -214,7 +218,8 @@ guildRoutes.post("/:guildId/ticket-panel", async (c) => {
         approximate_member_count?: number;
       };
       serverName = g.name ?? "";
-      memberCount = g.approximate_member_count != null ? String(g.approximate_member_count) : "";
+      memberCount =
+        g.approximate_member_count != null ? String(g.approximate_member_count) : "";
     }
   } catch {
     // ignore — zmienne zostaną puste
@@ -222,7 +227,10 @@ guildRoutes.post("/:guildId/ticket-panel", async (c) => {
   const replace = (s: string) =>
     s.replace(/{server}/g, serverName).replace(/{member_count}/g, memberCount);
 
-  const embed = toDiscordEmbed(cfg?.ticketPanelEmbed ?? DEFAULT_TICKET_PANEL_EMBED, replace);
+  const embed = toDiscordEmbed(
+    cfg?.ticketPanelEmbed ?? DEFAULT_TICKET_PANEL_EMBED,
+    replace,
+  );
   const btnLabel = cfg?.ticketPanelButton?.label?.trim() || "Złóż ticket";
   const btnEmoji = cfg?.ticketPanelButton?.emoji?.trim() || "📩";
 

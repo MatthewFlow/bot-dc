@@ -1,8 +1,11 @@
 "use client";
 
+import { X } from "lucide-react";
 import { useState } from "react";
 
 import { useToast } from "@/components/toast";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import type { Channel } from "@/lib/api";
 import { createChannel } from "@/lib/api";
 
@@ -44,22 +47,23 @@ export function CreateChannelButton({
 
   if (!open) {
     return (
-      <button
+      <Button
+        variant="secondary"
         onClick={() => {
           setName(defaultName);
           setOpen(true);
         }}
-        className="shrink-0 rounded-lg bg-[#0f1117] px-3 py-2.5 text-sm text-gray-400 transition hover:text-white"
+        className="h-auto shrink-0 px-3 py-2.5 font-normal text-gray-300"
         title="Utwórz nowy kanał przez bota"
       >
         + Stwórz kanał
-      </button>
+      </Button>
     );
   }
 
   return (
     <div className="flex w-full flex-wrap items-center gap-2">
-      <input
+      <Input
         autoFocus
         value={name}
         onChange={(e) => setName(e.target.value)}
@@ -68,22 +72,24 @@ export function CreateChannelButton({
           if (e.key === "Escape") setOpen(false);
         }}
         placeholder="nazwa-kanału"
-        className="min-w-0 flex-1 rounded-lg bg-[#0f1117] px-3 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]"
+        className="min-w-0 flex-1 py-2.5"
       />
-      <button
+      <Button
         onClick={submit}
         disabled={busy || !name.trim()}
-        className="shrink-0 rounded-lg bg-[#d4a843] px-3 py-2.5 text-sm font-semibold text-black transition hover:bg-[#c49b3a] disabled:opacity-40"
+        className="h-auto shrink-0 px-3 py-2.5"
       >
         {busy ? "…" : "Utwórz"}
-      </button>
-      <button
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={() => setOpen(false)}
-        className="shrink-0 text-gray-500 hover:text-gray-300"
+        className="shrink-0"
         title="Anuluj"
       >
-        ✕
-      </button>
+        <X className="size-4" />
+      </Button>
     </div>
   );
 }

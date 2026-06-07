@@ -23,6 +23,7 @@ export const COMMAND_CATALOG: CommandCategory[] = [
       { name: "level", desc: "Pokaż swój aktualny level i XP" },
       { name: "leaderboard", desc: "Pokaż top 10 graczy na serwerze" },
       { name: "profile", desc: "Pokaż profil XP użytkownika" },
+      { name: "feedback", desc: "Podziel się opinią o bocie" },
     ],
   },
   {

@@ -74,7 +74,7 @@ export default function CommandsPage() {
           category="Konfiguracja serwera"
           title={
             <>
-              Komendy <span className="italic text-[#d4a843]">bota</span>
+              Komendy <span className="italic text-primary">bota</span>
             </>
           }
           description="Włączaj i wyłączaj komendy bota na tym serwerze."

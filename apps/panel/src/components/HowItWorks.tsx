@@ -16,18 +16,20 @@ export function HowItWorks({
   className = "",
 }: HowItWorksProps) {
   return (
-    <div className={`rounded-xl border border-white/5 bg-[#1a1f2e] p-5 ${className}`}>
+    <div
+      className={`surface-raised rounded-xl border border-border bg-card p-5 ${className}`}
+    >
       <p className="mb-4 flex items-center gap-2 text-sm font-semibold text-white">
-        <Lightbulb size={16} className="shrink-0 text-[#d4a843]" />
+        <Lightbulb size={16} className="shrink-0 text-primary" />
         {title}
       </p>
       <ol className="grid gap-x-5 gap-y-3 sm:grid-cols-2 lg:grid-cols-4">
         {steps.map((text, i) => (
           <li key={i} className="flex gap-2.5">
-            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#d4a843]/15 text-xs font-semibold text-[#d4a843]">
+            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
               {i + 1}
             </span>
-            <p className="text-sm leading-snug text-gray-400">{text}</p>
+            <p className="text-sm leading-snug text-gray-300">{text}</p>
           </li>
         ))}
       </ol>

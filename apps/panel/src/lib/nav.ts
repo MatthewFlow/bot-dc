@@ -41,6 +41,17 @@ export const NAV_OVERVIEW: NavItem = {
   icon: LayoutDashboard,
 };
 
+/** Feedback — wyróżniony na górze nawigacji, poza grupami. */
+export const NAV_FEEDBACK: NavItem = {
+  label: "Feedback",
+  href: "/feedback",
+  desc: "Podziel się uwagami i sugestiami",
+  icon: MessageSquareHeart,
+};
+
+/** Pozycje przypięte na górze sidebara (poza sekcjami). */
+export const NAV_TOP: NavItem[] = [NAV_OVERVIEW, NAV_FEEDBACK];
+
 /** Pozycje nawigacji pogrupowane w sekcje. */
 export const NAV_GROUPS: NavGroup[] = [
   {
@@ -129,19 +140,13 @@ export const NAV_GROUPS: NavGroup[] = [
         desc: "Rola admina i kanał logów moderacji",
         icon: Settings,
       },
-      {
-        label: "Feedback",
-        href: "/feedback",
-        desc: "Podziel się uwagami i sugestiami",
-        icon: MessageSquareHeart,
-      },
     ],
   },
 ];
 
 /** Płaska lista wszystkich pozycji (overview + grupy) — overview pierwszy. */
 export const NAV_ITEMS: NavItem[] = [
-  NAV_OVERVIEW,
+  ...NAV_TOP,
   ...NAV_GROUPS.flatMap((group) => group.items),
 ];
 

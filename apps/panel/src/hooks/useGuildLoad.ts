@@ -19,7 +19,8 @@ export function useGuildLoad<T>(
   onDataRef.current = onData;
 
   useEffect(() => {
-    loaderRef.current(guildId)
+    loaderRef
+      .current(guildId)
       .then((data) => onDataRef.current(data))
       .catch((e) => {
         // TokenExpiredError already triggers window.location.href = "/" in api.ts

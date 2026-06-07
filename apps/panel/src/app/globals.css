@@ -1,4 +1,72 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+/* ── Design tokens — paleta marki (dark) ─────────────────────────────
+   Zmienne surowe w :root; @theme inline mapuje je na utility Tailwind
+   (bg-card, text-primary, shadow-card, …). Trzymanie wartości w :root
+   ułatwia ewentualny tryb jasny w przyszłości. */
+:root {
+  --background: #0f1117; /* tło strony */
+  --foreground: #ffffff; /* tekst podstawowy */
+  --sidebar: #0d1117; /* sidebar */
+  --card: #1a1f2e; /* karty / powierzchnie */
+  --elevated: #222838; /* hover / elewacja */
+  --input: #0f1117; /* pola formularzy (inset) */
+
+  --primary: #d4a843; /* akcent złoty */
+  --primary-hover: #c49b3a;
+  --primary-foreground: #000000;
+
+  --discord: #5865f2; /* blurple */
+  --destructive: #ed4245;
+  --destructive-hover: #c93a3d;
+  --success: #57f287;
+
+  --border: rgba(255, 255, 255, 0.08);
+  --ring: #d4a843;
+
+  --radius: 0.625rem;
+
+  /* Głębia — „subtelna premium": miękkie, niskie cienie. */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 12px rgba(0, 0, 0, 0.22);
+  --shadow-elevated: 0 4px 10px rgba(0, 0, 0, 0.35), 0 14px 30px rgba(0, 0, 0, 0.3);
+  --shadow-button: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-popover: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-sidebar: var(--sidebar);
+  --color-card: var(--card);
+  --color-surface: var(--card);
+  --color-elevated: var(--elevated);
+  --color-input: var(--input);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-discord: var(--discord);
+  --color-destructive: var(--destructive);
+  --color-destructive-hover: var(--destructive-hover);
+  --color-success: var(--success);
+
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+
+  --shadow-card: var(--shadow-card);
+  --shadow-elevated: var(--shadow-elevated);
+  --shadow-button: var(--shadow-button);
+  --shadow-popover: var(--shadow-popover);
+}
+
+/* Powierzchnia „wypukła": cień karty + delikatne światło u góry. */
+@utility surface-raised {
+  box-shadow:
+    var(--shadow-card),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
 
 html,
 body {

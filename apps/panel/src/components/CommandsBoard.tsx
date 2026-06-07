@@ -1,5 +1,6 @@
 "use client";
 
+import { Switch } from "@/components/ui/switch";
 import { COMMAND_CATALOG } from "@/lib/commands";
 
 function Toggle({
@@ -9,20 +10,10 @@ function Toggle({
   checked: boolean;
   onChange: (v: boolean) => void;
 }) {
-  return (
-    <span className="relative inline-flex shrink-0">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="peer sr-only"
-      />
-      <span className="h-6 w-11 rounded-full bg-gray-700 transition after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-[#d4a843] peer-checked:after:translate-x-full" />
-    </span>
-  );
+  return <Switch checked={checked} onCheckedChange={onChange} />;
 }
 
-const CARD = "rounded-xl border border-white/5 bg-[#1a1f2e]";
+const CARD = "surface-raised rounded-xl border border-border bg-card";
 
 /**
  * Presentational board for per-server command enable/disable toggles.
@@ -66,16 +57,16 @@ export function CommandsBoard({
           const allOn = onCount === names.length;
           return (
             <div key={cat.key} className={CARD}>
-              <div className="flex items-center justify-between gap-4 border-b border-white/5 px-5 py-3.5">
+              <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-3.5">
                 <div className="flex items-center gap-2.5">
                   <p className="text-sm font-semibold text-white">{cat.label}</p>
-                  <span className="rounded-full bg-white/5 px-2 py-0.5 text-[11px] font-medium text-gray-400">
+                  <span className="rounded-full bg-white/5 px-2 py-0.5 text-[11px] font-medium text-gray-300">
                     {onCount}/{names.length}
                   </span>
                 </div>
                 <button
                   onClick={() => setCategory(names, !allOn)}
-                  className="text-xs font-medium text-gray-400 transition hover:text-[#d4a843]"
+                  className="text-xs font-medium text-gray-300 transition hover:text-primary"
                 >
                   {allOn ? "Wyłącz wszystkie" : "Włącz wszystkie"}
                 </button>
@@ -86,15 +77,15 @@ export function CommandsBoard({
                   return (
                     <label
                       key={cmd.name}
-                      className="flex cursor-pointer items-center justify-between gap-3 bg-[#1a1f2e] px-5 py-3 transition hover:bg-[#1f2535]"
+                      className="flex cursor-pointer items-center justify-between gap-3 bg-card px-5 py-3 transition hover:bg-elevated"
                     >
                       <div className="min-w-0">
                         <p
-                          className={`truncate font-mono text-sm ${on ? "text-white" : "text-gray-500 line-through"}`}
+                          className={`truncate font-mono text-sm ${on ? "text-white" : "text-gray-400 line-through"}`}
                         >
                           /{cmd.name}
                         </p>
-                        <p className="truncate text-xs text-gray-500">{cmd.desc}</p>
+                        <p className="truncate text-xs text-gray-400">{cmd.desc}</p>
                       </div>
                       <Toggle checked={on} onChange={(v) => toggle(cmd.name, v)} />
                     </label>
@@ -102,7 +93,7 @@ export function CommandsBoard({
                 })}
                 {/* Wyrównanie siatki 2-kolumnowej przy nieparzystej liczbie komend. */}
                 {cat.commands.length % 2 === 1 && (
-                  <div className="hidden bg-[#1a1f2e] sm:block" aria-hidden />
+                  <div className="hidden bg-card sm:block" aria-hidden />
                 )}
               </div>
             </div>
@@ -114,15 +105,15 @@ export function CommandsBoard({
         <div className={`${CARD} flex items-stretch divide-x divide-white/5`}>
           <div className="flex-1 px-5 py-4">
             <p className="text-2xl font-bold text-white">{activeCount}</p>
-            <p className="text-xs text-gray-500">aktywnych komend</p>
+            <p className="text-xs text-gray-400">aktywnych komend</p>
           </div>
           <div className="flex-1 px-5 py-4">
             <p
-              className={`text-2xl font-bold ${disabledCount ? "text-[#d4a843]" : "text-gray-600"}`}
+              className={`text-2xl font-bold ${disabledCount ? "text-primary" : "text-gray-400"}`}
             >
               {disabledCount}
             </p>
-            <p className="text-xs text-gray-500">wyłączonych</p>
+            <p className="text-xs text-gray-400">wyłączonych</p>
           </div>
         </div>
       </div>

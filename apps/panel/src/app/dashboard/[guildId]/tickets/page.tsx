@@ -56,9 +56,9 @@ function TicketsSkeleton() {
         <Skeleton className="h-3 w-64" />
       </div>
       <Skeleton className="h-32 w-full rounded-xl" />
-      <div className="rounded-xl bg-[#1a1f2e]">
+      <div className="surface-raised rounded-xl bg-card">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="border-b border-white/5 last:border-0">
+          <div key={i} className="border-b border-border last:border-0">
             <SkeletonRow />
           </div>
         ))}
@@ -70,7 +70,7 @@ function TicketsSkeleton() {
 const STATUS_BADGE: Record<TicketStatus, { label: string; cls: string }> = {
   pending: { label: "Oczekuje", cls: "bg-yellow-500/15 text-yellow-400" },
   open: { label: "W trakcie", cls: "bg-green-500/15 text-green-400" },
-  closed: { label: "Zamknięty", cls: "bg-gray-500/15 text-gray-400" },
+  closed: { label: "Zamknięty", cls: "bg-gray-500/15 text-gray-300" },
 };
 
 function StatusBadge({ status }: { status: TicketStatus }) {
@@ -85,7 +85,7 @@ function StatusBadge({ status }: { status: TicketStatus }) {
 /** Pokazuje nazwę użytkownika (z Discorda); gdy brak — fallback na ID w monospace. */
 function UserName({ name, id }: { name?: string | null; id?: string }) {
   if (name) return <span className="font-medium text-gray-300">{name}</span>;
-  return <span className="font-mono text-gray-500">{id ?? "—"}</span>;
+  return <span className="font-mono text-gray-400">{id ?? "—"}</span>;
 }
 
 /** Zwraca zwięzły czas oczekiwania od podanej daty, np. „2h 15min", „3 dni". */
@@ -231,7 +231,7 @@ export default function TicketsPage() {
         category="Support System"
         title={
           <>
-            System <span className="italic text-[#d4a843]">ticketów</span>
+            System <span className="italic text-primary">ticketów</span>
           </>
         }
         description="Prywatne wątki Discord do obsługi zgłoszeń użytkowników."
@@ -259,11 +259,11 @@ export default function TicketsPage() {
       )}
 
       {/* Wygląd panelu ticketów — edytor embeda + live podgląd */}
-      <div className="rounded-xl bg-[#1a1f2e]">
-        <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
+      <div className="surface-raised rounded-xl bg-card">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div>
             <p className="text-sm font-semibold text-white">Wygląd panelu ticketów</p>
-            <p className="text-xs text-gray-600">
+            <p className="text-xs text-gray-400">
               Embed i przycisk wysyłane przez „Wyślij panel" oraz /ticket_setup.
             </p>
           </div>
@@ -281,9 +281,9 @@ export default function TicketsPage() {
               onChange={(embed) => setConfig((c) => ({ ...c, ticketPanelEmbed: embed }))}
               variables={TICKET_VARS}
             />
-            <div className="mt-4 grid grid-cols-[1fr_auto] gap-3 border-t border-white/5 pt-4">
+            <div className="mt-4 grid grid-cols-[1fr_auto] gap-3 border-t border-border pt-4">
               <div>
-                <label className="mb-1 block text-xs text-gray-500">
+                <label className="mb-1 block text-xs text-gray-400">
                   Etykieta przycisku
                 </label>
                 <input
@@ -299,11 +299,11 @@ export default function TicketsPage() {
                   }
                   maxLength={80}
                   placeholder="Złóż ticket"
-                  className="w-full rounded-lg bg-[#0f1117] px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]"
+                  className="w-full rounded-lg bg-background px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-500">Emoji</label>
+                <label className="mb-1 block text-xs text-gray-400">Emoji</label>
                 <input
                   value={config.ticketPanelButton?.emoji ?? ""}
                   onChange={(e) =>
@@ -317,13 +317,13 @@ export default function TicketsPage() {
                   }
                   maxLength={8}
                   placeholder="📩"
-                  className="w-16 rounded-lg bg-[#0f1117] px-3 py-2 text-center text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]"
+                  className="w-16 rounded-lg bg-background px-3 py-2 text-center text-sm text-white outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
             </div>
           </div>
           <div className="lg:sticky lg:top-20 lg:self-start">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
               Podgląd
             </p>
             <EmbedPreview
@@ -335,14 +335,14 @@ export default function TicketsPage() {
 
             {/* Dostępne zmienne — panel jest statyczny, więc tylko kontekst serwera */}
             <div className="mt-4">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
                 Dostępne zmienne
               </p>
               <div className="flex flex-col gap-2">
                 {TICKET_VARS.map((v) => (
                   <div key={v} className="flex items-center gap-3">
-                    <span className="w-32 font-mono text-xs text-[#d4a843]">{v}</span>
-                    <span className="text-xs text-gray-400">{VARIABLE_INFO[v]}</span>
+                    <span className="w-32 font-mono text-xs text-primary">{v}</span>
+                    <span className="text-xs text-gray-300">{VARIABLE_INFO[v]}</span>
                   </div>
                 ))}
               </div>
@@ -354,8 +354,8 @@ export default function TicketsPage() {
       <div className="flex flex-col gap-6 lg:flex-row">
         {/* Config */}
         <div className="flex flex-col gap-4 lg:w-80">
-          <div className="rounded-xl bg-[#1a1f2e]">
-            <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
+          <div className="surface-raised rounded-xl bg-card">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
               <p className="text-sm font-semibold text-white">Konfiguracja</p>
               <SaveButton
                 onClick={handleSave}
@@ -366,7 +366,7 @@ export default function TicketsPage() {
             </div>
             <div className="flex flex-col gap-4 p-6">
               <div>
-                <label className="mb-1 block text-xs text-gray-500">
+                <label className="mb-1 block text-xs text-gray-400">
                   Rola obsługi #1
                 </label>
                 <RoleSelect
@@ -390,7 +390,7 @@ export default function TicketsPage() {
               </div>
 
               <div>
-                <label className="mb-1 block text-xs text-gray-500">
+                <label className="mb-1 block text-xs text-gray-400">
                   Rola obsługi #2
                 </label>
                 <RoleSelect
@@ -399,14 +399,14 @@ export default function TicketsPage() {
                   roles={roles}
                   className="w-full px-3 py-2.5"
                 />
-                <p className="mt-1 text-xs text-gray-600">
+                <p className="mt-1 text-xs text-gray-400">
                   Obie role są pingowane przy nowym zgłoszeniu i mogą je przejmować (obok
                   admina).
                 </p>
               </div>
 
               <div>
-                <label className="mb-1 block text-xs text-gray-500">
+                <label className="mb-1 block text-xs text-gray-400">
                   Kanał logów ticketów
                 </label>
                 <div className="flex flex-wrap items-center gap-2">
@@ -428,7 +428,7 @@ export default function TicketsPage() {
                     }}
                   />
                 </div>
-                <p className="mt-1 text-xs text-gray-600">
+                <p className="mt-1 text-xs text-gray-400">
                   Tu trafiają logi otwarcia i zamknięcia ticketów.
                 </p>
               </div>
@@ -436,9 +436,9 @@ export default function TicketsPage() {
           </div>
 
           {/* Wyślij panel ticketów na kanał */}
-          <div className="rounded-xl bg-[#1a1f2e] p-6">
+          <div className="surface-raised rounded-xl bg-card p-6">
             <p className="mb-1 text-sm font-semibold text-white">Panel na kanale</p>
-            <p className="mb-3 text-xs text-gray-600">
+            <p className="mb-3 text-xs text-gray-400">
               Wyślij embed z przyciskiem „Złóż ticket" na wybrany kanał — bez komendy
               /ticket_setup.
             </p>
@@ -453,7 +453,7 @@ export default function TicketsPage() {
               <button
                 onClick={handleSendPanel}
                 disabled={!panelChannelId || sendingPanel}
-                className="shrink-0 rounded-lg bg-[#d4a843] px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-[#c49b3a] disabled:opacity-40"
+                className="shrink-0 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-primary-hover disabled:opacity-40"
               >
                 {sendingPanel ? "Wysyłanie…" : "Wyślij panel"}
               </button>
@@ -462,28 +462,28 @@ export default function TicketsPage() {
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-xl bg-[#1a1f2e] p-4 text-center">
+            <div className="surface-raised rounded-xl bg-card p-4 text-center">
               <p className="text-2xl font-bold text-yellow-400">{pendingCount}</p>
-              <p className="text-xs text-gray-500">Oczekuje</p>
+              <p className="text-xs text-gray-400">Oczekuje</p>
             </div>
-            <div className="rounded-xl bg-[#1a1f2e] p-4 text-center">
+            <div className="surface-raised rounded-xl bg-card p-4 text-center">
               <p className="text-2xl font-bold text-green-400">{openCount}</p>
-              <p className="text-xs text-gray-500">W trakcie</p>
+              <p className="text-xs text-gray-400">W trakcie</p>
             </div>
-            <div className="rounded-xl bg-[#1a1f2e] p-4 text-center">
-              <p className="text-2xl font-bold text-gray-400">{closedCount}</p>
-              <p className="text-xs text-gray-500">Zamknięte</p>
+            <div className="surface-raised rounded-xl bg-card p-4 text-center">
+              <p className="text-2xl font-bold text-gray-300">{closedCount}</p>
+              <p className="text-xs text-gray-400">Zamknięte</p>
             </div>
           </div>
         </div>
 
         {/* Tickets list */}
         <div className="flex-1">
-          <div className="rounded-xl bg-[#1a1f2e]">
-            <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
+          <div className="surface-raised rounded-xl bg-card">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
               <p className="text-sm font-semibold text-white">
                 Tickety
-                <span className="ml-2 text-xs text-gray-500">
+                <span className="ml-2 text-xs text-gray-400">
                   {visibleTickets.length}
                 </span>
               </p>
@@ -494,8 +494,8 @@ export default function TicketsPage() {
                     onClick={() => setFilter(s)}
                     className={`rounded-lg px-3 py-1 text-xs transition ${
                       filter === s
-                        ? "bg-[#d4a843]/20 text-[#d4a843]"
-                        : "text-gray-500 hover:text-gray-300"
+                        ? "bg-primary/20 text-primary"
+                        : "text-gray-400 hover:text-gray-300"
                     }`}
                   >
                     {FILTER_LABELS[s]}
@@ -506,12 +506,12 @@ export default function TicketsPage() {
 
             {ticketsLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="border-b border-white/5 last:border-0">
+                <div key={i} className="border-b border-border last:border-0">
                   <SkeletonRow />
                 </div>
               ))
             ) : visibleTickets.length === 0 ? (
-              <div className="px-6 py-10 text-center text-sm text-gray-500">
+              <div className="px-6 py-10 text-center text-sm text-gray-400">
                 Brak ticketów
                 {filter !== "all" ? ` (${FILTER_LABELS[filter].toLowerCase()})` : ""}.
               </div>
@@ -519,7 +519,7 @@ export default function TicketsPage() {
               visibleTickets.map((ticket) => (
                 <div
                   key={ticket.id}
-                  className="flex flex-col gap-3 border-b border-white/5 px-6 py-4 last:border-0 sm:flex-row sm:items-start sm:justify-between"
+                  className="flex flex-col gap-3 border-b border-border px-6 py-4 last:border-0 sm:flex-row sm:items-start sm:justify-between"
                 >
                   <div className="min-w-0 flex-1">
                     {/* Nagłówek: status + autor */}
@@ -540,7 +540,7 @@ export default function TicketsPage() {
                     )}
 
                     {/* Meta: przejęcie + link do wątku */}
-                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                    <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-400">
                       {ticket.assignedTo ? (
                         <span>
                           Przejął:{" "}
@@ -558,7 +558,7 @@ export default function TicketsPage() {
                         href={`https://discord.com/channels/${guildId}/${ticket.threadId}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-[#5865f2] hover:underline"
+                        className="text-discord hover:underline"
                       >
                         Otwórz wątek ↗
                       </a>
@@ -566,7 +566,7 @@ export default function TicketsPage() {
                   </div>
 
                   <div className="flex shrink-0 items-center justify-between gap-3 sm:flex-col sm:items-end">
-                    <div className="text-xs text-gray-600 sm:text-right">
+                    <div className="text-xs text-gray-400 sm:text-right">
                       {new Date(ticket.createdAt).toLocaleString("pl-PL", {
                         day: "2-digit",
                         month: "2-digit",
@@ -579,7 +579,7 @@ export default function TicketsPage() {
                       <button
                         onClick={() => handleReopenTicket(ticket.threadId)}
                         disabled={actionBusy === ticket.threadId}
-                        className="rounded-lg bg-[#0f1117] px-3 py-1 text-xs text-green-400 transition hover:bg-green-500/10 disabled:opacity-40"
+                        className="rounded-lg bg-background px-3 py-1 text-xs text-green-400 transition hover:bg-green-500/10 disabled:opacity-40"
                       >
                         {actionBusy === ticket.threadId ? "…" : "Otwórz ponownie"}
                       </button>
@@ -587,7 +587,7 @@ export default function TicketsPage() {
                       <button
                         onClick={() => handleCloseTicket(ticket.threadId)}
                         disabled={actionBusy === ticket.threadId}
-                        className="rounded-lg bg-[#0f1117] px-3 py-1 text-xs text-red-400 transition hover:bg-red-500/10 disabled:opacity-40"
+                        className="rounded-lg bg-background px-3 py-1 text-xs text-red-400 transition hover:bg-red-500/10 disabled:opacity-40"
                       >
                         {actionBusy === ticket.threadId ? "…" : "Zamknij"}
                       </button>

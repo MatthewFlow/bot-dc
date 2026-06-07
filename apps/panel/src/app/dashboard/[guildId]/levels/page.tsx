@@ -67,7 +67,7 @@ function LvToggle({
     <label className="flex cursor-pointer items-start justify-between gap-4">
       <div className="min-w-0">
         <p className="text-sm text-white">{label}</p>
-        {desc && <p className="text-xs text-gray-500">{desc}</p>}
+        {desc && <p className="text-xs text-gray-400">{desc}</p>}
       </div>
       <span className="relative inline-flex shrink-0">
         <input
@@ -76,7 +76,7 @@ function LvToggle({
           onChange={(e) => onChange(e.target.checked)}
           className="peer sr-only"
         />
-        <span className="h-6 w-11 rounded-full bg-gray-700 transition after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-[#d4a843] peer-checked:after:translate-x-full" />
+        <span className="h-6 w-11 rounded-full bg-gray-700 transition after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full" />
       </span>
     </label>
   );
@@ -91,8 +91,8 @@ function LevelsSkeleton() {
         <Skeleton className="h-3 w-64" />
       </div>
       <div className="flex flex-col gap-6 lg:flex-row">
-        <div className="flex-1 rounded-xl bg-[#1a1f2e]">
-          <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
+        <div className="flex-1 surface-raised rounded-xl bg-card">
+          <div className="flex items-center justify-between border-b border-border px-6 py-4">
             <div className="space-y-2">
               <Skeleton className="h-3 w-48" />
               <Skeleton className="h-4 w-28" />
@@ -102,7 +102,7 @@ function LevelsSkeleton() {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="grid grid-cols-3 items-center border-b border-white/5 px-6 py-3"
+              className="grid grid-cols-3 items-center border-b border-border px-6 py-3"
             >
               <Skeleton className="h-4 w-12" />
               <Skeleton className="h-5 w-20 rounded" />
@@ -112,12 +112,12 @@ function LevelsSkeleton() {
         </div>
         <Skeleton className="h-48 w-full rounded-xl lg:w-72" />
       </div>
-      <div className="rounded-xl bg-[#1a1f2e]">
-        <div className="border-b border-white/5 px-6 py-4">
+      <div className="surface-raised rounded-xl bg-card">
+        <div className="border-b border-border px-6 py-4">
           <Skeleton className="h-4 w-32" />
         </div>
         {[1, 2, 3, 4, 5].map((i) => (
-          <div key={i} className="border-b border-white/5 last:border-0">
+          <div key={i} className="border-b border-border last:border-0">
             <SkeletonRow />
           </div>
         ))}
@@ -236,7 +236,7 @@ export default function LevelsPage() {
         category="Growth Ladder"
         title={
           <>
-            System <span className="italic text-[#d4a843]">levelowania</span>
+            System <span className="italic text-primary">levelowania</span>
           </>
         }
         description="Mapowanie progów XP na istniejące role Discord."
@@ -253,10 +253,10 @@ export default function LevelsPage() {
       />
 
       <div className="flex flex-col gap-6 lg:flex-row">
-        <div className="flex-1 rounded-xl bg-[#1a1f2e]">
-          <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
+        <div className="flex-1 surface-raised rounded-xl bg-card">
+          <div className="flex items-center justify-between border-b border-border px-6 py-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
                 Mapowanie progu XP na istniejącą rolę Discord
               </p>
               <p className="text-base font-semibold text-white">Tiery → Role</p>
@@ -269,11 +269,11 @@ export default function LevelsPage() {
             />
           </div>
 
-          <div className="grid grid-cols-3 border-b border-white/5 px-6 py-2">
+          <div className="grid grid-cols-3 border-b border-border px-6 py-2">
             {["Lv.", "Tier", "Discord rola"].map((h) => (
               <span
                 key={h}
-                className="text-xs font-semibold uppercase tracking-wider text-gray-600"
+                className="text-xs font-semibold uppercase tracking-wider text-gray-400"
               >
                 {h}
               </span>
@@ -281,29 +281,29 @@ export default function LevelsPage() {
           </div>
 
           {rewards.length === 0 ? (
-            <div className="px-6 py-8 text-center text-sm text-gray-500">
+            <div className="px-6 py-8 text-center text-sm text-gray-400">
               Brak progów. Dodaj pierwszy po prawej.
             </div>
           ) : (
             rewards.map((r) => (
               <div
                 key={r.level}
-                className="grid grid-cols-3 items-center border-b border-white/5 px-6 py-3 last:border-0"
+                className="grid grid-cols-3 items-center border-b border-border px-6 py-3 last:border-0"
               >
                 <span className="text-sm font-bold text-white">Lv. {r.level}</span>
                 <span className="inline-flex">
-                  <span className="rounded bg-[#d4a843]/20 px-2 py-0.5 text-xs font-semibold text-[#d4a843]">
+                  <span className="rounded bg-primary/20 px-2 py-0.5 text-xs font-semibold text-primary">
                     {roleName(r.roleId).toUpperCase()}
                   </span>
                 </span>
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-1.5 text-sm text-gray-300">
-                    <span className="h-2 w-2 rounded-full bg-[#5865F2]" />
+                    <span className="h-2 w-2 rounded-full bg-discord" />
                     {roleName(r.roleId)}
                   </span>
                   <button
                     onClick={() => setPendingDelete(r.level)}
-                    className="text-gray-600 hover:text-red-400"
+                    className="text-gray-400 hover:text-red-400"
                   >
                     ✕
                   </button>
@@ -314,22 +314,22 @@ export default function LevelsPage() {
         </div>
 
         <div className="flex w-full flex-col gap-4 lg:w-72">
-          <div className="rounded-xl bg-[#1a1f2e] p-6">
+          <div className="surface-raised rounded-xl bg-card p-6">
             <p className="mb-4 text-sm font-semibold text-white">Dodaj próg</p>
             <div className="flex flex-col gap-3">
               <div>
-                <label className="mb-1 block text-xs text-gray-500">Level</label>
+                <label className="mb-1 block text-xs text-gray-400">Level</label>
                 <input
                   type="number"
                   min={1}
                   value={newLevel}
                   onChange={(e) => setNewLevel(e.target.value)}
                   placeholder="np. 10"
-                  className="w-full rounded-lg bg-[#0f1117] px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]"
+                  className="w-full rounded-lg bg-background px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-500">Rola Discord</label>
+                <label className="mb-1 block text-xs text-gray-400">Rola Discord</label>
                 <RoleSelect
                   value={newRoleId}
                   onChange={setNewRoleId}
@@ -351,7 +351,7 @@ export default function LevelsPage() {
               <button
                 onClick={addReward}
                 disabled={!newLevel || !newRoleId}
-                className="mt-1 rounded-lg bg-[#d4a843] py-2 text-sm font-semibold text-black transition hover:bg-[#c49b3a] disabled:opacity-40"
+                className="mt-1 rounded-lg bg-primary py-2 text-sm font-semibold text-black transition hover:bg-primary-hover disabled:opacity-40"
               >
                 + Dodaj tier
               </button>
@@ -361,8 +361,8 @@ export default function LevelsPage() {
       </div>
 
       {/* Ustawienia XP */}
-      <div className="rounded-xl border border-white/5 bg-[#1a1f2e]">
-        <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
+      <div className="surface-raised rounded-xl border border-border bg-card">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <p className="text-sm font-semibold text-white">Ustawienia XP</p>
           <SaveButton
             onClick={handleSave}
@@ -373,8 +373,8 @@ export default function LevelsPage() {
         <div className="grid grid-cols-1 gap-6 p-6 lg:grid-cols-2">
           <div className="flex flex-col gap-5">
             <div>
-              <label className="mb-1 block text-xs text-gray-500">Mnożnik XP</label>
-              <div className="flex items-center gap-2 text-sm text-gray-400">
+              <label className="mb-1 block text-xs text-gray-400">Mnożnik XP</label>
+              <div className="flex items-center gap-2 text-sm text-gray-300">
                 <input
                   type="number"
                   min={0.1}
@@ -382,12 +382,12 @@ export default function LevelsPage() {
                   step={0.1}
                   value={lv.xpMultiplier}
                   onChange={(e) => setLv({ xpMultiplier: Number(e.target.value) })}
-                  className="w-24 rounded-lg bg-[#0f1117] px-3 py-2 text-center text-sm text-white outline-none focus:ring-2 focus:ring-[#d4a843]"
+                  className="w-24 rounded-lg bg-background px-3 py-2 text-center text-sm text-white outline-none focus:ring-2 focus:ring-primary"
                 />
                 <span>× (np. 2 = podwójne XP)</span>
               </div>
             </div>
-            <div className="flex flex-col gap-4 border-t border-white/5 pt-4">
+            <div className="flex flex-col gap-4 border-t border-border pt-4">
               <LvToggle
                 checked={lv.levelUpEnabled}
                 onChange={(v) => setLv({ levelUpEnabled: v })}
@@ -405,7 +405,7 @@ export default function LevelsPage() {
 
           <div className="flex flex-col gap-5">
             <div>
-              <label className="mb-1 block text-xs text-gray-500">Kanały bez XP</label>
+              <label className="mb-1 block text-xs text-gray-400">Kanały bez XP</label>
               <ChannelSelect
                 value=""
                 onChange={(v) =>
@@ -424,7 +424,7 @@ export default function LevelsPage() {
                     onClick={() =>
                       setLv({ noXpChannelIds: lv.noXpChannelIds.filter((x) => x !== id) })
                     }
-                    className="rounded-full bg-[#0f1117] px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
+                    className="rounded-full bg-background px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
                   >
                     #{channelName(id)} ✕
                   </button>
@@ -432,7 +432,7 @@ export default function LevelsPage() {
               </div>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-gray-500">Role bez XP</label>
+              <label className="mb-1 block text-xs text-gray-400">Role bez XP</label>
               <RoleSelect
                 value=""
                 onChange={(v) =>
@@ -451,7 +451,7 @@ export default function LevelsPage() {
                     onClick={() =>
                       setLv({ noXpRoleIds: lv.noXpRoleIds.filter((x) => x !== id) })
                     }
-                    className="rounded-full bg-[#0f1117] px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
+                    className="rounded-full bg-background px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
                   >
                     @{roleName(id)} ✕
                   </button>
@@ -463,11 +463,11 @@ export default function LevelsPage() {
       </div>
 
       {/* Wiadomość o awansie (embed) */}
-      <div className="rounded-xl border border-white/5 bg-[#1a1f2e]">
-        <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
+      <div className="surface-raised rounded-xl border border-border bg-card">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div>
             <p className="text-sm font-semibold text-white">Wiadomość o awansie</p>
-            <p className="text-xs text-gray-600">
+            <p className="text-xs text-gray-400">
               Embed wysyłany przy zdobyciu nowego poziomu.
             </p>
           </div>
@@ -499,7 +499,7 @@ export default function LevelsPage() {
                 variables={LEVEL_VARS}
               />
               <div className="lg:sticky lg:top-20 lg:self-start">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
                   Podgląd
                 </p>
                 <EmbedPreview embed={config.levelUpEmbed} replace={previewReplacer} />
@@ -510,10 +510,10 @@ export default function LevelsPage() {
       </div>
 
       {/* Leaderboard */}
-      <div className="rounded-xl bg-[#1a1f2e]">
-        <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
+      <div className="surface-raised rounded-xl bg-card">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
               Wszyscy aktywni członkowie
             </p>
             <p className="text-base font-semibold text-white">🏆 Leaderboard</p>
@@ -521,17 +521,17 @@ export default function LevelsPage() {
           <button
             onClick={() => fetchLeaderboard(true)}
             disabled={leaderboardLoading}
-            className="rounded-lg bg-[#0f1117] px-3 py-1.5 text-xs text-gray-400 transition hover:text-white disabled:opacity-50"
+            className="rounded-lg bg-background px-3 py-1.5 text-xs text-gray-300 transition hover:text-white disabled:opacity-50"
           >
             {leaderboardLoading ? "Ładowanie..." : "↻ Odśwież"}
           </button>
         </div>
 
-        <div className="grid grid-cols-[2rem_1fr_6rem_6rem] gap-4 border-b border-white/5 px-6 py-2">
+        <div className="grid grid-cols-[2rem_1fr_6rem_6rem] gap-4 border-b border-border px-6 py-2">
           {["#", "Gracz", "Level", "XP"].map((h, i) => (
             <span
               key={h}
-              className={`text-xs font-semibold uppercase tracking-wider text-gray-600 ${i >= 2 ? "text-right" : ""}`}
+              className={`text-xs font-semibold uppercase tracking-wider text-gray-400 ${i >= 2 ? "text-right" : ""}`}
             >
               {h}
             </span>
@@ -540,21 +540,21 @@ export default function LevelsPage() {
 
         {leaderboardLoading ? (
           Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="border-b border-white/5 last:border-0">
+            <div key={i} className="border-b border-border last:border-0">
               <SkeletonRow />
             </div>
           ))
         ) : leaderboard.length === 0 ? (
-          <div className="px-6 py-8 text-center text-sm text-gray-500">
+          <div className="px-6 py-8 text-center text-sm text-gray-400">
             Brak danych XP na tym serwerze.
           </div>
         ) : (
           leaderboard.map((entry) => (
             <div
               key={entry.userId}
-              className={`grid grid-cols-[2rem_1fr_6rem_6rem] items-center gap-4 border-b border-white/5 px-6 py-3 last:border-0 ${entry.position <= 3 ? "bg-[#d4a843]/5" : ""}`}
+              className={`grid grid-cols-[2rem_1fr_6rem_6rem] items-center gap-4 border-b border-border px-6 py-3 last:border-0 ${entry.position <= 3 ? "bg-primary/5" : ""}`}
             >
-              <span className="text-sm font-bold text-gray-400">
+              <span className="text-sm font-bold text-gray-300">
                 {MEDALS[entry.position - 1] ?? entry.position}
               </span>
               <div className="flex min-w-0 items-center gap-3">
@@ -564,7 +564,7 @@ export default function LevelsPage() {
                 </span>
               </div>
               <div className="text-right">
-                <span className="rounded bg-[#d4a843]/20 px-2 py-0.5 text-xs font-semibold text-[#d4a843]">
+                <span className="rounded bg-primary/20 px-2 py-0.5 text-xs font-semibold text-primary">
                   Lv. {entry.level}
                 </span>
               </div>

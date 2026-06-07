@@ -19,9 +19,9 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 const TOAST_DURATION_MS = 3000;
 
 const STYLES: Record<ToastType, { border: string; icon: string; iconColor: string }> = {
-  success: { border: "border-l-[#57F287]", icon: "✓", iconColor: "text-[#57F287]" },
-  error: { border: "border-l-[#ED4245]", icon: "✕", iconColor: "text-[#ED4245]" },
-  warning: { border: "border-l-[#d4a843]", icon: "!", iconColor: "text-[#d4a843]" },
+  success: { border: "border-l-success", icon: "✓", iconColor: "text-success" },
+  error: { border: "border-l-destructive", icon: "✕", iconColor: "text-destructive" },
+  warning: { border: "border-l-primary", icon: "!", iconColor: "text-primary" },
 };
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
@@ -49,13 +49,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           return (
             <div
               key={t.id}
-              className={`pointer-events-auto flex w-80 items-center gap-3 rounded-lg border-l-4 ${style.border} bg-[#1a1f2e] px-4 py-3 shadow-lg animate-[toast-in_0.2s_ease-out]`}
+              className={`pointer-events-auto flex w-80 items-center gap-3 rounded-lg border border-border border-l-4 ${style.border} bg-card px-4 py-3 shadow-popover animate-[toast-in_0.2s_ease-out]`}
             >
               <span className={`text-sm font-bold ${style.iconColor}`}>{style.icon}</span>
               <span className="flex-1 text-sm text-white">{t.message}</span>
               <button
                 onClick={() => dismiss(t.id)}
-                className="text-gray-500 transition hover:text-white"
+                className="text-gray-400 transition hover:text-white"
                 aria-label="Zamknij"
               >
                 ✕
