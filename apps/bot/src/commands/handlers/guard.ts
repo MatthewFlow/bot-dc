@@ -33,7 +33,10 @@ export async function requireAdminRole(interaction: ChatInputCommandInteraction)
   if (adminRoleId && member.roles.cache.has(adminRoleId)) return true;
 
   await interaction.reply({
-    content: "Nie masz wymaganych uprawnień do użycia tej komendy.",
+    content:
+      "⛔ **Nie masz uprawnień do tej komendy.**\n" +
+      "Wymagane jest uprawnienie **Administrator** lub **Zarządzanie serwerem**, " +
+      "albo rola administratora bota skonfigurowana w panelu.",
     ephemeral: true,
   });
   return false;
