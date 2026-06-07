@@ -89,6 +89,15 @@ export default function SettingsPage() {
         className="mb-0"
       />
 
+      <HowItWorks
+        steps={[
+          "Administrator i Zarządzanie serwerem zawsze mają dostęp do komend bota.",
+          "Opcjonalnie wskaż dodatkową rolę admina bota dla zaufanej ekipy.",
+          "Ustaw kanał logów moderacji, by śledzić wszystkie akcje w jednym miejscu.",
+          "Zmiany działają natychmiast — bez restartu bota.",
+        ]}
+      />
+
       <div className="flex flex-col gap-6 lg:flex-row">
         <div className="flex-1 rounded-xl border border-white/5 bg-[#1a1f2e]">
           <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
@@ -165,17 +174,6 @@ export default function SettingsPage() {
               </p>
             </div>
           </div>
-        </div>
-
-        <div className="w-full lg:w-72">
-          <HowItWorks
-            steps={[
-              "Administratorzy i osoby z Zarządzaniem serwerem zawsze mają dostęp do komend",
-              "Opcjonalnie wskaż dodatkową rolę admina bota dla zaufanej ekipy",
-              "Ustaw kanał logów, aby śledzić wszystkie akcje moderacyjne",
-              "Zapisz — zmiany działają natychmiast, bez restartu bota",
-            ]}
-          />
         </div>
       </div>
     </div>

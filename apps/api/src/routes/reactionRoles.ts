@@ -17,6 +17,55 @@ function hexToDecimal(hex: string): number {
   return parseInt(hex.replace("#", ""), 16);
 }
 
+// Custom emoji: <:nazwa:id> lub <a:nazwa:id> (animowane); name:id; samo id.
+const CUSTOM_EMOJI_RE = /^<a?:(\w+):(\d+)>$/;
+const NAME_ID_RE = /^(\w+):(\d+)$/;
+const RAW_ID_RE = /^(\d+)$/;
+
+/** Pobiera nazwę custom emoji z serwera po jego ID (gdy użytkownik podał samo ID). */
+async function fetchGuildEmojiName(
+  guildId: string,
+  emojiId: string,
+  botToken: string,
+): Promise<string | null> {
+  const res = await fetch(`${DISCORD_API}/guilds/${guildId}/emojis/${emojiId}`, {
+    headers: { Authorization: `Bot ${botToken}` },
+  });
+  if (!res.ok) return null;
+  const e = (await res.json()) as { name?: string };
+  return e.name ?? null;
+}
+
+/**
+ * Sprowadza dowolny zapis emoji do dwóch postaci:
+ * - `stored` — kanoniczna `<:nazwa:id>` (custom) lub znak unicode; po niej bot dopasowuje reakcje,
+ * - `reaction` — `nazwa:id` (custom) lub znak unicode; tej wymaga endpoint PUT reactions Discorda.
+ * Zwraca null, gdy podano ID custom emoji, którego nie ma na serwerze.
+ */
+async function resolveEmoji(
+  raw: string,
+  guildId: string,
+  botToken: string,
+): Promise<{ stored: string; reaction: string } | null> {
+  const input = raw.trim();
+
+  const custom = input.match(CUSTOM_EMOJI_RE) ?? input.match(NAME_ID_RE);
+  if (custom) {
+    const [, name, id] = custom;
+    return { stored: `<:${name}:${id}>`, reaction: `${name}:${id}` };
+  }
+
+  const id = input.match(RAW_ID_RE)?.[1];
+  if (id) {
+    const name = await fetchGuildEmojiName(guildId, id, botToken);
+    if (!name) return null;
+    return { stored: `<:${name}:${id}>`, reaction: `${name}:${id}` };
+  }
+
+  // Standardowe emoji unicode (lub inny znak) — bez zmian.
+  return { stored: input, reaction: input };
+}
+
 export const reactionRoleRoutes = new Hono<{ Variables: AppVariables }>();
 
 reactionRoleRoutes.use("*", authMiddleware);
@@ -57,6 +106,26 @@ reactionRoleRoutes.post("/:guildId/reaction-roles", async (c) => {
 
   const botToken = process.env.DISCORD_TOKEN;
   if (!botToken) return c.json({ error: "Missing bot token" }, 500);
+
+  // Sprowadź wszystkie emoji do postaci kanonicznej + endpointowej PRZED wysłaniem
+  // wiadomości, żeby nie zostawiać osieroconej wiadomości przy nieprawidłowym emoji.
+  const resolvedEntries: Array<{ emoji: string; reaction: string; roleId: string }> = [];
+  for (const entry of body.entries) {
+    const resolved = await resolveEmoji(entry.emoji, guildId, botToken);
+    if (!resolved) {
+      return c.json(
+        {
+          error: `Nieznane emoji: ${entry.emoji}. Użyj standardowego emoji albo custom emoji z tego serwera (w Discordzie wpisz \\:nazwa: aby uzyskać zapis <:nazwa:id>).`,
+        },
+        400,
+      );
+    }
+    resolvedEntries.push({
+      emoji: resolved.stored,
+      reaction: resolved.reaction,
+      roleId: entry.roleId,
+    });
+  }
 
   // Tryb pełnego embeda (z edytora) ma pierwszeństwo nad legacy title/content/color.
   let embed: ReturnType<typeof toDiscordEmbed>;
@@ -112,8 +181,8 @@ reactionRoleRoutes.post("/:guildId/reaction-roles", async (c) => {
 
   const msg = (await msgRes.json()) as { id: string };
 
-  for (const entry of body.entries) {
-    const emoji = encodeURIComponent(entry.emoji);
+  for (const entry of resolvedEntries) {
+    const emoji = encodeURIComponent(entry.reaction);
     const res = await fetch(
       `${DISCORD_API}/channels/${body.channelId}/messages/${msg.id}/reactions/${emoji}/@me`,
       {
@@ -138,7 +207,8 @@ reactionRoleRoutes.post("/:guildId/reaction-roles", async (c) => {
     content,
     color: colorHex,
     embed: body.embed,
-    entries: body.entries,
+    // Zapis kanoniczny `<:nazwa:id>` / unicode — po nim bot dopasowuje reakcje.
+    entries: resolvedEntries.map((e) => ({ emoji: e.emoji, roleId: e.roleId })),
   });
 
   return c.json(created, 201);

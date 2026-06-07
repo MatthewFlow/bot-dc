@@ -1,10 +1,13 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
 import { useParams, usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { prefetchGuildData } from "@/lib/api";
-import { NAV_ITEMS } from "@/lib/nav";
+import { NAV_GROUPS, NAV_OVERVIEW, type NavItem } from "@/lib/nav";
+
+const COLLAPSED_KEY = "jh_nav_collapsed";
 
 export function Sidebar({ guildName }: { guildName: string }) {
   const router = useRouter();
@@ -12,10 +15,69 @@ export function Sidebar({ guildName }: { guildName: string }) {
   const pathname = usePathname();
   const guildId = params.guildId as string;
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+
+  // Wczytaj zapamiętany stan zwiniętych sekcji.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(COLLAPSED_KEY);
+      if (raw) setCollapsed(new Set(JSON.parse(raw) as string[]));
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  function toggleGroup(id: string) {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      try {
+        localStorage.setItem(COLLAPSED_KEY, JSON.stringify([...next]));
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }
 
   function navigate(href: string) {
     router.push(href);
     setOpen(false);
+  }
+
+  function isItemActive(item: NavItem) {
+    const href = `/dashboard/${guildId}${item.href}`;
+    return item.href === ""
+      ? pathname === `/dashboard/${guildId}`
+      : pathname.startsWith(href);
+  }
+
+  function NavButton({ item }: { item: NavItem }) {
+    const href = `/dashboard/${guildId}${item.href}`;
+    const isActive = isItemActive(item);
+    const Icon = item.icon;
+
+    return (
+      <button
+        onClick={() => navigate(href)}
+        onMouseEnter={() => {
+          router.prefetch(href); // JS trasy
+          prefetchGuildData(guildId); // dane (jeśli cache wygasł)
+        }}
+        className={`relative mb-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition outline-none focus-visible:ring-2 focus-visible:ring-[#d4a843]/40 ${
+          isActive
+            ? "bg-[#1a1f2e] text-[#d4a843]"
+            : "text-gray-400 hover:bg-[#1a1f2e] hover:text-white"
+        }`}
+      >
+        {isActive && (
+          <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-[#d4a843]" />
+        )}
+        <Icon size={18} className="shrink-0" />
+        <span>{item.label}</span>
+      </button>
+    );
   }
 
   const navContent = (
@@ -33,34 +95,28 @@ export function Sidebar({ guildName }: { guildName: string }) {
 
       {/* Nav */}
       <nav className="flex-1 overflow-y-auto px-2 py-4">
-        <p className="mb-2 px-2 text-xs font-semibold uppercase tracking-wider text-gray-600">
-          Zarządzanie
-        </p>
-        {NAV_ITEMS.map((item) => {
-          const href = `/dashboard/${guildId}${item.href}`;
-          const isActive =
-            item.href === ""
-              ? pathname === `/dashboard/${guildId}`
-              : pathname.startsWith(href);
-          const Icon = item.icon;
+        {/* Dashboard — poza grupami */}
+        <NavButton item={NAV_OVERVIEW} />
 
+        {NAV_GROUPS.map((group) => {
+          const isCollapsed = collapsed.has(group.id);
+          const GroupIcon = group.icon;
           return (
-            <button
-              key={item.href}
-              onClick={() => navigate(href)}
-              onMouseEnter={() => {
-                router.prefetch(href); // JS trasy
-                prefetchGuildData(guildId); // dane (jeśli cache wygasł)
-              }}
-              className={`mb-1 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm transition outline-none focus-visible:ring-2 focus-visible:ring-[#d4a843]/40 ${
-                isActive
-                  ? "bg-[#1a1f2e] text-[#d4a843]"
-                  : "text-gray-400 hover:bg-[#1a1f2e] hover:text-white"
-              }`}
-            >
-              <Icon size={18} className="shrink-0" />
-              <span>{item.label}</span>
-            </button>
+            <div key={group.id} className="mt-4">
+              <button
+                onClick={() => toggleGroup(group.id)}
+                className="mb-1 flex w-full items-center gap-2 rounded-md px-2 py-1 text-xs font-semibold uppercase tracking-wider text-gray-600 transition hover:text-gray-400 outline-none focus-visible:text-gray-400"
+              >
+                <GroupIcon size={13} className="shrink-0" />
+                <span className="flex-1 text-left">{group.label}</span>
+                <ChevronDown
+                  size={14}
+                  className={`shrink-0 transition-transform ${isCollapsed ? "-rotate-90" : ""}`}
+                />
+              </button>
+              {!isCollapsed &&
+                group.items.map((item) => <NavButton key={item.href} item={item} />)}
+            </div>
           );
         })}
       </nav>

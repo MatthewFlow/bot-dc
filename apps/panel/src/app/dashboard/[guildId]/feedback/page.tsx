@@ -99,6 +99,15 @@ export default function FeedbackPage() {
         className="mb-0"
       />
 
+      <HowItWorks
+        steps={[
+          "Wybierz kategorię: błąd, sugestia lub inne.",
+          "Opcjonalnie dodaj ocenę w gwiazdkach (1–5).",
+          "Opisz swoje spostrzeżenie i kliknij Wyślij.",
+          "Twoje zgłoszenia zobaczysz na liście poniżej formularza.",
+        ]}
+      />
+
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
         <div className="flex-1">
           <div className={CARD}>
@@ -225,17 +234,6 @@ export default function FeedbackPage() {
               </div>
             )}
           </div>
-        </div>
-
-        <div className="w-full lg:w-72">
-          <HowItWorks
-            steps={[
-              "Wybierz kategorię: błąd, sugestia lub inne",
-              "Opcjonalnie dodaj ocenę w gwiazdkach",
-              "Opisz spostrzeżenie i wyślij",
-              "Twoje zgłoszenia widać poniżej formularza",
-            ]}
-          />
         </div>
       </div>
     </div>

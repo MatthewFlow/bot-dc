@@ -117,6 +117,16 @@ export default function AutoRolePage() {
         description="Automatyczne nadawanie roli przy wejściu na serwer."
       />
 
+      <HowItWorks
+        className="mb-6"
+        steps={[
+          "Nowy członek dostaje rolę „niezweryfikowanego” zaraz po wejściu.",
+          "Z tą rolą widzi ograniczony zestaw kanałów (np. tylko regulamin).",
+          "Po weryfikacji przez Reaction Roles bot nadaje rolę „zweryfikowanego”.",
+          "Wtedy bot automatycznie zdejmuje rolę niezweryfikowanego.",
+        ]}
+      />
+
       <div className="flex flex-col gap-6 lg:flex-row">
         <div className="flex-1 rounded-xl bg-[#1a1f2e]">
           <div className="flex items-center justify-between border-b border-white/5 px-6 py-4">
@@ -236,17 +246,6 @@ export default function AutoRolePage() {
               {error && <p className="text-xs text-red-400">{error}</p>}
             </div>
           </div>
-        </div>
-
-        <div className="w-full lg:w-72">
-          <HowItWorks
-            steps={[
-              "Nowy użytkownik dołącza do serwera",
-              "Bot automatycznie nadaje rolę niezweryfikowanego",
-              "Użytkownik ma ograniczony dostęp do kanałów",
-              "Po weryfikacji przez Reaction Roles bot zamienia rolę na zweryfikowanego",
-            ]}
-          />
         </div>
       </div>
     </div>

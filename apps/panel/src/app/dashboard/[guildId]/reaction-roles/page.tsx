@@ -12,7 +12,13 @@ import { PageHeader } from "@/components/PageHeader";
 import { RoleSelect } from "@/components/RoleSelect";
 import { useToast } from "@/components/toast";
 import { useGuildLoad } from "@/hooks/useGuildLoad";
-import type { Channel, EmbedConfig, ReactionRole, ReactionRoleEntry, Role } from "@/lib/api";
+import type {
+  Channel,
+  EmbedConfig,
+  ReactionRole,
+  ReactionRoleEntry,
+  Role,
+} from "@/lib/api";
 import {
   deleteReactionRole,
   getChannels,
@@ -159,6 +165,16 @@ export default function ReactionRolesPage() {
         description="Bot publikuje embed z emoji — reakcja nadaje rolę."
       />
 
+      <HowItWorks
+        className="mb-8"
+        steps={[
+          "Zbuduj embed: wybierz kanał, tytuł, treść i kolor (pełny edytor embeda).",
+          "Dodaj pary emoji → rola, np. ✅ → Zweryfikowany.",
+          "Kliknij Opublikuj — bot wyśle wiadomość i sam doda reakcje.",
+          "Klik reakcji nadaje przypisaną rolę, a jej zdjęcie — odbiera.",
+        ]}
+      />
+
       <div className="flex flex-col gap-8 lg:flex-row">
         {/* Form */}
         <div className="w-full lg:w-96">
@@ -195,7 +211,14 @@ export default function ReactionRolesPage() {
               />
 
               <div>
-                <label className="mb-2 block text-xs text-gray-500">Pary emoji → rola</label>
+                <label className="mb-1 block text-xs text-gray-500">
+                  Pary emoji → rola
+                </label>
+                <p className="mb-2 text-xs text-gray-600">
+                  Standardowe emoji wpisz wprost (np. ✅). Custom emoji z serwera podaj
+                  jako <code className="text-gray-400">&lt;:nazwa:id&gt;</code> — w
+                  Discordzie uzyskasz ten zapis wpisując <code className="text-gray-400">\:nazwa:</code>.
+                </p>
                 <div className="flex flex-col gap-2">
                   {form.entries.map((entry, idx) => (
                     <div key={idx} className="flex items-center gap-2">
@@ -280,7 +303,9 @@ export default function ReactionRolesPage() {
                             style={{ backgroundColor: rr.color }}
                           />
                         )}
-                        <p className="text-xs text-gray-500"># {channelName(rr.channelId)}</p>
+                        <p className="text-xs text-gray-500">
+                          # {channelName(rr.channelId)}
+                        </p>
                       </div>
                       <p className="mt-1 text-sm font-semibold text-white">{rr.title}</p>
                       <p className="truncate text-xs text-gray-400">{rr.content}</p>
@@ -315,14 +340,6 @@ export default function ReactionRolesPage() {
               ))
             )}
           </div>
-          <HowItWorks
-            steps={[
-              "Wypełnij formularz: wybierz kanał, tytuł, treść i kolor embeda",
-              "Dodaj pary emoji → rola (np. ✅ → Zweryfikowany)",
-              "Kliknij Opublikuj — bot wyśle embed i doda reakcje automatycznie",
-              "Gdy członek kliknie reakcję, bot natychmiast nadaje przypisaną rolę",
-            ]}
-          />
         </div>
       </div>
 
