@@ -146,9 +146,6 @@ Framework: Next.js 16 App Router, all dashboard pages are client components (`"u
 | bot   | `GUILD_ID`                 | Guild to register commands on                                     |
 | bot   | `CFG_ADMIN_ROLE_ID`        | Legacy fallback admin role for `/cfg_*`/`/mod_*` (prefer native Administrator perm or per-guild `adminRoleId`) |
 | bot   | `RESET_COMMANDS`           | Set `true` once to reset slash commands                           |
-| bot   | `WELCOME_CHANNEL_ID`       | Fallback welcome channel (overridden by DB config)                |
-| bot   | `GOODBYE_CHANNEL_ID`       | Fallback goodbye channel (overridden by DB config)                |
-| bot   | `LEVEL_UP_CHANNEL_ID`      | Fallback level-up notification channel (overridden by DB config)  |
 | api   | `DISCORD_TOKEN`            | Bot token (used to proxy channel/role/leaderboard requests)       |
 | api   | `CORS_ORIGINS`             | Comma-separated allowed browser origins (falls back to `PANEL_URL`) |
 | api   | `DISCORD_CLIENT_ID/SECRET` | OAuth2 credentials                                                |

@@ -1,7 +1,6 @@
 import { guildConfigRepository, levelFromXp, toDiscordEmbed, xpRepository } from "@jurassic-haven/db";
 import { EmbedBuilder, type GuildMember } from "discord.js";
 
-import { envWelcomeChannelId } from "../config/env";
 import { applyAutoRole } from "../levels/autorole";
 import { memberVarReplacer } from "../utils/embedVars";
 import { isAllowedTextChannel } from "../utils/channels";
@@ -29,7 +28,7 @@ export async function onMemberAdd(member: GuildMember) {
 
   await applyAutoRole(member, level).catch(() => {});
 
-  const channelId = cfg?.welcomeChannelId ?? envWelcomeChannelId;
+  const channelId = cfg?.welcomeChannelId;
   if (!channelId) return;
 
   const ch = member.guild.channels.cache.get(channelId);

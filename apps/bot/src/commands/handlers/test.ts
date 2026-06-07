@@ -1,7 +1,6 @@
 import { guildConfigRepository, levelFromXp, toDiscordEmbed, xpRepository } from "@jurassic-haven/db";
 import { ChannelType, type ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
 
-import { envGoodbyeChannelId, envWelcomeChannelId } from "../../config/env";
 import { applyAutoRole } from "../../levels/autorole";
 import { notifyLevelUp } from "../../levels/levelUpNotify";
 
@@ -72,7 +71,7 @@ export async function handleTestWelcome(interaction: ChatInputCommandInteraction
   const guild = interaction.guild!;
 
   const cfg = await guildConfigRepository.get(guildId);
-  const channelId = cfg?.welcomeChannelId ?? envWelcomeChannelId;
+  const channelId = cfg?.welcomeChannelId;
 
   if (!channelId) {
     await interaction.reply({
@@ -116,7 +115,7 @@ export async function handleTestGoodbye(interaction: ChatInputCommandInteraction
   const guild = interaction.guild!;
 
   const cfg = await guildConfigRepository.get(guildId);
-  const channelId = cfg?.goodbyeChannelId ?? envGoodbyeChannelId;
+  const channelId = cfg?.goodbyeChannelId;
 
   if (!channelId) {
     await interaction.reply({
