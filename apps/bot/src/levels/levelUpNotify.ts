@@ -44,7 +44,7 @@ export async function notifyLevelUp(
 
   if (opts?.suppressChannel) return;
 
-  const channelId = cfg?.levelUpChannelId ?? process.env.LEVEL_UP_CHANNEL_ID;
+  const channelId = cfg?.levelUpChannelId;
   if (!channelId) return;
 
   const channel = member.guild.channels.cache.get(channelId);

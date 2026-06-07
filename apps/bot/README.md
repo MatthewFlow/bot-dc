@@ -48,12 +48,6 @@ GUILD_ID=
 # per-guild admin role configured from the dashboard.
 CFG_ADMIN_ROLE_ID=
 
-# ── CHANNELS (fallback) ────────────────────────────────────────────
-# Used only if the channel has not been set via /cfg_* commands or the dashboard
-WELCOME_CHANNEL_ID=
-GOODBYE_CHANNEL_ID=
-LEVEL_UP_CHANNEL_ID=
-
 # ── DEBUG ──────────────────────────────────────────────────────────
 RESET_COMMANDS=false
 ```
