@@ -12,6 +12,7 @@ export default function GuildLayout({ children }: { children: React.ReactNode })
   const params = useParams();
   const guildId = params.guildId as string;
   const [guildName, setGuildName] = useState("...");
+  const [guildIcon, setGuildIcon] = useState<string | null>(null);
 
   useEffect(() => {
     // Rozgrzej cache (config/role/kanały) raz przy wejściu na serwer — wtedy
@@ -21,14 +22,17 @@ export default function GuildLayout({ children }: { children: React.ReactNode })
     getGuilds()
       .then((guilds) => {
         const guild = guilds.find((g) => g.id === guildId);
-        if (guild) setGuildName(guild.name);
+        if (guild) {
+          setGuildName(guild.name);
+          setGuildIcon(guild.icon);
+        }
       })
       .catch(() => router.replace("/"));
   }, [guildId, router]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <Sidebar guildName={guildName} />
+      <Sidebar guildName={guildName} guildIcon={guildIcon} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar guildName={guildName} />
         <main className="flex-1 overflow-auto">{children}</main>
