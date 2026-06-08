@@ -29,6 +29,7 @@ export class GuildConfigProvider implements IGuildConfigRepository {
       welcomeEmbed: doc.welcomeEmbed,
       goodbyeEmbed: doc.goodbyeEmbed,
       ticketPanelEmbed: doc.ticketPanelEmbed,
+      feedbackPanelEmbed: doc.feedbackPanelEmbed,
       ticketPanelButton: doc.ticketPanelButton,
       levelUpEmbed: doc.levelUpEmbed,
       autoMod: doc.autoMod,

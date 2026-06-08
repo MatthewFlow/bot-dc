@@ -38,6 +38,7 @@ const CONFIG_ALLOWED_FIELDS = [
   "welcomeEmbed",
   "goodbyeEmbed",
   "ticketPanelEmbed",
+  "feedbackPanelEmbed",
   "ticketPanelButton",
   "levelUpEmbed",
   "autoMod",
@@ -53,6 +54,15 @@ const DEFAULT_TICKET_PANEL_EMBED = {
     "Naciśnij przycisk poniżej, opisz swój problem, a Twoje zgłoszenie trafi do ekipy. " +
     "Po przejęciu przez moderatora lub admina otrzymasz pomoc w prywatnym wątku.",
   color: 0x5865f2,
+};
+
+// Domyślny embed panelu feedbacku.
+const DEFAULT_FEEDBACK_PANEL_EMBED = {
+  title: "💡 Podziel się opinią",
+  description:
+    "Masz pomysł, uwagę albo znalazłeś błąd? Kliknij przycisk poniżej i napisz nam — " +
+    "Twoja opinia trafi prosto do ekipy.",
+  color: 0xd4a843,
 };
 
 export const guildRoutes = new Hono<{ Variables: AppVariables }>();
@@ -280,6 +290,94 @@ guildRoutes.post("/:guildId/ticket-panel", async (c) => {
   } catch (e) {
     console.error("[guilds] Błąd wysyłania panelu ticketów:", e);
     return c.json({ error: "Failed to send ticket panel" }, 502);
+  }
+});
+
+guildRoutes.post("/:guildId/feedback-panel", async (c) => {
+  const botToken = process.env.DISCORD_TOKEN;
+  if (!botToken) return c.json({ error: "Missing bot token" }, 500);
+
+  const guildId = c.req.param("guildId");
+  const cfg = await guildConfigRepository.get(guildId);
+  const channelId = cfg?.feedbackChannelId;
+  if (!channelId) {
+    return c.json({ error: "Najpierw ustaw kanał feedbacku w ustawieniach." }, 400);
+  }
+
+  // Zmienne kontekstu serwera ({server}, {member_count}) — best-effort.
+  let serverName = "";
+  let memberCount = "";
+  try {
+    const gRes = await fetch(`${DISCORD_API}/guilds/${guildId}?with_counts=true`, {
+      headers: { Authorization: `Bot ${botToken}` },
+    });
+    if (gRes.ok) {
+      const g = (await gRes.json()) as {
+        name?: string;
+        approximate_member_count?: number;
+      };
+      serverName = g.name ?? "";
+      memberCount =
+        g.approximate_member_count != null ? String(g.approximate_member_count) : "";
+    }
+  } catch {
+    // ignore — zmienne zostaną puste
+  }
+  const replace = (s: string) =>
+    s.replace(/{server}/g, serverName).replace(/{member_count}/g, memberCount);
+
+  // custom_id "feedback_open" obsługuje bot — musi pozostać niezmienny.
+  const embed = toDiscordEmbed(
+    cfg?.feedbackPanelEmbed ?? DEFAULT_FEEDBACK_PANEL_EMBED,
+    replace,
+  );
+
+  const payload = {
+    embeds: [embed],
+    components: [
+      {
+        type: 1,
+        components: [
+          {
+            type: 2,
+            style: 1,
+            label: "Podziel się opinią",
+            custom_id: "feedback_open",
+            emoji: { name: "💡" },
+          },
+        ],
+      },
+    ],
+  };
+
+  try {
+    const res = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bot ${botToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.status === 429) {
+      const data = (await res.json()) as { retry_after: number };
+      return c.json(
+        { error: "Rate limited by Discord", retry_after: data.retry_after },
+        429,
+      );
+    }
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      console.error(`[guilds] Discord feedback-panel error ${res.status}:`, errBody);
+      return c.json({ error: "Failed to send feedback panel" }, 502);
+    }
+
+    return c.json({ ok: true });
+  } catch (e) {
+    console.error("[guilds] Błąd wysyłania panelu feedbacku:", e);
+    return c.json({ error: "Failed to send feedback panel" }, 502);
   }
 });
 

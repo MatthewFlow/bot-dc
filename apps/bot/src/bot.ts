@@ -11,6 +11,7 @@ import { onMessageReactionAdd } from "./events/messageReactionAdd";
 import { onMessageReactionRemove } from "./events/messageReactionRemove";
 import { onThreadDelete } from "./events/threadDelete";
 import { onThreadUpdate } from "./events/threadUpdate";
+import { handleFeedbackSubmit, showFeedbackModal } from "./feedback/feedback";
 import {
   onGuildMemberUpdateLog,
   onMemberJoinLog,
@@ -75,11 +76,16 @@ export function createBot() {
     }
     if (interaction.isButton()) {
       if (interaction.customId === "ticket_open") await showTicketModal(interaction);
-      else if (interaction.customId === "ticket_claim") await handleTicketClaim(interaction);
+      else if (interaction.customId === "ticket_claim")
+        await handleTicketClaim(interaction);
+      else if (interaction.customId === "feedback_open")
+        await showFeedbackModal(interaction);
       return;
     }
-    if (interaction.isModalSubmit() && interaction.customId === "ticket_submit") {
-      await handleTicketSubmit(interaction);
+    if (interaction.isModalSubmit()) {
+      if (interaction.customId === "ticket_submit") await handleTicketSubmit(interaction);
+      else if (interaction.customId === "feedback_submit")
+        await handleFeedbackSubmit(interaction);
     }
   });
 

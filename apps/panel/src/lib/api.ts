@@ -89,6 +89,7 @@ export type GuildConfig = {
   welcomeEmbed?: EmbedConfig;
   goodbyeEmbed?: EmbedConfig;
   ticketPanelEmbed?: EmbedConfig;
+  feedbackPanelEmbed?: EmbedConfig;
   ticketPanelButton?: TicketPanelButton;
   levelUpEmbed?: EmbedConfig;
   autoMod?: AutoModConfig;
@@ -350,6 +351,7 @@ export type GuildConfigUpdate = Partial<
     | "welcomeEmbed"
     | "goodbyeEmbed"
     | "ticketPanelEmbed"
+    | "feedbackPanelEmbed"
     | "ticketPanelButton"
     | "levelUpEmbed"
   >
@@ -357,6 +359,7 @@ export type GuildConfigUpdate = Partial<
   welcomeEmbed?: EmbedConfig | null;
   goodbyeEmbed?: EmbedConfig | null;
   ticketPanelEmbed?: EmbedConfig | null;
+  feedbackPanelEmbed?: EmbedConfig | null;
   ticketPanelButton?: TicketPanelButton | null;
   levelUpEmbed?: EmbedConfig | null;
 };
@@ -511,6 +514,19 @@ export async function sendTicketPanel(guildId: string, channelId: string): Promi
     body: JSON.stringify({ channelId }),
   });
   if (!res.ok) throw new Error("Failed to send ticket panel");
+}
+
+/** Wysyła panel feedbacku (embed + przycisk) na skonfigurowany kanał feedbacku. */
+export async function sendFeedbackPanel(guildId: string): Promise<void> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/feedback-panel`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({}),
+  });
+  if (!res.ok) {
+    const data = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(data?.error || "Failed to send feedback panel");
+  }
 }
 
 export async function closeTicket(guildId: string, threadId: string): Promise<void> {
