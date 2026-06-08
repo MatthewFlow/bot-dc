@@ -3,6 +3,7 @@ import type { ChatInputCommandInteraction } from "discord.js";
 import {
   handleTicketAdd,
   handleTicketClose,
+  handleTicketDelete,
   handleTicketSetup,
 } from "../../tickets/handler";
 import { getCachedGuildConfig } from "../../utils/configCache";
@@ -59,6 +60,7 @@ const handlers: Record<string, Handler> = {
   ticket_setup: handleTicketSetup,
   ticket_close: handleTicketClose,
   ticket_add: handleTicketAdd,
+  ticket_delete: handleTicketDelete,
   test_welcome: handleTestWelcome,
   test_goodbye: handleTestGoodbye,
 };
@@ -90,7 +92,8 @@ export async function handleCommand(interaction: ChatInputCommandInteraction) {
     interaction.commandName.startsWith("cfg_") ||
     interaction.commandName.startsWith("test_") ||
     interaction.commandName.startsWith("mod_") ||
-    interaction.commandName === "ticket_setup";
+    interaction.commandName === "ticket_setup" ||
+    interaction.commandName === "ticket_delete";
 
   if (isRestricted) {
     const ok = await requireAdminRole(interaction);

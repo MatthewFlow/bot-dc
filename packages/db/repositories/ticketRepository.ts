@@ -42,4 +42,6 @@ export interface ITicketRepository {
   close(threadId: string): Promise<void>;
   /** Ponowne otwarcie zamkniętego ticketu — closed → open. */
   reopen(threadId: string): Promise<void>;
+  /** Trwałe usunięcie rekordu ticketu. */
+  delete(threadId: string): Promise<void>;
 }

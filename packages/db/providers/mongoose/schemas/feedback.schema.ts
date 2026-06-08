@@ -30,5 +30,29 @@ const feedbackSchema = new Schema<FeedbackDocument>(
 );
 
 feedbackSchema.index({ userId: 1, createdAt: -1 });
+feedbackSchema.index({ guildId: 1, createdAt: -1 });
 
 export const FeedbackModel = model<FeedbackDocument>("Feedback", feedbackSchema);
+
+/** Stan „przeczytane do" — per admin (userId) i serwer (guildId). */
+export type FeedbackReadDocument = {
+  userId: string;
+  guildId: string;
+  seenAt: Date;
+};
+
+const feedbackReadSchema = new Schema<FeedbackReadDocument>(
+  {
+    userId: { type: String, required: true },
+    guildId: { type: String, required: true },
+    seenAt: { type: Date, required: true },
+  },
+  { versionKey: false },
+);
+
+feedbackReadSchema.index({ userId: 1, guildId: 1 }, { unique: true });
+
+export const FeedbackReadModel = model<FeedbackReadDocument>(
+  "FeedbackRead",
+  feedbackReadSchema,
+);

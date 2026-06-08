@@ -78,4 +78,8 @@ export class TicketProvider implements ITicketRepository {
       { status: "open", $unset: { closedAt: "" } },
     );
   }
+
+  async delete(threadId: string): Promise<void> {
+    await TicketModel.deleteOne({ threadId });
+  }
 }

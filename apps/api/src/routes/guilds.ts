@@ -1,4 +1,5 @@
 import {
+  feedbackRepository,
   guildConfigRepository,
   levelFromXp,
   ticketRepository,
@@ -9,7 +10,7 @@ import {
 import { Hono } from "hono";
 
 import { sanitizeConfigPatch } from "../lib/configSanitize";
-import { canManageGuild, fetchGuilds, isGuildAdmin } from "../lib/guildGuard";
+import { canAccessGuild, fetchAccessibleGuilds } from "../lib/guildGuard";
 import { authMiddleware } from "../middleware/authMiddleware";
 import type { AppVariables } from "../types";
 
@@ -73,8 +74,9 @@ guildRoutes.use("*", authMiddleware);
 guildRoutes.use("/:guildId/*", async (c, next) => {
   const guildId = c.req.param("guildId");
   const accessToken = c.get("accessToken");
+  const userId = c.get("userId");
 
-  if (!(await isGuildAdmin(accessToken, guildId))) {
+  if (!(await canAccessGuild(accessToken, userId, guildId))) {
     return c.json({ error: "Forbidden" }, 403);
   }
 
@@ -83,9 +85,8 @@ guildRoutes.use("/:guildId/*", async (c, next) => {
 
 guildRoutes.get("/", async (c) => {
   const accessToken = c.get("accessToken");
-  const guilds = await fetchGuilds(accessToken);
-  const adminGuilds = guilds.filter((g) => canManageGuild(g.permissions));
-  return c.json(adminGuilds);
+  const userId = c.get("userId");
+  return c.json(await fetchAccessibleGuilds(accessToken, userId));
 });
 
 guildRoutes.get("/:guildId/config", async (c) => {
@@ -379,6 +380,34 @@ guildRoutes.post("/:guildId/feedback-panel", async (c) => {
     console.error("[guilds] Błąd wysyłania panelu feedbacku:", e);
     return c.json({ error: "Failed to send feedback panel" }, 502);
   }
+});
+
+// Lista feedbacków serwera + liczba nieprzeczytanych dla bieżącego admina.
+guildRoutes.get("/:guildId/feedback", async (c) => {
+  const guildId = c.req.param("guildId");
+  const userId = c.get("userId");
+  const [items, seenAt] = await Promise.all([
+    feedbackRepository.getByGuild(guildId, 50),
+    feedbackRepository.getSeenAt(userId, guildId),
+  ]);
+  const unread = await feedbackRepository.countByGuildSince(guildId, seenAt);
+  return c.json({ items, unread, seenAt });
+});
+
+// Oznacz feedbacki serwera jako przeczytane (przez bieżącego admina) do teraz.
+guildRoutes.post("/:guildId/feedback/seen", async (c) => {
+  const guildId = c.req.param("guildId");
+  const userId = c.get("userId");
+  await feedbackRepository.markSeen(userId, guildId, new Date());
+  return c.json({ ok: true });
+});
+
+// Usuń zgłoszenie z serwera.
+guildRoutes.delete("/:guildId/feedback/:feedbackId", async (c) => {
+  const guildId = c.req.param("guildId");
+  const ok = await feedbackRepository.delete(c.req.param("feedbackId"), guildId);
+  if (!ok) return c.json({ error: "Not found" }, 404);
+  return c.json({ ok: true });
 });
 
 guildRoutes.get("/:guildId/roles", async (c) => {

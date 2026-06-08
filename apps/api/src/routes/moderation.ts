@@ -6,7 +6,7 @@ import {
 } from "@jurassic-haven/db";
 import { Hono } from "hono";
 
-import { isGuildAdmin } from "../lib/guildGuard";
+import { canAccessGuild } from "../lib/guildGuard";
 import { authMiddleware } from "../middleware/authMiddleware";
 import type { AppVariables } from "../types";
 
@@ -51,8 +51,9 @@ moderationRoutes.use("*", authMiddleware);
 moderationRoutes.use("/:guildId/*", async (c, next) => {
   const guildId = c.req.param("guildId");
   const accessToken = c.get("accessToken");
+  const userId = c.get("userId");
 
-  if (!(await isGuildAdmin(accessToken, guildId))) {
+  if (!(await canAccessGuild(accessToken, userId, guildId))) {
     return c.json({ error: "Forbidden" }, 403);
   }
 
