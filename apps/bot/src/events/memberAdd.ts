@@ -1,9 +1,14 @@
-import { guildConfigRepository, levelFromXp, toDiscordEmbed, xpRepository } from "@jurassic-haven/db";
+import {
+  guildConfigRepository,
+  levelFromXp,
+  toDiscordEmbed,
+  xpRepository,
+} from "@jurassic-haven/db";
 import { EmbedBuilder, type GuildMember } from "discord.js";
 
 import { applyAutoRole } from "../levels/autorole";
-import { memberVarReplacer } from "../utils/embedVars";
 import { isAllowedTextChannel } from "../utils/channels";
+import { memberVarReplacer } from "../utils/embedVars";
 
 const DEFAULT_WELCOME = "Siema {user}, miło że jesteś 😄";
 

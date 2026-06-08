@@ -1,4 +1,9 @@
-import { guildConfigRepository, levelFromXp, toDiscordEmbed, xpRepository } from "@jurassic-haven/db";
+import {
+  guildConfigRepository,
+  levelFromXp,
+  toDiscordEmbed,
+  xpRepository,
+} from "@jurassic-haven/db";
 import { ChannelType, type ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
 
 import { applyAutoRole } from "../../levels/autorole";
@@ -8,7 +13,9 @@ const DEFAULT_WELCOME = "Siema {user}, miło że jesteś 😄";
 const DEFAULT_GOODBYE = "{username} wyszedł z serwera.";
 
 /** Variable replacer for test commands — uses the invoking user as the sample member. */
-function testReplacer(interaction: ChatInputCommandInteraction): (template: string) => string {
+function testReplacer(
+  interaction: ChatInputCommandInteraction,
+): (template: string) => string {
   const avatar = interaction.user.displayAvatarURL({ size: 256 });
   return (template) =>
     template

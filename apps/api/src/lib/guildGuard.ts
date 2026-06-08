@@ -9,7 +9,12 @@ export function canManageGuild(permissions: string): boolean {
   return (p & ADMIN_PERM) === ADMIN_PERM || (p & MANAGE_GUILD_PERM) === MANAGE_GUILD_PERM;
 }
 
-export type GuildEntry = { id: string; name: string; icon: string | null; permissions: string };
+export type GuildEntry = {
+  id: string;
+  name: string;
+  icon: string | null;
+  permissions: string;
+};
 type CacheEntry = { guilds: GuildEntry[]; expiresAt: number };
 
 // Per-token guild list cache
@@ -40,7 +45,10 @@ export async function fetchGuilds(accessToken: string): Promise<GuildEntry[]> {
   return p;
 }
 
-export async function isGuildAdmin(accessToken: string, guildId: string): Promise<boolean> {
+export async function isGuildAdmin(
+  accessToken: string,
+  guildId: string,
+): Promise<boolean> {
   const guilds = await fetchGuilds(accessToken);
   const guild = guilds.find((g) => g.id === guildId);
   return !!guild && canManageGuild(guild.permissions);

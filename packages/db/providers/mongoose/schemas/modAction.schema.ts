@@ -1,12 +1,6 @@
 import { model, Schema } from "mongoose";
 
-export type ModActionType =
-  | "warn"
-  | "mute"
-  | "unmute"
-  | "kick"
-  | "ban"
-  | "clearwarns";
+export type ModActionType = "warn" | "mute" | "unmute" | "kick" | "ban" | "clearwarns";
 
 export type ModActionDocument = {
   guildId: string;

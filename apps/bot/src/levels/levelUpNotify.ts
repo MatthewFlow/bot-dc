@@ -1,4 +1,8 @@
-import { type EmbedConfig, guildConfigRepository, toDiscordEmbed } from "@jurassic-haven/db";
+import {
+  type EmbedConfig,
+  guildConfigRepository,
+  toDiscordEmbed,
+} from "@jurassic-haven/db";
 import { EmbedBuilder, type GuildMember } from "discord.js";
 
 function buildLevelUpEmbed(

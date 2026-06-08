@@ -53,10 +53,15 @@ export async function onMessageCreate(message: Message) {
         .filter((r) => r.level <= res.newLevel)
         .at(-1);
 
-      await notifyLevelUp(member, res.newLevel, target ? `<@&${target.roleId}>` : undefined, {
-        dm,
-        suppressChannel: !channelOn,
-      });
+      await notifyLevelUp(
+        member,
+        res.newLevel,
+        target ? `<@&${target.roleId}>` : undefined,
+        {
+          dm,
+          suppressChannel: !channelOn,
+        },
+      );
     }
   }
 }

@@ -47,11 +47,7 @@ describe("sanitizeConfigPatch", () => {
 
   test("filters invalid roleRewards", () => {
     const out = sanitizeConfigPatch({
-      roleRewards: [
-        { level: 5, roleId: "r1" },
-        { level: 0, roleId: "x" },
-        { level: 2 },
-      ],
+      roleRewards: [{ level: 5, roleId: "r1" }, { level: 0, roleId: "x" }, { level: 2 }],
     }) as RewardsOut;
     expect(out.roleRewards).toEqual([{ level: 5, roleId: "r1" }]);
   });

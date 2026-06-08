@@ -114,58 +114,58 @@ full `embed` (`EmbedConfig`) when published from the dashboard embed editor.
 Stores per-user moderation warnings.
 
 | Method                    | Description                                            |
-| ------------------------- | ----------------------------------------------------- |
+| ------------------------- | ------------------------------------------------------ |
 | `add(opts)`               | Adds a warning                                         |
-| `getAll(guildId, userId)` | Returns all warnings for a user                       |
+| `getAll(guildId, userId)` | Returns all warnings for a user                        |
 | `clear(guildId, userId)`  | Deletes all warnings for a user, returns deleted count |
-| `countByGuild(guildId)`   | Total number of warnings across the guild (dashboard) |
+| `countByGuild(guildId)`   | Total number of warnings across the guild (dashboard)  |
 
 ### `ticketRepository`
 
 Stores support ticket threads.
 
-| Method                            | Description                                                  |
-| --------------------------------- | ------------------------------------------------------------ |
-| `create(opts)`                    | Creates a `pending` ticket                                   |
-| `getByThread(threadId)`           | Returns ticket for a thread                                  |
-| `getActiveByUser(guildId, userId)`| Returns the user's open/pending ticket, if any              |
-| `getAll(guildId, status?)`        | Lists tickets (optionally filtered by status)               |
-| `counts(guildId)`                 | `{ total, pending, open, closed }` counts (dashboard)        |
-| `claim(threadId, moderatorId)`    | Marks ticket `open` and assigns a moderator                 |
-| `close(threadId)`                 | Marks ticket `closed`                                        |
-| `reopen(threadId)`                | Reopens a closed ticket                                     |
+| Method                             | Description                                           |
+| ---------------------------------- | ----------------------------------------------------- |
+| `create(opts)`                     | Creates a `pending` ticket                            |
+| `getByThread(threadId)`            | Returns ticket for a thread                           |
+| `getActiveByUser(guildId, userId)` | Returns the user's open/pending ticket, if any        |
+| `getAll(guildId, status?)`         | Lists tickets (optionally filtered by status)         |
+| `counts(guildId)`                  | `{ total, pending, open, closed }` counts (dashboard) |
+| `claim(threadId, moderatorId)`     | Marks ticket `open` and assigns a moderator           |
+| `close(threadId)`                  | Marks ticket `closed`                                 |
+| `reopen(threadId)`                 | Reopens a closed ticket                               |
 
 ### `modActionRepository`
 
 Stores a log of moderation actions (`warn`, `mute`, `unmute`, `kick`, `ban`, `clearwarns`).
 
-| Method                       | Description                              |
-| ---------------------------- | ---------------------------------------- |
-| `add(opts)`                  | Records a moderation action              |
-| `getRecent(guildId, limit)`  | Most recent actions for a guild          |
-| `getByUser(guildId, userId)` | Actions targeting a specific user        |
+| Method                       | Description                       |
+| ---------------------------- | --------------------------------- |
+| `add(opts)`                  | Records a moderation action       |
+| `getRecent(guildId, limit)`  | Most recent actions for a guild   |
+| `getByUser(guildId, userId)` | Actions targeting a specific user |
 
 ### `sessionRepository`
 
 Server-side store of Discord OAuth access tokens (used by the API). Backed by a TTL-indexed
 collection so sessions expire automatically, survive restarts, and are shared across instances.
 
-| Method                          | Description                                       |
-| ------------------------------- | ------------------------------------------------- |
-| `set(userId, accessToken, ttl)` | Upserts a session with a TTL (ms)                 |
-| `get(userId)`                   | Returns the access token, or `null` if expired    |
-| `delete(userId)`                | Removes a session (e.g. on logout)                |
+| Method                          | Description                                    |
+| ------------------------------- | ---------------------------------------------- |
+| `set(userId, accessToken, ttl)` | Upserts a session with a TTL (ms)              |
+| `get(userId)`                   | Returns the access token, or `null` if expired |
+| `delete(userId)`                | Removes a session (e.g. on logout)             |
 
 ## Embed Helpers (`embed.ts`)
 
 Shared, generic Discord embed model used by the panel editor, the API (REST send) and the bot
 (discord.js accepts the same JSON in `embeds: []`).
 
-| Export                       | Description                                                                  |
-| ---------------------------- | ---------------------------------------------------------------------------- |
-| `EmbedConfig`                | Editable embed shape (title, description, color, author, images, footer, fields, …) |
-| `toDiscordEmbed(cfg, sub?)`  | Converts an `EmbedConfig` to a Discord embed JSON. `sub` substitutes template variables (`{user}`, `{server}`, …); empty fields are dropped and lengths clamped |
-| `isEmbedEmpty(embed)`        | True when an embed has no visible content (Discord rejects empty embeds)      |
+| Export                      | Description                                                                                                                                                     |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `EmbedConfig`               | Editable embed shape (title, description, color, author, images, footer, fields, …)                                                                             |
+| `toDiscordEmbed(cfg, sub?)` | Converts an `EmbedConfig` to a Discord embed JSON. `sub` substitutes template variables (`{user}`, `{server}`, …); empty fields are dropped and lengths clamped |
+| `isEmbedEmpty(embed)`       | True when an embed has no visible content (Discord rejects empty embeds)                                                                                        |
 
 ## XP Helpers
 

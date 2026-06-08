@@ -1,9 +1,4 @@
-import {
-  ChannelType,
-  EmbedBuilder,
-  type Guild,
-  PermissionFlagsBits,
-} from "discord.js";
+import { ChannelType, EmbedBuilder, type Guild, PermissionFlagsBits } from "discord.js";
 
 /**
  * Fired when the bot is added to a server. Logs the join and posts a short

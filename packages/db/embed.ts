@@ -38,7 +38,10 @@ export type DiscordEmbed = {
   fields?: Array<{ name: string; value: string; inline?: boolean }>;
 };
 
-function clean(value: string | undefined, sub?: (v: string) => string): string | undefined {
+function clean(
+  value: string | undefined,
+  sub?: (v: string) => string,
+): string | undefined {
   if (value == null) return undefined;
   const out = (sub ? sub(value) : value).trim();
   return out.length ? out : undefined;
@@ -49,7 +52,10 @@ function clean(value: string | undefined, sub?: (v: string) => string): string |
  * `sub` (opcjonalne) podstawia zmienne w polach tekstowych ({user}, {server}, …).
  * Puste pola są pomijane, a długości przycięte do limitów Discorda.
  */
-export function toDiscordEmbed(cfg: EmbedConfig, sub?: (v: string) => string): DiscordEmbed {
+export function toDiscordEmbed(
+  cfg: EmbedConfig,
+  sub?: (v: string) => string,
+): DiscordEmbed {
   const embed: DiscordEmbed = {};
 
   const title = clean(cfg.title, sub);

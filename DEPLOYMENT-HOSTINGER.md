@@ -58,10 +58,10 @@ nano .env
 
 Bez domeny masz dwie opcje (szczegóły i przykłady są w komentarzach `.env`):
 
-| | HTTPS? | Logowanie Discord | Ustawienia w `.env` |
-|---|---|---|---|
-| **Zalecane: nip.io** | ✅ darmowe | ✅ działa | `CADDY_SITE=<IP-z-myślnikami>.nip.io`, `PUBLIC_URL=https://<IP-z-myślnikami>.nip.io`, `COOKIE_SECURE=true` |
-| Szybki podgląd: samo IP | ❌ HTTP | ⚠️ słabsze | `CADDY_SITE=:80`, `PUBLIC_URL=http://IP_VPS`, `COOKIE_SECURE=false` |
+|                         | HTTPS?     | Logowanie Discord | Ustawienia w `.env`                                                                                        |
+| ----------------------- | ---------- | ----------------- | ---------------------------------------------------------------------------------------------------------- |
+| **Zalecane: nip.io**    | ✅ darmowe | ✅ działa         | `CADDY_SITE=<IP-z-myślnikami>.nip.io`, `PUBLIC_URL=https://<IP-z-myślnikami>.nip.io`, `COOKIE_SECURE=true` |
+| Szybki podgląd: samo IP | ❌ HTTP    | ⚠️ słabsze        | `CADDY_SITE=:80`, `PUBLIC_URL=http://IP_VPS`, `COOKIE_SECURE=false`                                        |
 
 `nip.io` to darmowy DNS: host `203-0-113-5.nip.io` zawsze wskazuje na IP `203.0.113.5` — Caddy
 pobierze dla niego **prawdziwy certyfikat HTTPS**, więc logowanie działa bez kupowania domeny.
@@ -109,11 +109,11 @@ ssh root@TWOJE_IP_VPS
 
 hPanel → **VPS** → **Firewall**: utwórz/edytuj zestaw reguł i **zezwól na ruch przychodzący**:
 
-| Port | Po co            |
-| ---- | ---------------- |
-| 22   | SSH              |
-| 80   | HTTP (ACME/Caddy)|
-| 443  | HTTPS            |
+| Port | Po co             |
+| ---- | ----------------- |
+| 22   | SSH               |
+| 80   | HTTP (ACME/Caddy) |
+| 443  | HTTPS             |
 
 Przypisz zestaw reguł do VPS. (Bez 80/443 Caddy nie pobierze certyfikatu i strona nie wstanie.)
 

@@ -1,5 +1,5 @@
-import { guildConfigRepository, modActionRepository } from "@jurassic-haven/db";
 import type { ModActionType } from "@jurassic-haven/db";
+import { guildConfigRepository, modActionRepository } from "@jurassic-haven/db";
 import { EmbedBuilder, type Guild, type User } from "discord.js";
 
 const ACTION_LABELS: Record<ModActionType, string> = {
