@@ -9,13 +9,28 @@ import { NAV_GROUPS, NAV_TOP, type NavItem } from "@/lib/nav";
 
 const COLLAPSED_KEY = "jh_nav_collapsed";
 
-export function Sidebar({ guildName }: { guildName: string }) {
+export function Sidebar({
+  guildName,
+  guildIcon,
+}: {
+  guildName: string;
+  guildIcon?: string | null;
+}) {
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
   const guildId = params.guildId as string;
   const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+
+  // Ikona serwera z CDN Discorda (gif dla animowanych „a_…"); fallback to inicjał.
+  const iconUrl = guildIcon
+    ? `https://cdn.discordapp.com/icons/${guildId}/${guildIcon}.${
+        guildIcon.startsWith("a_") ? "gif" : "png"
+      }?size=64`
+    : null;
+  const initial =
+    guildName && guildName !== "..." ? guildName.trim().charAt(0).toUpperCase() : "JH";
 
   // Wczytaj zapamiętany stan zwiniętych sekcji.
   useEffect(() => {
@@ -82,11 +97,19 @@ export function Sidebar({ guildName }: { guildName: string }) {
 
   const navContent = (
     <>
-      {/* Logo */}
+      {/* Logo serwera */}
       <div className="flex items-center gap-3 border-b border-border px-4 py-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-card text-sm font-bold text-primary">
-          JH
-        </div>
+        {iconUrl ? (
+          <img
+            src={iconUrl}
+            alt={guildName}
+            className="h-8 w-8 shrink-0 rounded-lg object-cover"
+          />
+        ) : (
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-card text-sm font-bold text-primary">
+            {initial}
+          </div>
+        )}
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-white">{guildName}</p>
           <p className="text-xs text-gray-400">Discord Bot</p>
