@@ -9,6 +9,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { RoleSelect } from "@/components/RoleSelect";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
+import { Switch } from "@/components/ui/switch";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { useGuildLoad } from "@/hooks/useGuildLoad";
 import type { GuildConfig, Role } from "@/lib/api";
@@ -138,18 +139,12 @@ export default function AutoRolePage() {
                 Auto-role przy dołączeniu
               </p>
             </div>
-            <label className="relative inline-flex cursor-pointer items-center">
-              <input
-                type="checkbox"
-                checked={!!config.joinRoleId}
-                onChange={(e) => {
-                  if (!e.target.checked)
-                    setConfig((c) => ({ ...c, joinRoleId: undefined }));
-                }}
-                className="peer sr-only"
-              />
-              <div className="peer h-6 w-11 rounded-full bg-gray-700 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full" />
-            </label>
+            <Switch
+              checked={!!config.joinRoleId}
+              onCheckedChange={(v) => {
+                if (!v) setConfig((c) => ({ ...c, joinRoleId: undefined }));
+              }}
+            />
           </div>
 
           <div className="border-b border-border p-6">

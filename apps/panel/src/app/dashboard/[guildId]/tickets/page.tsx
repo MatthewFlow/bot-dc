@@ -15,6 +15,7 @@ import { RoleSelect } from "@/components/RoleSelect";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton, SkeletonRow } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
+import { Button } from "@/components/ui/button";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { useGuildLoad } from "@/hooks/useGuildLoad";
 import type { Channel, GuildConfig, Role, Ticket, TicketStatus } from "@/lib/api";
@@ -264,7 +265,7 @@ export default function TicketsPage() {
           <div>
             <p className="text-sm font-semibold text-white">Wygląd panelu ticketów</p>
             <p className="text-xs text-gray-400">
-              Embed i przycisk wysyłane przez „Wyślij panel" oraz /ticket_setup.
+              Embed i przycisk wysyłane przez „Wyślij panel” oraz /ticket_setup.
             </p>
           </div>
           <SaveButton
@@ -439,7 +440,7 @@ export default function TicketsPage() {
           <div className="surface-raised rounded-xl bg-card p-6">
             <p className="mb-1 text-sm font-semibold text-white">Panel na kanale</p>
             <p className="mb-3 text-xs text-gray-400">
-              Wyślij embed z przyciskiem „Złóż ticket" na wybrany kanał — bez komendy
+              Wyślij embed z przyciskiem „Złóż ticket” na wybrany kanał — bez komendy
               /ticket_setup.
             </p>
             <div className="flex flex-wrap items-center gap-2">
@@ -450,13 +451,13 @@ export default function TicketsPage() {
                 placeholder="— Wybierz kanał —"
                 className="min-w-0 flex-1 px-3 py-2.5"
               />
-              <button
+              <Button
                 onClick={handleSendPanel}
                 disabled={!panelChannelId || sendingPanel}
-                className="shrink-0 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-primary-hover disabled:opacity-40"
+                className="shrink-0"
               >
                 {sendingPanel ? "Wysyłanie…" : "Wyślij panel"}
-              </button>
+              </Button>
             </div>
           </div>
 

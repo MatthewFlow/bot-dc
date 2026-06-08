@@ -4,13 +4,14 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 
 import { ChannelSelect } from "@/components/ChannelSelect";
+import { ConfirmModal } from "@/components/confirmModal";
 import { EmbedEditor } from "@/components/EmbedEditor";
 import { EmbedPreview } from "@/components/EmbedPreview";
 import { HowItWorks } from "@/components/HowItWorks";
-import { ConfirmModal } from "@/components/confirmModal";
 import { PageHeader } from "@/components/PageHeader";
 import { RoleSelect } from "@/components/RoleSelect";
 import { useToast } from "@/components/toast";
+import { Button } from "@/components/ui/button";
 import { useGuildLoad } from "@/hooks/useGuildLoad";
 import type {
   Channel,
@@ -260,17 +261,17 @@ export default function ReactionRolesPage() {
                 <EmbedPreview embed={form.embed} />
               </div>
 
-              <button
+              <Button
                 onClick={handlePublish}
                 disabled={publishing || !isFormValid}
-                className="mt-2 rounded-lg bg-primary py-2.5 text-sm font-semibold text-black transition hover:bg-primary-hover disabled:opacity-40"
+                className="mt-2"
               >
                 {publishing
                   ? "Publikowanie..."
                   : editingMessageId
                     ? "Zapisz zmiany"
                     : "Opublikuj"}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

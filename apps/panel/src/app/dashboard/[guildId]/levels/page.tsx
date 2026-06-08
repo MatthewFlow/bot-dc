@@ -15,6 +15,8 @@ import { RoleSelect } from "@/components/RoleSelect";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton, SkeletonRow } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { useGuildLoad } from "@/hooks/useGuildLoad";
 import type {
@@ -64,21 +66,13 @@ function LvToggle({
   desc?: string;
 }) {
   return (
-    <label className="flex cursor-pointer items-start justify-between gap-4">
+    <div className="flex items-start justify-between gap-4">
       <div className="min-w-0">
         <p className="text-sm text-white">{label}</p>
         {desc && <p className="text-xs text-gray-400">{desc}</p>}
       </div>
-      <span className="relative inline-flex shrink-0">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => onChange(e.target.checked)}
-          className="peer sr-only"
-        />
-        <span className="h-6 w-11 rounded-full bg-gray-700 transition after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full" />
-      </span>
-    </label>
+      <Switch checked={checked} onCheckedChange={onChange} className="mt-0.5" />
+    </div>
   );
 }
 
@@ -348,13 +342,13 @@ export default function LevelsPage() {
                   />
                 </div>
               </div>
-              <button
+              <Button
                 onClick={addReward}
                 disabled={!newLevel || !newRoleId}
-                className="mt-1 rounded-lg bg-primary py-2 text-sm font-semibold text-black transition hover:bg-primary-hover disabled:opacity-40"
+                className="mt-1"
               >
                 + Dodaj tier
-              </button>
+              </Button>
             </div>
           </div>
         </div>
