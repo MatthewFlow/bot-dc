@@ -8,7 +8,6 @@ import {
   type Message,
   type PartialGuildMember,
   type PartialMessage,
-  type PartialUser,
   PermissionFlagsBits,
   type User,
 } from "discord.js";
@@ -52,31 +51,40 @@ function memberExempt(
   return (log.exemptRoleIds ?? []).some((id) => member.roles.cache.has(id));
 }
 
-/** Best-effort: who deleted the message (via the audit log). Needs View Audit Log. */
-async function fetchDeleter(
+/**
+ * Best-effort odczyt z audit logu: kto usunął wiadomość i (jeśli była poza cache)
+ * kto był jej autorem. Wymaga uprawnienia View Audit Log.
+ *
+ * Uwaga: Discord NIE tworzy wpisu audit logu, gdy autor usuwa własną wiadomość —
+ * wtedy `executor` pozostaje null. Wpisy są też agregowane, stąd luźniejszy
+ * dopasowanie po kanale + świeżości (autor tylko jeśli znany z cache).
+ */
+async function fetchDeleteInfo(
   guild: Guild,
   message: Message | PartialMessage,
-): Promise<User | PartialUser | null> {
+): Promise<{ executor: User | null; author: User | null }> {
+  const empty = { executor: null, author: null };
   const me = guild.members.me;
-  if (!me?.permissions.has(PermissionFlagsBits.ViewAuditLog) || !message.author)
-    return null;
+  if (!me?.permissions.has(PermissionFlagsBits.ViewAuditLog)) return empty;
 
   try {
     const logs = await guild.fetchAuditLogs({
       type: AuditLogEvent.MessageDelete,
-      limit: 5,
+      limit: 6,
     });
     const entry = logs.entries.find((e) => {
       const extra = e.extra as { channel?: { id: string } } | undefined;
-      return (
-        e.target?.id === message.author?.id &&
-        extra?.channel?.id === message.channelId &&
-        Date.now() - e.createdTimestamp < 10_000
-      );
+      const channelMatch = extra?.channel?.id === message.channelId;
+      const authorMatch = message.author ? e.target?.id === message.author.id : true;
+      return channelMatch && authorMatch && Date.now() - e.createdTimestamp < 15_000;
     });
-    return entry?.executor ?? null;
+    if (!entry) return empty;
+    return {
+      executor: (entry.executor as User | null) ?? null,
+      author: (entry.target as User | null) ?? null,
+    };
   } catch {
-    return null;
+    return empty;
   }
 }
 
@@ -91,7 +99,10 @@ export async function onMessageDeleteLog(message: Message | PartialMessage) {
     return;
   }
 
-  const deleter = await fetchDeleter(message.guild, message);
+  const info = await fetchDeleteInfo(message.guild, message);
+  // Autor z cache, a gdy wiadomość była poza cache — odtworzony z audit logu.
+  const author = message.author ?? info.author;
+  if (author?.bot) return;
 
   const embed = new EmbedBuilder()
     .setTitle("🗑️ Wiadomość usunięta")
@@ -99,14 +110,23 @@ export async function onMessageDeleteLog(message: Message | PartialMessage) {
     .addFields(
       {
         name: "Autor",
-        value: message.author ? `${message.author} \`${message.author.id}\`` : "nieznany",
+        value: author ? `${author} \`${author.id}\`` : "nieznany",
         inline: true,
       },
       { name: "Kanał", value: `<#${message.channelId}>`, inline: true },
-      ...(deleter
-        ? [{ name: "Usunął", value: `${deleter} \`${deleter.id}\``, inline: true }]
-        : []),
-      { name: "Treść", value: message.content?.slice(0, 1024) || "(brak / niedostępna)" },
+      {
+        name: "Usunął",
+        value: info.executor
+          ? `${info.executor} \`${info.executor.id}\``
+          : "autor (samodzielnie) lub nieznane",
+        inline: true,
+      },
+      {
+        name: "Treść",
+        value:
+          message.content?.slice(0, 1024) ||
+          "(niedostępna — wiadomość spoza cache, np. sprzed uruchomienia bota)",
+      },
     )
     .setTimestamp();
 
