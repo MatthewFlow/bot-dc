@@ -72,6 +72,7 @@ export type GuildConfigDocument = {
   welcomeEmbed?: EmbedConfig;
   goodbyeEmbed?: EmbedConfig;
   ticketPanelEmbed?: EmbedConfig;
+  feedbackPanelEmbed?: EmbedConfig;
   ticketPanelButton?: TicketPanelButton;
   levelUpEmbed?: EmbedConfig;
   autoMod?: AutoModConfig;
@@ -188,6 +189,7 @@ const guildConfigSchema = new Schema<GuildConfigDocument>(
     welcomeEmbed: { type: embedSchema, default: undefined },
     goodbyeEmbed: { type: embedSchema, default: undefined },
     ticketPanelEmbed: { type: embedSchema, default: undefined },
+    feedbackPanelEmbed: { type: embedSchema, default: undefined },
     ticketPanelButton: { type: ticketPanelButtonSchema, default: undefined },
     levelUpEmbed: { type: embedSchema, default: undefined },
     autoMod: { type: autoModSchema, default: undefined },

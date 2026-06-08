@@ -28,6 +28,7 @@ export type GuildConfig = {
   welcomeEmbed?: EmbedConfig;
   goodbyeEmbed?: EmbedConfig;
   ticketPanelEmbed?: EmbedConfig;
+  feedbackPanelEmbed?: EmbedConfig;
   ticketPanelButton?: TicketPanelButton;
   levelUpEmbed?: EmbedConfig;
   autoMod?: AutoModConfig;

@@ -1,21 +1,7 @@
-import {
-  type FeedbackCategory,
-  feedbackRepository,
-  guildConfigRepository,
-  levelFromXp,
-  xpRepository,
-  xpToNextLevel,
-} from "@jurassic-haven/db";
+import { levelFromXp, xpRepository, xpToNextLevel } from "@jurassic-haven/db";
 import { type ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
 
-const FEEDBACK_CATEGORIES = new Set<FeedbackCategory>(["bug", "suggestion", "other"]);
-
-const FEEDBACK_CATEGORY_META: Record<FeedbackCategory, { label: string; color: number }> =
-  {
-    bug: { label: "🐛 Błąd", color: 0xed4245 },
-    suggestion: { label: "💡 Sugestia", color: 0xd4a843 },
-    other: { label: "💬 Inne", color: 0x5865f2 },
-  };
+import { parseFeedbackCategory, submitFeedback } from "../../feedback/feedback";
 
 export async function handleLevel(interaction: ChatInputCommandInteraction) {
   const guildId = interaction.guildId!;
@@ -67,6 +53,15 @@ export async function handleLeaderboard(interaction: ChatInputCommandInteraction
 }
 
 export async function handleFeedback(interaction: ChatInputCommandInteraction) {
+  const guild = interaction.guild;
+  if (!guild) {
+    await interaction.reply({
+      ephemeral: true,
+      content: "Ta komenda działa tylko na serwerze.",
+    });
+    return;
+  }
+
   const message = interaction.options.getString("message", true).trim();
   if (!message) {
     await interaction.reply({
@@ -76,52 +71,10 @@ export async function handleFeedback(interaction: ChatInputCommandInteraction) {
     return;
   }
 
-  const rawCategory = interaction.options.getString("category") ?? "other";
-  const category: FeedbackCategory = FEEDBACK_CATEGORIES.has(
-    rawCategory as FeedbackCategory,
-  )
-    ? (rawCategory as FeedbackCategory)
-    : "other";
+  const category = parseFeedbackCategory(interaction.options.getString("category"));
   const rating = interaction.options.getInteger("rating") ?? undefined;
-  const trimmed = message.slice(0, 2000);
 
-  await feedbackRepository.add({
-    userId: interaction.user.id,
-    username: interaction.user.username,
-    guildId: interaction.guildId ?? undefined,
-    category,
-    message: trimmed,
-    rating,
-  });
-
-  // Jeśli serwer ma ustawiony kanał feedbacku — opublikuj zgłoszenie jako embed.
-  const guild = interaction.guild;
-  if (guild) {
-    const cfg = await guildConfigRepository.get(guild.id);
-    if (cfg?.feedbackChannelId) {
-      const meta = FEEDBACK_CATEGORY_META[category];
-      const embed = new EmbedBuilder()
-        .setColor(meta.color)
-        .setAuthor({
-          name: interaction.user.tag,
-          iconURL: interaction.user.displayAvatarURL(),
-        })
-        .setTitle(meta.label)
-        .setDescription(trimmed)
-        .setTimestamp();
-      if (rating) {
-        embed.addFields({
-          name: "Ocena",
-          value: `${"⭐".repeat(rating)} ${rating}/5`,
-          inline: true,
-        });
-      }
-      const channel = await guild.channels.fetch(cfg.feedbackChannelId).catch(() => null);
-      if (channel?.isTextBased()) {
-        await channel.send({ embeds: [embed] }).catch(() => {});
-      }
-    }
-  }
+  await submitFeedback({ guild, user: interaction.user, category, message, rating });
 
   await interaction.reply({
     ephemeral: true,

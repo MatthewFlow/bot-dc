@@ -26,6 +26,7 @@ const EMBED_FIELDS = new Set([
   "welcomeEmbed",
   "goodbyeEmbed",
   "ticketPanelEmbed",
+  "feedbackPanelEmbed",
   "levelUpEmbed",
 ]);
 
