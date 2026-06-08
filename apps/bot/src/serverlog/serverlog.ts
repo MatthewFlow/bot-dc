@@ -58,7 +58,8 @@ async function fetchDeleter(
   message: Message | PartialMessage,
 ): Promise<User | PartialUser | null> {
   const me = guild.members.me;
-  if (!me?.permissions.has(PermissionFlagsBits.ViewAuditLog) || !message.author) return null;
+  if (!me?.permissions.has(PermissionFlagsBits.ViewAuditLog) || !message.author)
+    return null;
 
   try {
     const logs = await guild.fetchAuditLogs({
@@ -83,7 +84,10 @@ export async function onMessageDeleteLog(message: Message | PartialMessage) {
   if (!message.guild || message.author?.bot) return;
   const ctx = await resolveContext(message.guild, "messageDelete");
   if (!ctx) return;
-  if (channelExempt(ctx.log, message.channelId) || memberExempt(ctx.log, message.member)) {
+  if (
+    channelExempt(ctx.log, message.channelId) ||
+    memberExempt(ctx.log, message.member)
+  ) {
     return;
   }
 
@@ -117,7 +121,10 @@ export async function onMessageUpdateLog(
   if (oldMessage.content === newMessage.content) return; // ignore non-content edits
   const ctx = await resolveContext(newMessage.guild, "messageEdit");
   if (!ctx) return;
-  if (channelExempt(ctx.log, newMessage.channelId) || memberExempt(ctx.log, newMessage.member)) {
+  if (
+    channelExempt(ctx.log, newMessage.channelId) ||
+    memberExempt(ctx.log, newMessage.member)
+  ) {
     return;
   }
 
@@ -212,13 +219,19 @@ export async function onGuildMemberUpdateLog(
         if (added.size) {
           embed.addFields({
             name: "Dodane",
-            value: added.map((r) => `${r}`).join(", ").slice(0, 1024),
+            value: added
+              .map((r) => `${r}`)
+              .join(", ")
+              .slice(0, 1024),
           });
         }
         if (removed.size) {
           embed.addFields({
             name: "Usunięte",
-            value: removed.map((r) => `${r}`).join(", ").slice(0, 1024),
+            value: removed
+              .map((r) => `${r}`)
+              .join(", ")
+              .slice(0, 1024),
           });
         }
         await ctx.channel.send({ embeds: [embed] }).catch(() => {});

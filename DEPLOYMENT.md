@@ -61,13 +61,13 @@ docker compose up -d bot
 
 ## Operacje
 
-| Czynność              | Komenda                                  |
-| --------------------- | ---------------------------------------- |
-| Logi (na żywo)        | `docker compose logs -f api`             |
-| Restart usługi        | `docker compose restart api`             |
-| Aktualizacja kodu     | `git pull && docker compose up -d --build` |
-| Stop (dane zostają)   | `docker compose down`                    |
-| Status                | `docker compose ps`                      |
+| Czynność            | Komenda                                    |
+| ------------------- | ------------------------------------------ |
+| Logi (na żywo)      | `docker compose logs -f api`               |
+| Restart usługi      | `docker compose restart api`               |
+| Aktualizacja kodu   | `git pull && docker compose up -d --build` |
+| Stop (dane zostają) | `docker compose down`                      |
+| Status              | `docker compose ps`                        |
 
 ## Baza danych
 

@@ -40,21 +40,21 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Pages
 
-| Route                                 | Description                                              |
-| ------------------------------------- | ------------------------------------------------------- |
-| `/`                                   | Landing page with Login with Discord button             |
-| `/auth/success`                       | Handles OAuth2 callback, saves JWT token                |
-| `/dashboard`                          | List of servers where user has admin permissions        |
+| Route                                 | Description                                                                 |
+| ------------------------------------- | --------------------------------------------------------------------------- |
+| `/`                                   | Landing page with Login with Discord button                                 |
+| `/auth/success`                       | Handles OAuth2 callback, saves JWT token                                    |
+| `/dashboard`                          | List of servers where user has admin permissions                            |
 | `/dashboard/[guildId]`                | Server overview — stat cards (members, bans, warnings, tickets) + quick nav |
-| `/dashboard/[guildId]/welcome`        | Welcome & Goodbye config (plain text or full embed)     |
-| `/dashboard/[guildId]/autorole`       | Auto-role on member join (with "create role")           |
-| `/dashboard/[guildId]/levels`         | XP level → role reward tiers (with "create role")       |
-| `/dashboard/[guildId]/reaction-roles` | Reaction role messages with the embed editor            |
-| `/dashboard/[guildId]/moderation`     | Warnings & recent moderation actions                    |
-| `/dashboard/[guildId]/automod`        | Auto-moderation filters (invites, links, words, spam)   |
-| `/dashboard/[guildId]/serverlog`      | Server event logging (messages, members, roles)         |
-| `/dashboard/[guildId]/tickets`        | Ticket list + panel embed/button editor + config        |
-| `/dashboard/[guildId]/settings`       | Admin role + moderation log channel                     |
+| `/dashboard/[guildId]/welcome`        | Welcome & Goodbye config (plain text or full embed)                         |
+| `/dashboard/[guildId]/autorole`       | Auto-role on member join (with "create role")                               |
+| `/dashboard/[guildId]/levels`         | XP level → role reward tiers (with "create role")                           |
+| `/dashboard/[guildId]/reaction-roles` | Reaction role messages with the embed editor                                |
+| `/dashboard/[guildId]/moderation`     | Warnings & recent moderation actions                                        |
+| `/dashboard/[guildId]/automod`        | Auto-moderation filters (invites, links, words, spam)                       |
+| `/dashboard/[guildId]/serverlog`      | Server event logging (messages, members, roles)                             |
+| `/dashboard/[guildId]/tickets`        | Ticket list + panel embed/button editor + config                            |
+| `/dashboard/[guildId]/settings`       | Admin role + moderation log channel                                         |
 
 Every server page sits under a sticky **TopBar** (breadcrumb + user menu) and the navigation
 **Sidebar**, both driven by the shared `lib/nav.ts` map.

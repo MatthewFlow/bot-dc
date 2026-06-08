@@ -1,25 +1,29 @@
-import { guildConfigRepository, ticketRepository, toDiscordEmbed } from "@jurassic-haven/db";
+import {
+  guildConfigRepository,
+  ticketRepository,
+  toDiscordEmbed,
+} from "@jurassic-haven/db";
 import {
   ActionRowBuilder,
   ButtonBuilder,
+  type ButtonInteraction,
   ButtonStyle,
   ChannelType,
+  type ChatInputCommandInteraction,
   EmbedBuilder,
   ModalBuilder,
+  type ModalSubmitInteraction,
   TextInputBuilder,
   TextInputStyle,
-  type ButtonInteraction,
-  type ChatInputCommandInteraction,
-  type ModalSubmitInteraction,
 } from "discord.js";
 
 import { logTicketEvent } from "./log";
 
 /** Role uprawnione do obsługi ticketów: dwie role support (z configu) + admin (z env). */
 function staffRoleIds(supportRoleId?: string, supportRoleId2?: string): string[] {
-  return [...new Set([supportRoleId, supportRoleId2, process.env.CFG_ADMIN_ROLE_ID])].filter(
-    (id): id is string => Boolean(id),
-  );
+  return [
+    ...new Set([supportRoleId, supportRoleId2, process.env.CFG_ADMIN_ROLE_ID]),
+  ].filter((id): id is string => Boolean(id));
 }
 
 function staffMentions(supportRoleId?: string, supportRoleId2?: string): string {
@@ -169,9 +173,7 @@ export async function handleTicketClaim(interaction: ButtonInteraction) {
   const allowed = allowedRoleIds.some((id) => member.roles.cache.has(id));
 
   if (!allowed) {
-    await interaction.editReply(
-      "Tylko moderator lub admin może przejąć to zgłoszenie.",
-    );
+    await interaction.editReply("Tylko moderator lub admin może przejąć to zgłoszenie.");
     return;
   }
 
@@ -188,9 +190,7 @@ export async function handleTicketClaim(interaction: ButtonInteraction) {
 
   // Usuwamy przycisk z wiadomości, żeby nikt nie klikał drugi raz
   await interaction.message.edit({ components: [] }).catch(() => {});
-  await channel.send(
-    `✋ ${interaction.user} przejął to zgłoszenie i zaraz pomoże.`,
-  );
+  await channel.send(`✋ ${interaction.user} przejął to zgłoszenie i zaraz pomoże.`);
 
   await interaction.editReply("Przejąłeś zgłoszenie ✅");
 }

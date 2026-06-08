@@ -1,7 +1,7 @@
 import { warnRepository } from "@jurassic-haven/db";
 import {
-  EmbedBuilder,
   type ChatInputCommandInteraction,
+  EmbedBuilder,
   type GuildMember,
 } from "discord.js";
 
@@ -55,7 +55,14 @@ export async function handleModWarn(interaction: ChatInputCommandInteraction) {
 
   const all = await warnRepository.getAll(guild.id, user.id);
 
-  await sendModLog(guild, "warn", user, interaction.user, reason, `Ostrzeżenie #${all.length}`);
+  await sendModLog(
+    guild,
+    "warn",
+    user,
+    interaction.user,
+    reason,
+    `Ostrzeżenie #${all.length}`,
+  );
 
   await interaction.editReply(
     `Ostrzeżenie **#${all.length}** dla ${user} zostało dodane.\nPowód: ${reason}`,
@@ -129,8 +136,17 @@ export async function handleModMute(interaction: ChatInputCommandInteraction) {
 
   try {
     await member.timeout(minutes * 60 * 1000, reason);
-    await sendModLog(guild, "mute", user, interaction.user, reason, `Czas: ${minutes} min`);
-    await interaction.editReply(`${user} wyciszony na **${minutes} min**.\nPowód: ${reason}`);
+    await sendModLog(
+      guild,
+      "mute",
+      user,
+      interaction.user,
+      reason,
+      `Czas: ${minutes} min`,
+    );
+    await interaction.editReply(
+      `${user} wyciszony na **${minutes} min**.\nPowód: ${reason}`,
+    );
   } catch {
     await interaction.editReply("Nie udało się wyciszyć. Sprawdź uprawnienia bota.");
   }
@@ -153,7 +169,9 @@ export async function handleModUnmute(interaction: ChatInputCommandInteraction) 
     await sendModLog(guild, "unmute", user, interaction.user, reason);
     await interaction.editReply(`${user} timeout usunięty.`);
   } catch {
-    await interaction.editReply("Nie udało się usunąć timeoutu. Sprawdź uprawnienia bota.");
+    await interaction.editReply(
+      "Nie udało się usunąć timeoutu. Sprawdź uprawnienia bota.",
+    );
   }
 }
 
@@ -178,7 +196,9 @@ export async function handleModKick(interaction: ChatInputCommandInteraction) {
   try {
     await member.kick(reason);
     await sendModLog(guild, "kick", user, interaction.user, reason);
-    await interaction.editReply(`**${user.username}** został wyrzucony.\nPowód: ${reason}`);
+    await interaction.editReply(
+      `**${user.username}** został wyrzucony.\nPowód: ${reason}`,
+    );
   } catch {
     await interaction.editReply("Nie udało się wyrzucić. Sprawdź uprawnienia bota.");
   }
@@ -212,7 +232,9 @@ export async function handleModBan(interaction: ChatInputCommandInteraction) {
       deleteMessageSeconds: deleteMessageDays * 86400,
     });
     await sendModLog(guild, "ban", user, interaction.user, reason);
-    await interaction.editReply(`**${user.username}** został zbanowany.\nPowód: ${reason}`);
+    await interaction.editReply(
+      `**${user.username}** został zbanowany.\nPowód: ${reason}`,
+    );
   } catch {
     await interaction.editReply("Nie udało się zbanować. Sprawdź uprawnienia bota.");
   }

@@ -83,41 +83,41 @@ bun run start
 
 ### Auth
 
-| Method   | Path             | Description                              |
-| -------- | ---------------- | ---------------------------------------- |
-| `GET`    | `/auth/discord`  | Redirect to Discord OAuth2 login         |
-| `GET`    | `/auth/callback` | OAuth2 callback — exchanges code for JWT |
-| `GET`    | `/auth/me`       | Returns current user info                |
-| `POST`   | `/auth/logout`   | Clears the `jh_token` cookie             |
+| Method | Path             | Description                              |
+| ------ | ---------------- | ---------------------------------------- |
+| `GET`  | `/auth/discord`  | Redirect to Discord OAuth2 login         |
+| `GET`  | `/auth/callback` | OAuth2 callback — exchanges code for JWT |
+| `GET`  | `/auth/me`       | Returns current user info                |
+| `POST` | `/auth/logout`   | Clears the `jh_token` cookie             |
 
 ### Guilds (requires JWT)
 
-| Method   | Path                                         | Description                                         |
-| -------- | -------------------------------------------- | --------------------------------------------------- |
-| `GET`    | `/guilds`                                    | List servers where user is admin                    |
-| `GET`    | `/guilds/:guildId/config`                    | Get server configuration                            |
-| `PUT`    | `/guilds/:guildId/config`                    | Update server configuration (allowlisted fields)    |
-| `GET`    | `/guilds/:guildId/stats`                     | Dashboard stats (members, bans, warnings, tickets)  |
-| `GET`    | `/guilds/:guildId/channels`                  | List text channels                                  |
-| `POST`   | `/guilds/:guildId/channels`                  | Create a text channel via the bot                   |
-| `GET`    | `/guilds/:guildId/roles`                     | List server roles                                   |
-| `POST`   | `/guilds/:guildId/roles`                     | Create a role via the bot                           |
-| `GET`    | `/guilds/:guildId/leaderboard`               | Get XP leaderboard (top 10), enriched with members  |
-| `POST`   | `/guilds/:guildId/ticket-panel`             | Send the ticket panel embed + button to a channel    |
-| `GET`    | `/guilds/:guildId/reaction-roles`            | List reaction role configurations                   |
-| `POST`   | `/guilds/:guildId/reaction-roles`            | Publish new reaction role message (full embed)      |
-| `DELETE` | `/guilds/:guildId/reaction-roles/:messageId` | Delete reaction role message                        |
+| Method   | Path                                         | Description                                        |
+| -------- | -------------------------------------------- | -------------------------------------------------- |
+| `GET`    | `/guilds`                                    | List servers where user is admin                   |
+| `GET`    | `/guilds/:guildId/config`                    | Get server configuration                           |
+| `PUT`    | `/guilds/:guildId/config`                    | Update server configuration (allowlisted fields)   |
+| `GET`    | `/guilds/:guildId/stats`                     | Dashboard stats (members, bans, warnings, tickets) |
+| `GET`    | `/guilds/:guildId/channels`                  | List text channels                                 |
+| `POST`   | `/guilds/:guildId/channels`                  | Create a text channel via the bot                  |
+| `GET`    | `/guilds/:guildId/roles`                     | List server roles                                  |
+| `POST`   | `/guilds/:guildId/roles`                     | Create a role via the bot                          |
+| `GET`    | `/guilds/:guildId/leaderboard`               | Get XP leaderboard (top 10), enriched with members |
+| `POST`   | `/guilds/:guildId/ticket-panel`              | Send the ticket panel embed + button to a channel  |
+| `GET`    | `/guilds/:guildId/reaction-roles`            | List reaction role configurations                  |
+| `POST`   | `/guilds/:guildId/reaction-roles`            | Publish new reaction role message (full embed)     |
+| `DELETE` | `/guilds/:guildId/reaction-roles/:messageId` | Delete reaction role message                       |
 
 ### Moderation & Tickets (requires JWT + guild admin)
 
-| Method   | Path                                          | Description                                  |
-| -------- | --------------------------------------------- | -------------------------------------------- |
-| `GET`    | `/guilds/:guildId/warnings/:userId`           | List a user's warnings                       |
-| `DELETE` | `/guilds/:guildId/warnings/:userId`           | Clear a user's warnings                      |
-| `GET`    | `/guilds/:guildId/mod-actions`                | Recent moderation actions log                |
-| `GET`    | `/guilds/:guildId/tickets`                    | List tickets, enriched with usernames/avatars|
-| `POST`   | `/guilds/:guildId/tickets/:threadId/close`    | Close (lock + archive) a ticket thread       |
-| `POST`   | `/guilds/:guildId/tickets/:threadId/reopen`   | Reopen a closed ticket thread                |
+| Method   | Path                                        | Description                                   |
+| -------- | ------------------------------------------- | --------------------------------------------- |
+| `GET`    | `/guilds/:guildId/warnings/:userId`         | List a user's warnings                        |
+| `DELETE` | `/guilds/:guildId/warnings/:userId`         | Clear a user's warnings                       |
+| `GET`    | `/guilds/:guildId/mod-actions`              | Recent moderation actions log                 |
+| `GET`    | `/guilds/:guildId/tickets`                  | List tickets, enriched with usernames/avatars |
+| `POST`   | `/guilds/:guildId/tickets/:threadId/close`  | Close (lock + archive) a ticket thread        |
+| `POST`   | `/guilds/:guildId/tickets/:threadId/reopen` | Reopen a closed ticket thread                 |
 
 The `config` PUT uses an explicit allowlist — unknown fields are dropped. Editable embeds
 (`welcomeEmbed`, `goodbyeEmbed`, `ticketPanelEmbed`) and `ticketPanelButton` are part of the

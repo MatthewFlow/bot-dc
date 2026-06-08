@@ -120,25 +120,25 @@ Set `RESET_COMMANDS=true` in `.env` and restart the bot. Set it back to `false` 
 
 ### Moderation (requires admin role)
 
-| Command                           | Description                                          |
-| --------------------------------- | ---------------------------------------------------- |
-| `/mod_warn <user> <reason>`       | Warns a user (stored + logged)                       |
-| `/mod_warnings <user>`            | Lists a user's warnings                              |
-| `/mod_clearwarns <user>`          | Clears a user's warnings                             |
-| `/mod_mute <user> <duration>`     | Times out a user for a duration                      |
-| `/mod_unmute <user>`              | Removes a timeout                                    |
-| `/mod_kick <user> [reason]`       | Kicks a user                                         |
-| `/mod_ban <user> [reason]`        | Bans a user                                          |
+| Command                       | Description                     |
+| ----------------------------- | ------------------------------- |
+| `/mod_warn <user> <reason>`   | Warns a user (stored + logged)  |
+| `/mod_warnings <user>`        | Lists a user's warnings         |
+| `/mod_clearwarns <user>`      | Clears a user's warnings        |
+| `/mod_mute <user> <duration>` | Times out a user for a duration |
+| `/mod_unmute <user>`          | Removes a timeout               |
+| `/mod_kick <user> [reason]`   | Kicks a user                    |
+| `/mod_ban <user> [reason]`    | Bans a user                     |
 
 Every moderation action is written to `modActionRepository` and posted to the mod-log channel.
 
 ### Tickets (requires admin / support role)
 
-| Command                  | Description                                                       |
-| ------------------------ | ---------------------------------------------------------------- |
-| `/ticket_setup`          | Posts the ticket panel embed + button on the current channel     |
-| `/ticket_close`          | Closes the current ticket thread (lock + archive)                |
-| `/ticket_add <user>`     | Adds a user to the current ticket thread                         |
+| Command              | Description                                                  |
+| -------------------- | ------------------------------------------------------------ |
+| `/ticket_setup`      | Posts the ticket panel embed + button on the current channel |
+| `/ticket_close`      | Closes the current ticket thread (lock + archive)            |
+| `/ticket_add <user>` | Adds a user to the current ticket thread                     |
 
 Users open tickets by clicking the panel button and filling in a short modal; the bot creates a
 private thread, pings the support roles, and posts a "claim" button. Ticket events are logged to

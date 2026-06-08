@@ -1,4 +1,8 @@
-import type { AddWarnOpts, IWarnRepository, Warn } from "../../repositories/warnRepository";
+import type {
+  AddWarnOpts,
+  IWarnRepository,
+  Warn,
+} from "../../repositories/warnRepository";
 import { WarnModel } from "./schemas/warn.schema";
 
 export class WarnProvider implements IWarnRepository {

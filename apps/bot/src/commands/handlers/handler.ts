@@ -1,6 +1,12 @@
 import type { ChatInputCommandInteraction } from "discord.js";
 
 import {
+  handleTicketAdd,
+  handleTicketClose,
+  handleTicketSetup,
+} from "../../tickets/handler";
+import { getCachedGuildConfig } from "../../utils/configCache";
+import {
   handleCfgAddReward,
   handleCfgCheckRole,
   handleCfgClear,
@@ -23,13 +29,7 @@ import {
   handleModWarnings,
 } from "./mod";
 import { handleCfgAddXp, handleTestGoodbye, handleTestWelcome } from "./test";
-import {
-  handleTicketAdd,
-  handleTicketClose,
-  handleTicketSetup,
-} from "../../tickets/handler";
 import { handleFeedback, handleLeaderboard, handleLevel, handleProfile } from "./user";
-import { getCachedGuildConfig } from "../../utils/configCache";
 
 type Handler = (interaction: ChatInputCommandInteraction) => Promise<void>;
 

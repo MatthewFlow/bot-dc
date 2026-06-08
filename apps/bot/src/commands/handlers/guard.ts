@@ -1,5 +1,5 @@
 import { guildConfigRepository } from "@jurassic-haven/db";
-import { PermissionFlagsBits, type ChatInputCommandInteraction } from "discord.js";
+import { type ChatInputCommandInteraction, PermissionFlagsBits } from "discord.js";
 
 /**
  * Authorizes `/cfg_*`, `/mod_*` and other privileged commands. Multi-tenant aware:

@@ -102,7 +102,8 @@ reactionRoleRoutes.post("/:guildId/reaction-roles", async (c) => {
   if (!body?.channelId || !body?.entries?.length) {
     return c.json({ error: "Missing required fields" }, 400);
   }
-  if (body.entries.length > 20) return c.json({ error: "Too many entries (max 20)" }, 400);
+  if (body.entries.length > 20)
+    return c.json({ error: "Too many entries (max 20)" }, 400);
 
   const botToken = process.env.DISCORD_TOKEN;
   if (!botToken) return c.json({ error: "Missing bot token" }, 500);
@@ -148,7 +149,8 @@ reactionRoleRoutes.post("/:guildId/reaction-roles", async (c) => {
     if (!body.title || !body.content) {
       return c.json({ error: "Missing required fields" }, 400);
     }
-    if (body.title.length > 256) return c.json({ error: "Title too long (max 256)" }, 400);
+    if (body.title.length > 256)
+      return c.json({ error: "Title too long (max 256)" }, 400);
     if (body.content.length > 4096)
       return c.json({ error: "Content too long (max 4096)" }, 400);
     if (body.color && !COLOR_RE.test(body.color)) {
