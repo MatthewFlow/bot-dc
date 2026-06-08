@@ -5,6 +5,7 @@ import { useParams, usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Avatar } from "@/components/Avatar";
+import { NotificationBell } from "@/components/NotificationBell";
 import { Skeleton } from "@/components/Skeleton";
 import type { User } from "@/lib/api";
 import { getMe, logout } from "@/lib/api";
@@ -59,8 +60,9 @@ export function TopBar({ guildName }: { guildName: string }) {
         )}
       </nav>
 
-      {/* User + logout */}
+      {/* Bell + user + logout */}
       <div className="flex shrink-0 items-center gap-3">
+        <NotificationBell guildId={guildId} />
         {user ? (
           <>
             <Avatar

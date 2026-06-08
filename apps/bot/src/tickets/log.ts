@@ -1,11 +1,12 @@
 import { guildConfigRepository } from "@jurassic-haven/db";
 import { EmbedBuilder, type Guild } from "discord.js";
 
-export type TicketEvent = "open" | "close";
+export type TicketEvent = "open" | "close" | "delete";
 
 const EVENT_META: Record<TicketEvent, { title: string; color: number }> = {
   open: { title: "🎫 Ticket otwarty", color: 0x22c55e },
   close: { title: "🔒 Ticket zamknięty", color: 0x6b7280 },
+  delete: { title: "🗑️ Ticket usunięty", color: 0xef4444 },
 };
 
 /**
@@ -35,8 +36,12 @@ export async function logTicketEvent(
     )
     .setTimestamp();
 
-  if (event === "close" && opts.actorId) {
-    embed.addFields({ name: "Zamknął", value: `<@${opts.actorId}>`, inline: true });
+  if (opts.actorId && (event === "close" || event === "delete")) {
+    embed.addFields({
+      name: event === "delete" ? "Usunął" : "Zamknął",
+      value: `<@${opts.actorId}>`,
+      inline: true,
+    });
   }
 
   await channel.send({ embeds: [embed] }).catch(() => {});

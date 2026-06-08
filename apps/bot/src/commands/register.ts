@@ -261,6 +261,16 @@ export const commands = [
       opt.setName("user").setDescription("Użytkownik do dodania").setRequired(true),
     ),
 
+  new SlashCommandBuilder()
+    .setName("ticket_delete")
+    .setDescription("Usuń ticket po ID wątku (usuwa wątek i wpis)")
+    .addStringOption((opt) =>
+      opt
+        .setName("id")
+        .setDescription("ID wątku ticketu (PPM na wątek → Kopiuj ID)")
+        .setRequired(true),
+    ),
+
   // ===== TESTS =====
   new SlashCommandBuilder()
     .setName("test_welcome")

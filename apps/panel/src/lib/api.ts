@@ -571,3 +571,32 @@ export async function getMyFeedback(): Promise<Feedback[]> {
   if (!res.ok) throw new Error("Failed to fetch feedback");
   return res.json();
 }
+
+export type GuildFeedback = {
+  items: Feedback[];
+  unread: number;
+  seenAt: string | null;
+};
+
+/** Feedbacki serwera + liczba nieprzeczytanych dla bieżącego admina (dzwoneczek). */
+export async function getGuildFeedback(guildId: string): Promise<GuildFeedback> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/feedback`);
+  if (!res.ok) throw new Error("Failed to fetch guild feedback");
+  return res.json();
+}
+
+/** Oznacza feedbacki serwera jako przeczytane do teraz. */
+export async function markFeedbackSeen(guildId: string): Promise<void> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/feedback/seen`, {
+    method: "POST",
+  });
+  if (!res.ok) throw new Error("Failed to mark feedback seen");
+}
+
+/** Usuwa zgłoszenie z serwera (admin). */
+export async function deleteGuildFeedback(guildId: string, id: string): Promise<void> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/feedback/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete feedback");
+}
