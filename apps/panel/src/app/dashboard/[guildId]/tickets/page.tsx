@@ -616,7 +616,7 @@ export default function TicketsPage() {
                         onClick={() => setConfirmDelete(ticket.threadId)}
                         disabled={actionBusy === ticket.threadId}
                         title="Usuń ticket z bazy (i wątek na Discordzie)"
-                        className="rounded-lg bg-background p-1.5 text-gray-400 transition hover:bg-red-500/10 hover:text-red-400 disabled:opacity-40"
+                        className="rounded-lg bg-background p-1.5 text-gray-400 transition-all hover:bg-red-500/10 hover:text-red-400 active:scale-90 disabled:opacity-40"
                       >
                         <Trash2 size={14} />
                       </button>

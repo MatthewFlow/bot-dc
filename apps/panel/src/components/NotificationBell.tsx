@@ -124,7 +124,7 @@ export function NotificationBell({ guildId }: { guildId: string }) {
                       <button
                         onClick={() => setConfirmId(f.id)}
                         title="Usuń"
-                        className="shrink-0 text-gray-400 opacity-0 transition hover:text-red-400 focus-visible:opacity-100 group-hover:opacity-100"
+                        className="flex size-7 shrink-0 items-center justify-center rounded-md text-gray-400 opacity-0 transition-all hover:bg-red-500/10 hover:text-red-400 focus-visible:opacity-100 active:scale-90 group-hover:opacity-100"
                       >
                         <Trash2 size={14} />
                       </button>
