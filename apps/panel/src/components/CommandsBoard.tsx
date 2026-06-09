@@ -86,6 +86,26 @@ export function CommandsBoard({
                           /{cmd.name}
                         </p>
                         <p className="truncate text-xs text-gray-400">{cmd.desc}</p>
+                        {cmd.usage && (
+                          <p className="mt-0.5 truncate font-mono text-[10px] text-gray-500">
+                            {cmd.usage
+                              .split(/(<[^>]+>|\[[^\]]+\])/)
+                              .filter(Boolean)
+                              .map((part, i) =>
+                                part.startsWith("<") ? (
+                                  <span key={i} className="text-primary/70">
+                                    {part}
+                                  </span>
+                                ) : part.startsWith("[") ? (
+                                  <span key={i} className="text-gray-500">
+                                    {part}
+                                  </span>
+                                ) : (
+                                  <span key={i}>{part}</span>
+                                ),
+                              )}
+                          </p>
+                        )}
                       </div>
                       <Toggle checked={on} onChange={(v) => toggle(cmd.name, v)} />
                     </label>
