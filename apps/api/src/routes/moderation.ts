@@ -12,6 +12,64 @@ import type { AppVariables } from "../types";
 
 const DISCORD_API = "https://discord.com/api/v10";
 
+/** Dane członka rozwiązane z Discorda. `displayName` = pseudonim (nick/global), `username` = @handle. */
+type ResolvedMember = {
+  displayName: string | null;
+  username: string | null;
+  avatar: string | null;
+};
+
+/**
+ * Tworzy resolver członków serwera z własnym cache (po userId), żeby nie odpytywać
+ * Discorda wielokrotnie o ten sam ID. Best-effort — przy błędzie zwraca null-e,
+ * a panel pokaże fallback (ID).
+ */
+function createMemberResolver(guildId: string, botToken: string | undefined) {
+  const cache = new Map<string, ResolvedMember>();
+
+  return async function resolve(userId?: string): Promise<ResolvedMember> {
+    const empty: ResolvedMember = { displayName: null, username: null, avatar: null };
+    if (!userId) return empty;
+
+    const cached = cache.get(userId);
+    if (cached) return cached;
+
+    let resolved = empty;
+    if (botToken) {
+      try {
+        const res = await fetch(`${DISCORD_API}/guilds/${guildId}/members/${userId}`, {
+          headers: { Authorization: `Bot ${botToken}` },
+        });
+        if (res.ok) {
+          const member = (await res.json()) as {
+            nick?: string | null;
+            avatar: string | null;
+            user: {
+              username: string;
+              global_name?: string | null;
+              avatar: string | null;
+            };
+          };
+          const displayName =
+            member.nick ?? member.user.global_name ?? member.user.username;
+          const avatarHash = member.avatar ?? member.user.avatar;
+          resolved = {
+            displayName,
+            username: member.user.username,
+            avatar: avatarHash
+              ? `https://cdn.discordapp.com/avatars/${userId}/${avatarHash}.png`
+              : null,
+          };
+        }
+      } catch {
+        // ignore — zostawiamy null-e, panel pokaże fallback (ID)
+      }
+    }
+    cache.set(userId, resolved);
+    return resolved;
+  };
+}
+
 /** Loguje zdarzenie ticketu na kanał logów (jeśli ustawiony). Best-effort. */
 async function postTicketLog(
   guildId: string,
@@ -81,7 +139,26 @@ moderationRoutes.get("/:guildId/mod-actions", async (c) => {
   const raw = Number(c.req.query("limit") ?? 25);
   const limit = Number.isFinite(raw) && raw > 0 ? Math.min(raw, 100) : 25;
   const actions = await modActionRepository.getRecent(guildId, limit);
-  return c.json(actions);
+
+  // Wzbogacamy o pseudonim (display name), nazwę (@handle) i avatar ukaranego
+  // użytkownika — best-effort, z cache po ID.
+  const resolve = createMemberResolver(guildId, process.env.DISCORD_TOKEN);
+  const uniqueIds = [...new Set(actions.map((a) => a.userId))];
+  await Promise.all(uniqueIds.map((id) => resolve(id)));
+
+  const enriched = await Promise.all(
+    actions.map(async (a) => {
+      const m = await resolve(a.userId);
+      return {
+        ...a,
+        displayName: m.displayName,
+        username: m.username,
+        avatar: m.avatar,
+      };
+    }),
+  );
+
+  return c.json(enriched);
 });
 
 moderationRoutes.get("/:guildId/tickets", async (c) => {
@@ -94,47 +171,8 @@ moderationRoutes.get("/:guildId/tickets", async (c) => {
   const tickets = await ticketRepository.getAll(guildId, status);
 
   // Wzbogacamy o nazwy i avatary użytkowników (autor + osoba, która przejęła) —
-  // best-effort. Cache po unikalnym ID, żeby nie odpytywać Discorda wielokrotnie.
-  const botToken = process.env.DISCORD_TOKEN;
-  type ResolvedMember = { name: string | null; avatar: string | null };
-  const memberCache = new Map<string, ResolvedMember>();
-
-  async function resolveMember(userId?: string): Promise<ResolvedMember> {
-    if (!userId) return { name: null, avatar: null };
-    const cached = memberCache.get(userId);
-    if (cached) return cached;
-
-    let resolved: ResolvedMember = { name: null, avatar: null };
-    if (botToken) {
-      try {
-        const res = await fetch(`${DISCORD_API}/guilds/${guildId}/members/${userId}`, {
-          headers: { Authorization: `Bot ${botToken}` },
-        });
-        if (res.ok) {
-          const member = (await res.json()) as {
-            nick?: string;
-            avatar: string | null;
-            user: {
-              username: string;
-              global_name?: string | null;
-              avatar: string | null;
-            };
-          };
-          const name = member.nick ?? member.user.global_name ?? member.user.username;
-          const avatarHash = member.avatar ?? member.user.avatar;
-          const avatar = avatarHash
-            ? `https://cdn.discordapp.com/avatars/${userId}/${avatarHash}.png`
-            : null;
-          resolved = { name, avatar };
-        }
-      } catch {
-        // ignore — zostawiamy null, panel pokaże fallback (ID)
-      }
-    }
-    memberCache.set(userId, resolved);
-    return resolved;
-  }
-
+  // best-effort, z cache po ID.
+  const resolve = createMemberResolver(guildId, process.env.DISCORD_TOKEN);
   const uniqueIds = [
     ...new Set(
       tickets.flatMap((t) =>
@@ -142,16 +180,18 @@ moderationRoutes.get("/:guildId/tickets", async (c) => {
       ),
     ),
   ];
-  await Promise.all(uniqueIds.map((id) => resolveMember(id)));
+  const resolved = new Map<string, ResolvedMember>();
+  await Promise.all(uniqueIds.map(async (id) => resolved.set(id, await resolve(id))));
 
   const enriched = tickets.map((t) => {
-    const author = memberCache.get(t.userId);
+    const author = resolved.get(t.userId);
     return {
       ...t,
-      username: author?.name ?? null,
+      username: author?.displayName ?? null,
+      userTag: author?.username ?? null,
       avatar: author?.avatar ?? null,
       assignedToUsername: t.assignedTo
-        ? (memberCache.get(t.assignedTo)?.name ?? null)
+        ? (resolved.get(t.assignedTo)?.displayName ?? null)
         : null,
     };
   });

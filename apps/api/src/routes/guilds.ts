@@ -514,16 +514,25 @@ guildRoutes.get("/:guildId/leaderboard", async (c) => {
           },
         );
 
-        let username = entry.userId;
+        // displayName = pseudonim (nick/global), username = @handle. Gdy nie uda
+        // się pobrać członka, oba fallbackują na ID.
+        let displayName = entry.userId;
+        let username: string | null = null;
         let avatar: string | null = null;
 
         if (res.ok) {
           const member = (await res.json()) as {
-            nick?: string;
-            user: { username: string; avatar: string | null; id: string };
+            nick?: string | null;
+            user: {
+              username: string;
+              global_name?: string | null;
+              avatar: string | null;
+              id: string;
+            };
             avatar: string | null;
           };
-          username = member.nick ?? member.user.username;
+          displayName = member.nick ?? member.user.global_name ?? member.user.username;
+          username = member.user.username;
           const avatarHash = member.avatar ?? member.user.avatar;
           if (avatarHash) {
             avatar = `https://cdn.discordapp.com/avatars/${entry.userId}/${avatarHash}.png`;
@@ -533,6 +542,7 @@ guildRoutes.get("/:guildId/leaderboard", async (c) => {
         return {
           position: idx + 1,
           userId: entry.userId,
+          displayName,
           username,
           avatar,
           xp: entry.xp,

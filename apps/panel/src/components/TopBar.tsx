@@ -66,30 +66,33 @@ export function TopBar({ guildName }: { guildName: string }) {
         <BotStatusBadge />
         <NotificationBell guildId={guildId} />
         {user ? (
-          <>
+          <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card/60 py-1.5 pl-2.5 pr-1.5">
             <Avatar
               src={
                 user.avatar
                   ? `https://cdn.discordapp.com/avatars/${user.userId}/${user.avatar}.png`
                   : null
               }
-              name={user.username}
+              name={user.displayName ?? user.username}
               size="sm"
             />
-            <span className="hidden text-sm text-gray-300 sm:inline">
-              {user.username}
+            <span className="hidden leading-tight sm:flex sm:flex-col">
+              <span className="text-sm font-medium text-gray-200">
+                {user.displayName ?? user.username}
+              </span>
+              <span className="text-xs text-gray-400">@{user.username}</span>
             </span>
-          </>
+            <button
+              onClick={handleLogout}
+              title="Wyloguj"
+              className="ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg border-l border-border text-gray-400 outline-none transition hover:bg-white/5 hover:text-gray-200 focus-visible:ring-2 focus-visible:ring-primary/40"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
         ) : (
-          <Skeleton className="h-8 w-8 rounded-full" />
+          <Skeleton className="h-10 w-28 rounded-xl" />
         )}
-        <button
-          onClick={handleLogout}
-          title="Wyloguj"
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 outline-none transition hover:bg-white/5 hover:text-gray-200 focus-visible:ring-2 focus-visible:ring-primary/40"
-        >
-          <LogOut size={16} />
-        </button>
       </div>
     </header>
   );

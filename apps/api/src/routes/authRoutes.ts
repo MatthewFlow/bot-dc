@@ -119,6 +119,7 @@ authRoutes.get("/callback", async (c) => {
   const user = (await userRes.json()) as {
     id: string;
     username: string;
+    global_name?: string | null;
     avatar: string | null;
   };
 
@@ -128,6 +129,8 @@ authRoutes.get("/callback", async (c) => {
   const jwt = await new SignJWT({
     userId: user.id,
     username: user.username,
+    // Pseudonim (display name) konta — pod nim w panelu pokazujemy @username.
+    displayName: user.global_name ?? user.username,
     avatar: user.avatar,
   })
     .setProtectedHeader({ alg: "HS256" })
@@ -168,6 +171,8 @@ authRoutes.get("/me", async (c) => {
     return c.json({
       userId,
       username: payload.username,
+      // Starsze tokeny mogą nie mieć displayName — wtedy null, panel pokaże samą nazwę.
+      displayName: payload.displayName ?? null,
       avatar: payload.avatar,
     });
   } catch {
