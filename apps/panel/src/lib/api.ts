@@ -545,6 +545,13 @@ export async function reopenTicket(guildId: string, threadId: string): Promise<v
   if (!res.ok) throw new Error("Failed to reopen ticket");
 }
 
+export async function deleteTicket(guildId: string, threadId: string): Promise<void> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/tickets/${threadId}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete ticket");
+}
+
 export async function getGuildStats(guildId: string): Promise<GuildStats> {
   const key = `stats:${guildId}`;
   const cached = getCached<GuildStats>(key);

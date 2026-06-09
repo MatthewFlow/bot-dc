@@ -1,10 +1,12 @@
 "use client";
 
+import { Trash2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Avatar } from "@/components/Avatar";
 import { ChannelSelect } from "@/components/ChannelSelect";
+import { ConfirmModal } from "@/components/confirmModal";
 import { CreateChannelButton } from "@/components/CreateChannelButton";
 import { CreateRoleButton } from "@/components/CreateRoleButton";
 import { EmbedEditor } from "@/components/EmbedEditor";
@@ -21,6 +23,7 @@ import { useGuildLoad } from "@/hooks/useGuildLoad";
 import type { Channel, GuildConfig, Role, Ticket, TicketStatus } from "@/lib/api";
 import {
   closeTicket,
+  deleteTicket,
   getChannels,
   getGuildConfig,
   getRoles,
@@ -119,6 +122,7 @@ export default function TicketsPage() {
   const [panelChannelId, setPanelChannelId] = useState("");
   const [sendingPanel, setSendingPanel] = useState(false);
   const [actionBusy, setActionBusy] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const { loading } = useGuildLoad(
     guildId,
@@ -187,6 +191,20 @@ export default function TicketsPage() {
       await fetchTickets();
     } catch {
       toast("Nie udało się otworzyć ticketu (wątek mógł zostać usunięty).", "error");
+    } finally {
+      setActionBusy(null);
+    }
+  }
+
+  async function handleDeleteTicket(threadId: string) {
+    setConfirmDelete(null);
+    setActionBusy(threadId);
+    try {
+      await deleteTicket(guildId, threadId);
+      toast("Ticket usunięty.", "success");
+      await fetchTickets();
+    } catch {
+      toast("Nie udało się usunąć ticketu.", "error");
     } finally {
       setActionBusy(null);
     }
@@ -576,23 +594,33 @@ export default function TicketsPage() {
                         minute: "2-digit",
                       })}
                     </div>
-                    {ticket.status === "closed" ? (
+                    <div className="flex items-center gap-2">
+                      {ticket.status === "closed" ? (
+                        <button
+                          onClick={() => handleReopenTicket(ticket.threadId)}
+                          disabled={actionBusy === ticket.threadId}
+                          className="rounded-lg bg-background px-3 py-1 text-xs text-green-400 transition hover:bg-green-500/10 disabled:opacity-40"
+                        >
+                          {actionBusy === ticket.threadId ? "…" : "Otwórz ponownie"}
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleCloseTicket(ticket.threadId)}
+                          disabled={actionBusy === ticket.threadId}
+                          className="rounded-lg bg-background px-3 py-1 text-xs text-red-400 transition hover:bg-red-500/10 disabled:opacity-40"
+                        >
+                          {actionBusy === ticket.threadId ? "…" : "Zamknij"}
+                        </button>
+                      )}
                       <button
-                        onClick={() => handleReopenTicket(ticket.threadId)}
+                        onClick={() => setConfirmDelete(ticket.threadId)}
                         disabled={actionBusy === ticket.threadId}
-                        className="rounded-lg bg-background px-3 py-1 text-xs text-green-400 transition hover:bg-green-500/10 disabled:opacity-40"
+                        title="Usuń ticket z bazy (i wątek na Discordzie)"
+                        className="rounded-lg bg-background p-1.5 text-gray-400 transition hover:bg-red-500/10 hover:text-red-400 disabled:opacity-40"
                       >
-                        {actionBusy === ticket.threadId ? "…" : "Otwórz ponownie"}
+                        <Trash2 size={14} />
                       </button>
-                    ) : (
-                      <button
-                        onClick={() => handleCloseTicket(ticket.threadId)}
-                        disabled={actionBusy === ticket.threadId}
-                        className="rounded-lg bg-background px-3 py-1 text-xs text-red-400 transition hover:bg-red-500/10 disabled:opacity-40"
-                      >
-                        {actionBusy === ticket.threadId ? "…" : "Zamknij"}
-                      </button>
-                    )}
+                    </div>
                   </div>
                 </div>
               ))
@@ -600,6 +628,14 @@ export default function TicketsPage() {
           </div>
         </div>
       </div>
+
+      {confirmDelete && (
+        <ConfirmModal
+          message="Na pewno usunąć ten ticket? Wątek na Discordzie i wpis w bazie zostaną trwale usunięte."
+          onConfirm={() => handleDeleteTicket(confirmDelete)}
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
     </div>
   );
 }
