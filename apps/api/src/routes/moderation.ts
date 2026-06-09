@@ -15,7 +15,7 @@ const DISCORD_API = "https://discord.com/api/v10";
 /** Loguje zdarzenie ticketu na kanał logów (jeśli ustawiony). Best-effort. */
 async function postTicketLog(
   guildId: string,
-  event: "close" | "reopen",
+  event: "close" | "reopen" | "delete",
   ticketUserId: string,
   threadId: string,
   actorId: string,
@@ -27,7 +27,9 @@ async function postTicketLog(
   const meta =
     event === "close"
       ? { title: "🔒 Ticket zamknięty (z panelu)", color: 0x6b7280 }
-      : { title: "🔓 Ticket otwarty ponownie (z panelu)", color: 0x22c55e };
+      : event === "reopen"
+        ? { title: "🔓 Ticket otwarty ponownie (z panelu)", color: 0x22c55e }
+        : { title: "🗑️ Ticket usunięty (z panelu)", color: 0xef4444 };
 
   await fetch(`${DISCORD_API}/channels/${cfg.ticketLogChannelId}/messages`, {
     method: "POST",
@@ -184,6 +186,35 @@ moderationRoutes.post("/:guildId/tickets/:threadId/close", async (c) => {
     botToken,
   );
 
+  return c.json({ ok: true });
+});
+
+moderationRoutes.delete("/:guildId/tickets/:threadId", async (c) => {
+  const guildId = c.req.param("guildId");
+  const threadId = c.req.param("threadId");
+  const botToken = process.env.DISCORD_TOKEN;
+  if (!botToken) return c.json({ error: "Missing bot token" }, 500);
+
+  const ticket = await ticketRepository.getByThread(threadId);
+  if (!ticket || ticket.guildId !== guildId) return c.json({ error: "Not found" }, 404);
+
+  // Log przed usunięciem (wzmianka o wątku jeszcze się rozwiąże), potem usuń wątek + wpis.
+  await postTicketLog(
+    guildId,
+    "delete",
+    ticket.userId,
+    threadId,
+    c.get("userId"),
+    botToken,
+  );
+
+  // Usuń wątek na Discordzie (best-effort — mógł już zostać usunięty ręcznie).
+  await fetch(`${DISCORD_API}/channels/${threadId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bot ${botToken}` },
+  }).catch(() => {});
+
+  await ticketRepository.delete(threadId);
   return c.json({ ok: true });
 });
 
