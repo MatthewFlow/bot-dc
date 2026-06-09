@@ -298,3 +298,38 @@ export async function handleTicketAdd(interaction: ChatInputCommandInteraction) 
 
   await interaction.reply({ ephemeral: true, content: `${user} dodany do ticketu.` });
 }
+
+/** Usuwa ticket po ID wątku: kasuje wątek na Discordzie i rekord w bazie. */
+export async function handleTicketDelete(interaction: ChatInputCommandInteraction) {
+  await interaction.deferReply({ ephemeral: true });
+
+  const guild = interaction.guild;
+  if (!guild) {
+    await interaction.editReply("Tej komendy można użyć tylko na serwerze.");
+    return;
+  }
+
+  const threadId = interaction.options.getString("id", true).trim();
+  const ticket = await ticketRepository.getByThread(threadId);
+  if (!ticket || ticket.guildId !== guild.id) {
+    await interaction.editReply(
+      "Nie znaleziono ticketu o tym ID na tym serwerze. Skopiuj ID wątku (PPM → Kopiuj ID).",
+    );
+    return;
+  }
+
+  // Log przed usunięciem (wzmianka o wątku jeszcze się rozwiąże), potem usuń wątek + wpis.
+  await logTicketEvent(guild, "delete", {
+    threadId,
+    userId: ticket.userId,
+    actorId: interaction.user.id,
+  });
+
+  const thread = await guild.channels.fetch(threadId).catch(() => null);
+  if (thread?.isThread()) {
+    await thread.delete(`Ticket usunięty przez ${interaction.user.tag}`).catch(() => {});
+  }
+
+  await ticketRepository.delete(threadId);
+  await interaction.editReply(`Ticket \`${threadId}\` usunięty ✅`);
+}
