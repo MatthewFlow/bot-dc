@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 
+import { ConfirmModal } from "@/components/confirmModal";
 import { useToast } from "@/components/toast";
 import {
   deleteGuildFeedback,
@@ -38,6 +39,7 @@ export function NotificationBell({ guildId }: { guildId: string }) {
   const [items, setItems] = useState<Feedback[]>([]);
   const [unread, setUnread] = useState(0);
   const [open, setOpen] = useState(false);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
 
   const load = useCallback(() => {
     getGuildFeedback(guildId)
@@ -65,6 +67,7 @@ export function NotificationBell({ guildId }: { guildId: string }) {
   }
 
   function handleDelete(id: string) {
+    setConfirmId(null);
     setItems((prev) => prev.filter((x) => x.id !== id));
     deleteGuildFeedback(guildId, id)
       .then(() => toast("Feedback usunięty.", "success"))
@@ -119,7 +122,7 @@ export function NotificationBell({ guildId }: { guildId: string }) {
                         </p>
                       </div>
                       <button
-                        onClick={() => handleDelete(f.id)}
+                        onClick={() => setConfirmId(f.id)}
                         title="Usuń"
                         className="shrink-0 text-gray-400 opacity-0 transition hover:text-red-400 focus-visible:opacity-100 group-hover:opacity-100"
                       >
@@ -132,6 +135,14 @@ export function NotificationBell({ guildId }: { guildId: string }) {
             </div>
           </div>
         </>
+      )}
+
+      {confirmId && (
+        <ConfirmModal
+          message="Na pewno usunąć to zgłoszenie? Tej operacji nie można cofnąć."
+          onConfirm={() => handleDelete(confirmId)}
+          onCancel={() => setConfirmId(null)}
+        />
       )}
     </div>
   );
