@@ -98,6 +98,7 @@ Set `RESET_COMMANDS=true` in `.env` and restart the bot. Set it back to `false` 
 | `/level`       | Shows your current level, XP, and XP needed for the next level |
 | `/leaderboard` | Shows top 10 players by XP on the server                       |
 | `/profile`     | Shows a user's profile card (level, XP, rank)                  |
+| `/feedback`    | Submit feedback — `<message> [category] [rating]`              |
 
 > **Authorization (multi-tenant):** privileged commands pass when the member has the native
 > Discord **Administrator** permission, or a per-guild admin role (`adminRoleId`, set from the
@@ -134,15 +135,17 @@ Every moderation action is written to `modActionRepository` and posted to the mo
 
 ### Tickets (requires admin / support role)
 
-| Command              | Description                                                  |
-| -------------------- | ------------------------------------------------------------ |
-| `/ticket_setup`      | Posts the ticket panel embed + button on the current channel |
-| `/ticket_close`      | Closes the current ticket thread (lock + archive)            |
-| `/ticket_add <user>` | Adds a user to the current ticket thread                     |
+| Command               | Description                                                  |
+| --------------------- | ------------------------------------------------------------ |
+| `/ticket_setup`       | Posts the ticket panel embed + button on the current channel |
+| `/ticket_close`       | Closes the current ticket thread (lock + archive)            |
+| `/ticket_add <user>`  | Adds a user to the current ticket thread                     |
+| `/ticket_delete <id>` | Deletes a ticket by thread id — removes the thread + DB row  |
 
 Users open tickets by clicking the panel button and filling in a short modal; the bot creates a
-private thread, pings the support roles, and posts a "claim" button. Ticket events are logged to
-the ticket-log channel.
+private thread, pings the support roles, and posts a "claim" button. Ticket events (open, close,
+delete) are logged to the ticket-log channel. `/ticket_close` and `/ticket_add` work inside the
+thread; `/ticket_setup` and `/ticket_delete` require the admin role.
 
 ### Testing (requires admin role)
 
@@ -208,6 +211,21 @@ the ticket-log channel.
   in the bot's cache
 - Reads config through the same 15s cache as auto-moderation
 
+## Feedback
+
+- `/feedback <message> [category] [rating]` and a **feedback panel** (an embed with a
+  "share your opinion" button, posted from the dashboard) both submit through one shared module
+- Submissions are stored via `feedbackRepository` (with `guildId`) and, when a feedback channel
+  is configured, also posted there as an embed
+- The whole staff sees the server's feedback in the dashboard; the panel can delete submissions
+
+## Bot status (heartbeat)
+
+- On ready and every 30s the bot writes a heartbeat to MongoDB (`botStatusRepository`) with its
+  tag and guild count
+- The API reports the bot as online when the last heartbeat is fresher than 90s; the dashboard
+  shows a live online/offline indicator based on it
+
 ## Project Structure
 
 ```
@@ -241,13 +259,15 @@ src/
 │   ├── autorole.ts                 # progression role assignment
 │   └── levelUpNotify.ts            # level-up notifications
 ├── tickets/
-│   ├── handler.ts                  # ticket panel, modal, claim, close, add
-│   └── log.ts                      # ticket event logging
+│   ├── handler.ts                  # ticket panel, modal, claim, close, add, delete
+│   └── log.ts                      # ticket event logging (open/close/delete)
+├── feedback/
+│   └── feedback.ts                 # /feedback + feedback panel modal (shared submit)
 ├── modlog.ts                       # moderation action logging
 ├── utils/
 │   ├── channels.ts                 # channel type helper
 │   ├── configCache.ts              # short-TTL guild-config cache (hot path)
 │   └── embedVars.ts                # member variable substitution ({user}, {avatar}, …)
-├── bot.ts                          # Discord client setup
+├── bot.ts                          # Discord client setup + status heartbeat
 └── index.ts                        # entry point
 ```

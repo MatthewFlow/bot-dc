@@ -25,6 +25,8 @@ packages/db/
 │   ├── warnRepository.ts
 │   ├── modActionRepository.ts
 │   ├── ticketRepository.ts
+│   ├── feedbackRepository.ts
+│   ├── botStatusRepository.ts
 │   └── sessionRepository.ts
 └── providers/
     └── mongoose/                      # Mongoose implementations
@@ -35,6 +37,8 @@ packages/db/
         ├── warnProvider.ts
         ├── modActionProvider.ts
         ├── ticketProvider.ts
+        ├── feedbackProvider.ts
+        ├── botStatusProvider.ts
         ├── sessionProvider.ts
         └── schemas/                   # Mongoose schema definitions
             ├── guildConfig.schema.ts
@@ -43,6 +47,8 @@ packages/db/
             ├── warn.schema.ts
             ├── modAction.schema.ts
             ├── ticket.schema.ts
+            ├── feedback.schema.ts
+            ├── botStatus.schema.ts
             └── session.schema.ts
 ```
 
@@ -62,7 +68,8 @@ await xpRepository.addXpWithCooldown({ guildId, userId, amount: 15 });
 ```
 
 Singleton repositories exported from `index.ts`: `guildConfigRepository`, `xpRepository`,
-`reactionRoleRepository`, `warnRepository`, `ticketRepository`, `modActionRepository`.
+`reactionRoleRepository`, `warnRepository`, `ticketRepository`, `modActionRepository`,
+`sessionRepository`, `feedbackRepository`, `botStatusRepository`.
 
 ## Repositories
 
@@ -78,11 +85,12 @@ Stores per-guild bot configuration.
 **Schema fields:** `welcomeChannelId`, `goodbyeChannelId`, `levelUpChannelId`, `joinRoleId`,
 `verifiedRoleId`, `welcomeMessage`, `goodbyeMessage`, `roleRewards[]` (`{ level, roleId }`),
 `modLogChannelId`, `adminRoleId`, `ticketSupportRoleId`, `ticketSupportRoleId2`,
-`ticketLogChannelId`, `welcomeEmbed`, `goodbyeEmbed`, `ticketPanelEmbed`, `levelUpEmbed` (all
-`EmbedConfig`), `ticketPanelButton` (`{ label?, emoji? }`), `autoMod` (`AutoModConfig` — filters, action,
-exemptions), `serverLog` (`ServerLogConfig` — channel + per-category event toggles),
-`leveling` (`LevelingConfig` — XP multiplier, no-XP channels/roles, level-up toggles). The
-`serverLog` config also carries `exemptRoleIds`/`exemptChannelIds`.
+`ticketLogChannelId`, `feedbackChannelId`, `disabledCommands[]`, `welcomeEmbed`, `goodbyeEmbed`,
+`ticketPanelEmbed`, `levelUpEmbed`, `feedbackPanelEmbed` (all `EmbedConfig`), `ticketPanelButton`
+(`{ label?, emoji? }`), `autoMod` (`AutoModConfig` — filters, action, exemptions), `serverLog`
+(`ServerLogConfig` — channel + per-category event toggles), `leveling` (`LevelingConfig` — XP
+multiplier, no-XP channels/roles, level-up toggles). The `serverLog` config also carries
+`exemptRoleIds`/`exemptChannelIds`.
 
 ### `xpRepository`
 
@@ -134,6 +142,7 @@ Stores support ticket threads.
 | `claim(threadId, moderatorId)`     | Marks ticket `open` and assigns a moderator           |
 | `close(threadId)`                  | Marks ticket `closed`                                 |
 | `reopen(threadId)`                 | Reopens a closed ticket                               |
+| `delete(threadId)`                 | Removes the ticket record                             |
 
 ### `modActionRepository`
 
@@ -144,6 +153,31 @@ Stores a log of moderation actions (`warn`, `mute`, `unmute`, `kick`, `ban`, `cl
 | `add(opts)`                  | Records a moderation action       |
 | `getRecent(guildId, limit)`  | Most recent actions for a guild   |
 | `getByUser(guildId, userId)` | Actions targeting a specific user |
+
+### `feedbackRepository`
+
+Stores user feedback submissions (from `/feedback`, the feedback panel and the dashboard form)
+plus per-admin read state (`FeedbackRead`) for the notification bell.
+
+| Method                              | Description                                                |
+| ----------------------------------- | ---------------------------------------------------------- |
+| `add(opts)`                         | Stores a submission (`userId`, `username`, `guildId`, …)   |
+| `getByUser(userId)`                 | A user's own submissions                                   |
+| `getByGuild(guildId, limit?)`       | All submissions for a guild (newest first)                 |
+| `countByGuildSince(guildId, since)` | Count since a timestamp (unread badge)                     |
+| `getSeenAt(userId, guildId)`        | When this admin last read the guild's feedback             |
+| `markSeen(userId, guildId, at)`     | Marks the guild's feedback read for this admin             |
+| `delete(id, guildId)`               | Deletes a submission (verifies guild when the row has one) |
+
+### `botStatusRepository`
+
+Single heartbeat document the bot refreshes periodically; the API reads it to report
+online/offline in the dashboard.
+
+| Method            | Description                                           |
+| ----------------- | ----------------------------------------------------- |
+| `heartbeat(opts)` | Upserts `lastHeartbeat` + username/avatar/guild count |
+| `get()`           | Raw snapshot (freshness is evaluated in the API)      |
 
 ### `sessionRepository`
 

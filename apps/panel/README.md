@@ -4,9 +4,10 @@ Web dashboard for configuring the Jurassic Haven Discord bot. Built with Next.js
 
 ## Tech Stack
 
-- **Framework:** [Next.js](https://nextjs.org) 16+
+- **Framework:** [Next.js](https://nextjs.org) 16+ (App Router, React 19)
 - **Language:** TypeScript
-- **Styling:** Tailwind CSS 4
+- **Styling:** Tailwind CSS 4 with design tokens
+- **UI:** shadcn-style primitives on Radix UI (button, switch, select, dialog, tooltip, badge, …)
 - **Auth:** Discord OAuth2 (via Jurassic Haven API)
 
 ## Requirements
@@ -40,24 +41,28 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## Pages
 
-| Route                                 | Description                                                                 |
-| ------------------------------------- | --------------------------------------------------------------------------- |
-| `/`                                   | Landing page with Login with Discord button                                 |
-| `/auth/success`                       | Handles OAuth2 callback, saves JWT token                                    |
-| `/dashboard`                          | List of servers where user has admin permissions                            |
-| `/dashboard/[guildId]`                | Server overview — stat cards (members, bans, warnings, tickets) + quick nav |
-| `/dashboard/[guildId]/welcome`        | Welcome & Goodbye config (plain text or full embed)                         |
-| `/dashboard/[guildId]/autorole`       | Auto-role on member join (with "create role")                               |
-| `/dashboard/[guildId]/levels`         | XP level → role reward tiers (with "create role")                           |
-| `/dashboard/[guildId]/reaction-roles` | Reaction role messages with the embed editor                                |
-| `/dashboard/[guildId]/moderation`     | Warnings & recent moderation actions                                        |
-| `/dashboard/[guildId]/automod`        | Auto-moderation filters (invites, links, words, spam)                       |
-| `/dashboard/[guildId]/serverlog`      | Server event logging (messages, members, roles)                             |
-| `/dashboard/[guildId]/tickets`        | Ticket list + panel embed/button editor + config                            |
-| `/dashboard/[guildId]/settings`       | Admin role + moderation log channel                                         |
+| Route                                 | Description                                                                   |
+| ------------------------------------- | ----------------------------------------------------------------------------- |
+| `/`                                   | Landing page with Login with Discord button                                   |
+| `/auth/success`                       | Handles OAuth2 callback, saves JWT token                                      |
+| `/dashboard`                          | List of servers the user can manage or moderate                               |
+| `/dashboard/[guildId]`                | Server overview — stat cards (members, bans, warnings, tickets) + quick nav   |
+| `/dashboard/[guildId]/welcome`        | Welcome & Goodbye config (plain text or full embed)                           |
+| `/dashboard/[guildId]/autorole`       | Auto-role on member join (with "create role")                                 |
+| `/dashboard/[guildId]/levels`         | XP level → role reward tiers (with "create role")                             |
+| `/dashboard/[guildId]/reaction-roles` | Reaction role messages with the embed editor                                  |
+| `/dashboard/[guildId]/moderation`     | Warnings & recent moderation actions                                          |
+| `/dashboard/[guildId]/automod`        | Auto-moderation filters (invites, links, words, spam)                         |
+| `/dashboard/[guildId]/serverlog`      | Server event logging (messages, members, roles)                               |
+| `/dashboard/[guildId]/tickets`        | Ticket list (close / reopen / delete) + panel embed/button editor + config    |
+| `/dashboard/[guildId]/commands`       | Per-command enable/disable toggles, with usage signatures                     |
+| `/dashboard/[guildId]/feedback`       | Submit feedback, browse all server submissions (delete), feedback panel setup |
+| `/dashboard/[guildId]/settings`       | Bot admin role + moderation log channel                                       |
 
-Every server page sits under a sticky **TopBar** (breadcrumb + user menu) and the navigation
-**Sidebar**, both driven by the shared `lib/nav.ts` map.
+Every server page sits under a sticky **TopBar** (breadcrumb, live bot status indicator,
+feedback notification bell, user menu) and the navigation **Sidebar** (collapsible groups +
+pinned Feedback, server icon), both driven by the shared `lib/nav.ts` map. Config pages
+auto-save changes (`hooks/useAutoSave.ts`) while keeping a manual Save button.
 
 ## Project Structure
 
@@ -82,11 +87,17 @@ src/
 │           ├── moderation/page.tsx       # Warnings + mod-action log
 │           ├── automod/page.tsx          # Auto-moderation filters
 │           ├── serverlog/page.tsx        # Server event logging
-│           ├── tickets/page.tsx          # Tickets + panel embed editor
-│           └── settings/page.tsx         # Admin role + mod-log channel
+│           ├── tickets/page.tsx          # Tickets (close/reopen/delete) + panel editor
+│           ├── commands/page.tsx         # Per-command enable/disable toggles
+│           ├── feedback/page.tsx         # Submit + browse server feedback + panel setup
+│           └── settings/page.tsx         # Bot admin role + mod-log channel
 ├── components/
-│   ├── Sidebar.tsx                       # Navigation sidebar (mobile + desktop)
-│   ├── TopBar.tsx                        # Sticky breadcrumb + user/logout
+│   ├── ui/                               # shadcn-style Radix primitives (button, switch, …)
+│   ├── Sidebar.tsx                       # Navigation sidebar (groups + server icon)
+│   ├── TopBar.tsx                        # Sticky breadcrumb + status + bell + user/logout
+│   ├── BotStatusBadge.tsx                # Live bot online/offline indicator
+│   ├── NotificationBell.tsx              # Feedback notifications (per-guild unread)
+│   ├── CommandsBoard.tsx                 # Command enable/disable board
 │   ├── Skeleton.tsx                      # Loading skeleton
 │   ├── Avatar.tsx                        # Discord user avatar
 │   ├── ChannelSelect.tsx                 # Channel picker dropdown
@@ -101,9 +112,12 @@ src/
 │   ├── confirmModal.tsx                  # Delete confirmation dialog
 │   └── toast.tsx                         # Toast notification
 ├── hooks/
-│   └── useGuildLoad.ts                   # Generic guild-page data loader
+│   ├── useGuildLoad.ts                   # Generic guild-page data loader
+│   └── useAutoSave.ts                    # Debounced auto-save for config pages
 └── lib/
     ├── api.ts                            # Typed API client (fetch wrapper)
+    ├── cn.ts                             # clsx + tailwind-merge class helper
+    ├── commands.ts                       # Command catalog (names, descriptions, usage)
     ├── embed.ts                          # Embed color/variable helpers
     └── nav.ts                            # Shared navigation map (icons + routes)
 ```
