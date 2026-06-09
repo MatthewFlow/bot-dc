@@ -1,3 +1,4 @@
+import { botStatusRepository } from "@jurassic-haven/db";
 import { Client, GatewayIntentBits, Partials } from "discord.js";
 
 import { handleCommand } from "./commands/handlers/handler";
@@ -25,6 +26,9 @@ import {
   showTicketModal,
 } from "./tickets/handler";
 
+/** Co ile bot odświeża heartbeat w bazie (API uznaje go za offline po ~3 nieudanych). */
+const HEARTBEAT_MS = 30_000;
+
 export function createBot() {
   const client = new Client({
     intents: [
@@ -50,6 +54,18 @@ export function createBot() {
     } catch (e) {
       console.error("Rejestracja komend nie wyszła:", e);
     }
+
+    // Heartbeat do bazy — panel pokazuje na jego podstawie status online/offline.
+    const beat = () =>
+      botStatusRepository
+        .heartbeat({
+          username: client.user?.tag,
+          avatar: client.user?.displayAvatarURL() ?? null,
+          guildCount: client.guilds.cache.size,
+        })
+        .catch(() => {});
+    await beat();
+    setInterval(beat, HEARTBEAT_MS);
   });
 
   client.on("guildCreate", onGuildCreate);

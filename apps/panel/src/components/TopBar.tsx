@@ -5,6 +5,7 @@ import { useParams, usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Avatar } from "@/components/Avatar";
+import { BotStatusBadge } from "@/components/BotStatusBadge";
 import { NotificationBell } from "@/components/NotificationBell";
 import { Skeleton } from "@/components/Skeleton";
 import type { User } from "@/lib/api";
@@ -62,6 +63,7 @@ export function TopBar({ guildName }: { guildName: string }) {
 
       {/* Bell + user + logout */}
       <div className="flex shrink-0 items-center gap-3">
+        <BotStatusBadge />
         <NotificationBell guildId={guildId} />
         {user ? (
           <>

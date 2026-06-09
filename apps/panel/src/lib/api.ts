@@ -552,6 +552,21 @@ export async function deleteTicket(guildId: string, threadId: string): Promise<v
   if (!res.ok) throw new Error("Failed to delete ticket");
 }
 
+export type BotStatus = {
+  online: boolean;
+  username: string | null;
+  avatar: string | null;
+  guildCount: number;
+  lastSeen: string | null;
+};
+
+/** Status bota (online/offline) na podstawie heartbeatu w bazie. */
+export async function getBotStatus(): Promise<BotStatus> {
+  const res = await fetchWithRetry(`${API_URL}/bot/status`);
+  if (!res.ok) throw new Error("Failed to fetch bot status");
+  return res.json();
+}
+
 export async function getGuildStats(guildId: string): Promise<GuildStats> {
   const key = `stats:${guildId}`;
   const cached = getCached<GuildStats>(key);

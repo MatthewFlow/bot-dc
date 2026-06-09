@@ -8,6 +8,7 @@ import { feedbackRoutes } from "./routes/feedback";
 import { guildRoutes } from "./routes/guilds";
 import { moderationRoutes } from "./routes/moderation";
 import { reactionRoleRoutes } from "./routes/reactionRoles";
+import { statusRoutes } from "./routes/status";
 import type { AppVariables } from "./types";
 
 const app = new Hono<{ Variables: AppVariables }>();
@@ -45,6 +46,7 @@ app.route("/guilds", guildRoutes);
 app.route("/guilds", reactionRoleRoutes);
 app.route("/guilds", moderationRoutes);
 app.route("/feedback", feedbackRoutes);
+app.route("/bot", statusRoutes);
 
 app.get("/health", (c) => c.json({ ok: true }));
 
