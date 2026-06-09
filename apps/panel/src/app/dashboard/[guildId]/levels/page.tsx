@@ -552,10 +552,15 @@ export default function LevelsPage() {
                 {MEDALS[entry.position - 1] ?? entry.position}
               </span>
               <div className="flex min-w-0 items-center gap-3">
-                <Avatar src={entry.avatar} name={entry.username} size="sm" />
-                <span className="truncate text-sm font-medium text-white">
-                  {entry.username}
-                </span>
+                <Avatar src={entry.avatar} name={entry.displayName} size="sm" />
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-white">
+                    {entry.displayName}
+                  </p>
+                  {entry.username && (
+                    <p className="truncate text-xs text-gray-400">@{entry.username}</p>
+                  )}
+                </div>
               </div>
               <div className="text-right">
                 <span className="rounded bg-primary/20 px-2 py-0.5 text-xs font-semibold text-primary">

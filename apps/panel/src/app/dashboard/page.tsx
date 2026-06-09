@@ -79,10 +79,15 @@ export default function DashboardPage() {
                       ? `https://cdn.discordapp.com/avatars/${user.userId}/${user.avatar}.png`
                       : null
                   }
-                  name={user.username}
+                  name={user.displayName ?? user.username}
                   size="sm"
                 />
-                <span className="text-sm text-gray-300">{user.username}</span>
+                <span className="flex flex-col leading-tight">
+                  <span className="text-sm font-medium text-gray-200">
+                    {user.displayName ?? user.username}
+                  </span>
+                  <span className="text-xs text-gray-400">@{user.username}</span>
+                </span>
                 <button
                   onClick={async () => {
                     await logout();

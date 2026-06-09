@@ -106,6 +106,12 @@ export type ModAction = {
   guildId: string;
   type: ModActionType;
   userId: string;
+  /** Pseudonim (nick/display name) ukaranego użytkownika; null gdy nie pobrano. */
+  displayName?: string | null;
+  /** Nazwa (@handle) ukaranego użytkownika; null gdy nie pobrano. */
+  username?: string | null;
+  /** Avatar ukaranego użytkownika (URL CDN Discorda); null gdy brak/nie pobrano. */
+  avatar?: string | null;
   moderatorId: string;
   reason: string;
   extra?: string;
@@ -142,8 +148,10 @@ export type Ticket = {
   guildId: string;
   threadId: string;
   userId: string;
-  /** Nazwa autora ticketu (nick/username z Discorda); null jeśli nie udało się pobrać. */
+  /** Pseudonim autora ticketu (nick/display name z Discorda); null jeśli nie pobrano. */
   username?: string | null;
+  /** Nazwa (@handle) autora ticketu; null jeśli nie pobrano. */
+  userTag?: string | null;
   /** Avatar autora ticketu (URL CDN Discorda); null jeśli brak/nie pobrano. */
   avatar?: string | null;
   status: TicketStatus;
@@ -171,6 +179,8 @@ export type Role = {
 export type User = {
   userId: string;
   username: string;
+  /** Pseudonim (display name) konta; null gdy nieustawiony — wtedy pokazujemy username. */
+  displayName?: string | null;
   avatar: string | null;
 };
 
@@ -196,7 +206,10 @@ export type ReactionRoleInput = {
 export type LeaderboardEntry = {
   position: number;
   userId: string;
-  username: string;
+  /** Pseudonim (nick/display name); fallback na ID gdy nie pobrano członka. */
+  displayName: string;
+  /** Nazwa (@handle); null gdy nie pobrano. */
+  username: string | null;
   avatar: string | null;
   xp: number;
   level: number;
