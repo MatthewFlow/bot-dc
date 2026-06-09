@@ -1,3 +1,4 @@
+import { BotStatusProvider } from "./botStatusProvider";
 import { FeedbackProvider } from "./feedbackProvider";
 import { GuildConfigProvider } from "./guildConfigProvider";
 import { ModActionProvider } from "./modActionProvider";
@@ -15,3 +16,4 @@ export const ticketRepository = new TicketProvider();
 export const modActionRepository = new ModActionProvider();
 export const sessionRepository = new SessionProvider();
 export const feedbackRepository = new FeedbackProvider();
+export const botStatusRepository = new BotStatusProvider();

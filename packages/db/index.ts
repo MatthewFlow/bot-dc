@@ -2,6 +2,7 @@ export { connectDb } from "./client";
 export type { DiscordEmbed, EmbedConfig, EmbedFieldConfig } from "./embed";
 export { isEmbedEmpty, toDiscordEmbed } from "./embed";
 export {
+  botStatusRepository,
   feedbackRepository,
   guildConfigRepository,
   modActionRepository,
@@ -11,6 +12,11 @@ export {
   warnRepository,
   xpRepository,
 } from "./providers/mongoose/providers";
+export type {
+  BotHeartbeat,
+  BotStatusSnapshot,
+  IBotStatusRepository,
+} from "./repositories/botStatusRepository";
 export type {
   AddFeedbackOpts,
   Feedback,
