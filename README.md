@@ -9,11 +9,19 @@ A modular Discord bot platform with a web dashboard for server configuration.
 - **Welcome / Goodbye** — plain text or fully customizable embeds with variables
 - **Reaction roles** — published from a full embed editor with emoji → role pairs
 - **Moderation** — warn / mute / kick / ban with a persisted action log and mod-log channel
-- **Tickets** — button panel → private threads, claim/close flow, dashboard management
-- **Embed editor** — shared editor + live preview for welcome, goodbye, ticket panel and
-  reaction-role embeds
-- **Dashboard** — per-server overview with live stats (members, bans, warnings, tickets),
-  create-channel / create-role helpers, OAuth2 login
+- **Auto-moderation** — invite/link/banned-word filters + anti-spam, with staff/role/channel exemptions
+- **Server logging** — message, member, role and nickname events to a chosen channel
+- **Tickets** — button panel → private threads, claim/close flow, dashboard management (close,
+  reopen, delete) and a `/ticket_delete` command
+- **Feedback** — `/feedback` command and an embed panel with a button; submissions land on a
+  channel and in the dashboard, visible to the whole staff, with a notification bell
+- **Embed editor** — shared editor + live preview for welcome, goodbye, ticket panel, feedback
+  panel and reaction-role embeds
+- **Dashboard** — per-server overview with live stats (members, bans, warnings, tickets), a live
+  bot online/offline indicator, per-command enable/disable toggles, create-channel /
+  create-role helpers, auto-save, OAuth2 login
+- **Access** — open to members with Discord Administrator / Manage Server **or** a per-guild bot
+  admin role, so trusted moderators can use the dashboard too
 
 ## Project Structure
 
