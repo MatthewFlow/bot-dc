@@ -65,8 +65,13 @@ export class FeedbackProvider implements IFeedbackRepository {
 
   async delete(id: string, guildId: string): Promise<boolean> {
     try {
-      const res = await FeedbackModel.deleteOne({ _id: id, guildId });
-      return res.deletedCount > 0;
+      const doc = await FeedbackModel.findById(id);
+      if (!doc) return false;
+      // Nowe zgłoszenia muszą należeć do tego serwera (ochrona przed kasowaniem
+      // cudzego serwera). Legacy bez guildId dopuszczamy do usunięcia z panelu.
+      if (doc.guildId && doc.guildId !== guildId) return false;
+      await doc.deleteOne();
+      return true;
     } catch {
       // Niepoprawny ObjectId itp.
       return false;
