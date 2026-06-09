@@ -7,11 +7,13 @@ import {
   type LucideIcon,
   MessageCircle,
   Star,
+  Trash2,
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 
 import { ChannelSelect } from "@/components/ChannelSelect";
+import { ConfirmModal } from "@/components/confirmModal";
 import { CreateChannelButton } from "@/components/CreateChannelButton";
 import { EmbedEditor } from "@/components/EmbedEditor";
 import { EmbedPreview } from "@/components/EmbedPreview";
@@ -32,9 +34,10 @@ import type {
   GuildConfig,
 } from "@/lib/api";
 import {
+  deleteGuildFeedback,
   getChannels,
   getGuildConfig,
-  getMyFeedback,
+  getGuildFeedback,
   sendFeedbackPanel,
   submitFeedback,
   updateGuildConfig,
@@ -113,7 +116,10 @@ export default function FeedbackPage() {
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [saving, setSaving] = useState(false);
-  const [mine, setMine] = useState<Feedback[]>([]);
+
+  // Wszystkie zgłoszenia z tego serwera (widoczne dla całej ekipy).
+  const [list, setList] = useState<Feedback[]>([]);
+  const [confirmId, setConfirmId] = useState<string | null>(null);
 
   // Panel feedbacku (sekcja admina) — config + kanały
   const [config, setConfig] = useState<GuildConfig>({});
@@ -123,9 +129,9 @@ export default function FeedbackPage() {
 
   const { loading } = useGuildLoad(
     guildId,
-    (id) => Promise.all([getMyFeedback(), getGuildConfig(id), getChannels(id)]),
-    ([list, cfg, ch]) => {
-      setMine(list);
+    (id) => Promise.all([getGuildFeedback(id), getGuildConfig(id), getChannels(id)]),
+    ([fb, cfg, ch]) => {
+      setList(fb.items);
       setConfig(cfg);
       setChannels(ch);
     },
@@ -145,7 +151,7 @@ export default function FeedbackPage() {
         rating: rating || undefined,
         guildId,
       });
-      setMine((prev) => [created, ...prev]);
+      setList((prev) => [created, ...prev]);
       setMessage("");
       setRating(0);
       setCategory("suggestion");
@@ -155,6 +161,14 @@ export default function FeedbackPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleDelete(id: string) {
+    setConfirmId(null);
+    setList((prev) => prev.filter((x) => x.id !== id));
+    deleteGuildFeedback(guildId, id)
+      .then(() => toast("Zgłoszenie usunięte.", "success"))
+      .catch(() => toast("Nie udało się usunąć.", "error"));
   }
 
   async function handleSavePanel() {
@@ -204,7 +218,7 @@ export default function FeedbackPage() {
             Podziel się <span className="italic text-primary">opinią</span>
           </>
         }
-        description="Zgłoś błąd, zaproponuj funkcję lub po prostu napisz, co myślisz."
+        description="Zgłoś błąd, zaproponuj funkcję lub przejrzyj opinie z całego serwera."
         className="mb-0"
       />
 
@@ -213,7 +227,7 @@ export default function FeedbackPage() {
           "Wybierz kategorię: błąd, sugestia lub inne.",
           "Opcjonalnie dodaj ocenę w gwiazdkach (1–5).",
           "Opisz swoje spostrzeżenie i kliknij Wyślij.",
-          "Twoje zgłoszenia zobaczysz na liście poniżej formularza.",
+          "Po prawej widzisz wszystkie zgłoszenia z serwera — możesz je usuwać.",
         ]}
       />
 
@@ -303,14 +317,14 @@ export default function FeedbackPage() {
           </div>
         </div>
 
-        {/* Moje zgłoszenia */}
+        {/* Zgłoszenia z serwera (widoczne dla całej ekipy) */}
         <div className="flex-1">
           <div className={CARD}>
             <div className="flex items-center justify-between border-b border-border px-6 py-4">
-              <p className="text-sm font-semibold text-white">Twoje zgłoszenia</p>
-              {mine.length > 0 && <Badge variant="secondary">{mine.length}</Badge>}
+              <p className="text-sm font-semibold text-white">Zgłoszenia z serwera</p>
+              {list.length > 0 && <Badge variant="secondary">{list.length}</Badge>}
             </div>
-            {mine.length === 0 ? (
+            {list.length === 0 ? (
               <div className="flex flex-col items-center gap-3 px-6 py-14 text-center">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <Inbox className="size-6" />
@@ -318,20 +332,20 @@ export default function FeedbackPage() {
                 <div>
                   <p className="text-sm font-medium text-gray-300">Brak zgłoszeń</p>
                   <p className="mt-1 text-xs text-gray-400">
-                    Twoje wysłane opinie pojawią się tutaj.
+                    Opinie wysłane przez członków serwera pojawią się tutaj.
                   </p>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col gap-3 p-4">
-                {mine.map((f) => {
+              <div className="flex max-h-[640px] flex-col gap-3 overflow-y-auto p-4">
+                {list.map((f) => {
                   const meta = CAT_META[f.category];
                   const Icon = meta.icon;
                   const date = new Date(f.createdAt);
                   return (
                     <div
                       key={f.id}
-                      className={`flex flex-col gap-2 rounded-lg border border-border border-l-2 ${meta.accent} bg-background/40 p-3 transition hover:bg-background`}
+                      className={`group flex flex-col gap-2 rounded-lg border border-border border-l-2 ${meta.accent} bg-background/40 p-3 transition hover:bg-background`}
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge variant={meta.badge}>
@@ -344,12 +358,22 @@ export default function FeedbackPage() {
                             {f.rating}/5
                           </span>
                         ) : null}
+                        <span className="text-xs font-medium text-gray-300">
+                          {f.username}
+                        </span>
                         <span
                           className="ml-auto text-xs text-gray-400"
                           title={date.toLocaleString("pl-PL")}
                         >
                           {timeAgo(date)}
                         </span>
+                        <button
+                          onClick={() => setConfirmId(f.id)}
+                          title="Usuń zgłoszenie"
+                          className="shrink-0 text-gray-400 opacity-0 transition hover:text-red-400 focus-visible:opacity-100 group-hover:opacity-100"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
                       <p className="whitespace-pre-wrap text-sm text-gray-300">
                         {f.message}
@@ -442,6 +466,14 @@ export default function FeedbackPage() {
           </div>
         </div>
       </div>
+
+      {confirmId && (
+        <ConfirmModal
+          message="Na pewno usunąć to zgłoszenie? Tej operacji nie można cofnąć."
+          onConfirm={() => handleDelete(confirmId)}
+          onCancel={() => setConfirmId(null)}
+        />
+      )}
     </div>
   );
 }
