@@ -6,6 +6,7 @@ import {
 } from "@jurassic-haven/db";
 import { Hono } from "hono";
 
+import { channelInGuild } from "../lib/channelGuard";
 import { canAccessGuild } from "../lib/guildGuard";
 import { authMiddleware } from "../middleware/authMiddleware";
 import type { AppVariables } from "../types";
@@ -108,6 +109,12 @@ reactionRoleRoutes.post("/:guildId/reaction-roles", async (c) => {
 
   const botToken = process.env.DISCORD_TOKEN;
   if (!botToken) return c.json({ error: "Missing bot token" }, 500);
+
+  // Kanał z body musi należeć do gildii ze ścieżki — inaczej admin jednej gildii
+  // mógłby wysłać wiadomość bota do kanału innego serwera.
+  if (!(await channelInGuild(body.channelId, guildId, botToken))) {
+    return c.json({ error: "Channel does not belong to this guild" }, 400);
+  }
 
   // Sprowadź wszystkie emoji do postaci kanonicznej + endpointowej PRZED wysłaniem
   // wiadomości, żeby nie zostawiać osieroconej wiadomości przy nieprawidłowym emoji.
