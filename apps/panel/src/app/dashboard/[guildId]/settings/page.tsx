@@ -1,5 +1,6 @@
 "use client";
 
+import { Settings } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 
@@ -80,6 +81,7 @@ export default function SettingsPage() {
     <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
       <PageHeader
         category="Konfiguracja serwera"
+        icon={Settings}
         title={
           <>
             Ustawienia <span className="italic text-primary">ogólne</span>

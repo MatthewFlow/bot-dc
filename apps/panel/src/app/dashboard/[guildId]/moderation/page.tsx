@@ -1,6 +1,6 @@
 "use client";
 
-import { RotateCw, Search, Trash2 } from "lucide-react";
+import { RotateCw, Search, ShieldAlert, Trash2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -141,6 +141,7 @@ export default function ModerationPage() {
     <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
       <PageHeader
         category="Server Safety"
+        icon={ShieldAlert}
         title={
           <>
             System <span className="italic text-primary">moderacji</span>

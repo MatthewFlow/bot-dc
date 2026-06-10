@@ -1,5 +1,6 @@
 "use client";
 
+import { ShieldBan } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 
@@ -129,6 +130,7 @@ export default function AutoModPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <PageHeader
           category="Ochrona automatyczna"
+          icon={ShieldBan}
           title={
             <>
               Auto-<span className="italic text-primary">moderacja</span>

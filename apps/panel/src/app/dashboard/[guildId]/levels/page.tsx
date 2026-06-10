@@ -1,15 +1,16 @@
 "use client";
 
+import { Crown, RotateCw, TrendingUp } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { Avatar } from "@/components/Avatar";
 import { ChannelSelect } from "@/components/ChannelSelect";
 import { ConfirmModal } from "@/components/confirmModal";
 import { CreateRoleButton } from "@/components/CreateRoleButton";
 import { EmbedEditor } from "@/components/EmbedEditor";
 import { EmbedPreview } from "@/components/EmbedPreview";
 import { HowItWorks } from "@/components/HowItWorks";
+import { LeaderboardRows } from "@/components/Leaderboard";
 import { PageHeader } from "@/components/PageHeader";
 import { RoleSelect } from "@/components/RoleSelect";
 import { SaveButton } from "@/components/SaveButton";
@@ -35,8 +36,6 @@ import {
   updateGuildConfig,
 } from "@/lib/api";
 import { LEVEL_VARS, previewReplacer } from "@/lib/embed";
-
-const MEDALS = ["🥇", "🥈", "🥉"];
 
 const DEFAULT_LEVELING: LevelingConfig = {
   xpMultiplier: 1,
@@ -228,6 +227,7 @@ export default function LevelsPage() {
     <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
       <PageHeader
         category="Growth Ladder"
+        icon={TrendingUp}
         title={
           <>
             System <span className="italic text-primary">levelowania</span>
@@ -503,76 +503,31 @@ export default function LevelsPage() {
         </div>
       </div>
 
-      {/* Leaderboard */}
-      <div className="surface-raised rounded-xl bg-card">
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-              Wszyscy aktywni członkowie
-            </p>
-            <p className="text-base font-semibold text-white">🏆 Leaderboard</p>
+      {/* Leaderboard — ten sam komponent rankingu co na przeglądzie */}
+      <div className="surface-raised rounded-xl border border-border bg-card">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 text-primary">
+              <Crown size={15} />
+            </span>
+            <div>
+              <p className="text-sm font-semibold text-white">Leaderboard</p>
+              <p className="text-xs text-gray-400">Najaktywniejsi członkowie serwera</p>
+            </div>
           </div>
           <button
             onClick={() => fetchLeaderboard(true)}
             disabled={leaderboardLoading}
-            className="rounded-lg bg-background px-3 py-1.5 text-xs text-gray-300 transition hover:text-white disabled:opacity-50"
+            className="flex items-center gap-1.5 rounded-lg bg-background px-3 py-1.5 text-xs text-gray-300 transition hover:text-white disabled:opacity-50"
           >
-            {leaderboardLoading ? "Ładowanie..." : "↻ Odśwież"}
+            <RotateCw
+              className={`h-3.5 w-3.5 ${leaderboardLoading ? "animate-spin" : ""}`}
+            />
+            {leaderboardLoading ? "Ładowanie…" : "Odśwież"}
           </button>
         </div>
 
-        <div className="grid grid-cols-[2rem_1fr_6rem_6rem] gap-4 border-b border-border px-6 py-2">
-          {["#", "Gracz", "Level", "XP"].map((h, i) => (
-            <span
-              key={h}
-              className={`text-xs font-semibold uppercase tracking-wider text-gray-400 ${i >= 2 ? "text-right" : ""}`}
-            >
-              {h}
-            </span>
-          ))}
-        </div>
-
-        {leaderboardLoading ? (
-          Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="border-b border-border last:border-0">
-              <SkeletonRow />
-            </div>
-          ))
-        ) : leaderboard.length === 0 ? (
-          <div className="px-6 py-8 text-center text-sm text-gray-400">
-            Brak danych XP na tym serwerze.
-          </div>
-        ) : (
-          leaderboard.map((entry) => (
-            <div
-              key={entry.userId}
-              className={`grid grid-cols-[2rem_1fr_6rem_6rem] items-center gap-4 border-b border-border px-6 py-3 last:border-0 ${entry.position <= 3 ? "bg-primary/5" : ""}`}
-            >
-              <span className="text-sm font-bold text-gray-300">
-                {MEDALS[entry.position - 1] ?? entry.position}
-              </span>
-              <div className="flex min-w-0 items-center gap-3">
-                <Avatar src={entry.avatar} name={entry.displayName} size="sm" />
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-white">
-                    {entry.displayName}
-                  </p>
-                  {entry.username && (
-                    <p className="truncate text-xs text-gray-400">@{entry.username}</p>
-                  )}
-                </div>
-              </div>
-              <div className="text-right">
-                <span className="rounded bg-primary/20 px-2 py-0.5 text-xs font-semibold text-primary">
-                  Lv. {entry.level}
-                </span>
-              </div>
-              <div className="text-right text-sm text-gray-300">
-                {entry.xp.toLocaleString()}
-              </div>
-            </div>
-          ))
-        )}
+        <LeaderboardRows entries={leaderboard} loading={leaderboardLoading} rows={10} />
       </div>
 
       {pendingDelete !== null && (

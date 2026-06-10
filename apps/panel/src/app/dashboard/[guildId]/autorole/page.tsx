@@ -1,5 +1,6 @@
 "use client";
 
+import { UserPlus } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 
@@ -110,6 +111,7 @@ export default function AutoRolePage() {
     <div className="flex flex-col p-4 sm:p-6 lg:p-8">
       <PageHeader
         category="Assignment Grid"
+        icon={UserPlus}
         title={
           <>
             Auto-role <span className="italic text-primary">& reakcje</span>

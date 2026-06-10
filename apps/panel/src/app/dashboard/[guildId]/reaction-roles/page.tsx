@@ -1,5 +1,6 @@
 "use client";
 
+import { Zap } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 
@@ -158,6 +159,7 @@ export default function ReactionRolesPage() {
     <div className="flex flex-col p-4 sm:p-6 lg:p-8">
       <PageHeader
         category="Assignment Grid"
+        icon={Zap}
         title={
           <>
             Reaction <span className="italic text-primary">Roles</span>

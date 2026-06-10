@@ -6,6 +6,7 @@ import {
   Lightbulb,
   type LucideIcon,
   MessageCircle,
+  MessageSquareHeart,
   Star,
   Trash2,
 } from "lucide-react";
@@ -213,6 +214,7 @@ export default function FeedbackPage() {
     <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <PageHeader
         category="Twoja opinia"
+        icon={MessageSquareHeart}
         title={
           <>
             Podziel się <span className="italic text-primary">opinią</span>
