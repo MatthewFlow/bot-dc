@@ -1,5 +1,6 @@
 "use client";
 
+import { ScrollText } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 
@@ -146,6 +147,7 @@ export default function ServerLogPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <PageHeader
           category="Audyt serwera"
+          icon={ScrollText}
           title={
             <>
               Logi <span className="italic text-primary">serwera</span>

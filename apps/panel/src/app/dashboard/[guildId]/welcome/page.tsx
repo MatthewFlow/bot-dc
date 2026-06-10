@@ -1,5 +1,6 @@
 "use client";
 
+import { DoorOpen } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useRef, useState } from "react";
 
@@ -177,6 +178,7 @@ export default function WelcomePage() {
       <div className="border-b border-border px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
         <PageHeader
           category="First Contact"
+          icon={DoorOpen}
           title={
             <>
               Welcome <span className="text-primary">&</span> Goodbye

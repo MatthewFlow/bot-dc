@@ -1,5 +1,6 @@
 "use client";
 
+import { SlidersHorizontal } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 
@@ -72,6 +73,7 @@ export default function CommandsPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <PageHeader
           category="Konfiguracja serwera"
+          icon={SlidersHorizontal}
           title={
             <>
               Komendy <span className="italic text-primary">bota</span>

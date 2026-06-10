@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Ticket as TicketIcon, Trash2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -248,6 +248,7 @@ export default function TicketsPage() {
     <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
       <PageHeader
         category="Support System"
+        icon={TicketIcon}
         title={
           <>
             System <span className="italic text-primary">ticketów</span>
