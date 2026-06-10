@@ -55,7 +55,7 @@ function seedEmbed(tab: Tab, message: string): EmbedConfig {
 function WelcomeSkeleton() {
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-border px-8 py-6">
+      <div className="px-4 pt-4 sm:px-6 lg:px-8 lg:pt-8">
         <Skeleton className="mb-2 h-3 w-24" />
         <Skeleton className="mb-2 h-7 w-48" />
         <Skeleton className="h-3 w-64" />
@@ -175,7 +175,7 @@ export default function WelcomePage() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="border-b border-border px-4 py-5 sm:px-6 lg:px-8 lg:py-6">
+      <div className="px-4 pt-4 sm:px-6 lg:px-8 lg:pt-8">
         <PageHeader
           category="First Contact"
           icon={DoorOpen}
