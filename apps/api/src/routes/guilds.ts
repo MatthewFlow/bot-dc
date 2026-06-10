@@ -9,6 +9,7 @@ import {
 } from "@jurassic-haven/db";
 import { Hono } from "hono";
 
+import { channelInGuild } from "../lib/channelGuard";
 import { sanitizeConfigPatch } from "../lib/configSanitize";
 import { canAccessGuild, fetchAccessibleGuilds } from "../lib/guildGuard";
 import { createMemberResolver } from "../lib/memberResolver";
@@ -215,6 +216,12 @@ guildRoutes.post("/:guildId/ticket-panel", async (c) => {
   // Embed + przycisk z konfiguracji guildu (fallback do domyślnych).
   // custom_id "ticket_open" obsługuje bot — musi pozostać niezmienny.
   const guildId = c.req.param("guildId");
+
+  // Kanał z body musi należeć do tej gildii (zapobiega wysyłce do obcego serwera).
+  if (!(await channelInGuild(channelId, guildId, botToken))) {
+    return c.json({ error: "Channel does not belong to this guild" }, 400);
+  }
+
   const cfg = await guildConfigRepository.get(guildId);
 
   // Zmienne kontekstu serwera ({server}, {member_count}) — best-effort.
@@ -304,6 +311,12 @@ guildRoutes.post("/:guildId/feedback-panel", async (c) => {
   const channelId = cfg?.feedbackChannelId;
   if (!channelId) {
     return c.json({ error: "Najpierw ustaw kanał feedbacku w ustawieniach." }, 400);
+  }
+
+  // Skonfigurowany kanał musi należeć do tej gildii (config jest tylko walidowany
+  // długością, więc bez tego można by wskazać kanał innego serwera).
+  if (!(await channelInGuild(channelId, guildId, botToken))) {
+    return c.json({ error: "Feedback channel does not belong to this guild" }, 400);
   }
 
   // Zmienne kontekstu serwera ({server}, {member_count}) — best-effort.
