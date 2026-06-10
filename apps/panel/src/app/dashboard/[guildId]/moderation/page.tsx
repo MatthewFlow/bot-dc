@@ -1,19 +1,21 @@
 "use client";
 
-import { RotateCw, Search, ShieldAlert, Trash2 } from "lucide-react";
+import { Search, ShieldAlert, Trash2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { MOD_ACTION, ModActionBadge } from "@/components/badges";
 import { ChannelSelect } from "@/components/ChannelSelect";
 import { ConfirmModal } from "@/components/confirmModal";
 import { CreateChannelButton } from "@/components/CreateChannelButton";
 import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
+import { RefreshButton } from "@/components/RefreshButton";
 import { SaveButton } from "@/components/SaveButton";
-import { Skeleton, SkeletonRow } from "@/components/Skeleton";
+import { PageSkeleton, Skeleton, SkeletonRow } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { useGuildLoad } from "@/hooks/useGuildLoad";
-import type { Channel, GuildConfig, ModAction, ModActionType, Warn } from "@/lib/api";
+import type { Channel, GuildConfig, ModAction, Warn } from "@/lib/api";
 import {
   clearWarnings,
   getChannels,
@@ -25,33 +27,12 @@ import {
 
 function ModSkeleton() {
   return (
-    <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
-      <div>
-        <Skeleton className="mb-2 h-3 w-24" />
-        <Skeleton className="mb-2 h-7 w-48" />
-        <Skeleton className="h-3 w-64" />
-      </div>
+    <PageSkeleton>
       <Skeleton className="h-32 w-full rounded-xl" />
       <Skeleton className="h-48 w-full rounded-xl" />
-    </div>
+    </PageSkeleton>
   );
 }
-
-const ACTION_COLORS: Record<string, string> = {
-  warn: "text-yellow-400 bg-yellow-400/10",
-  mute: "text-indigo-400 bg-indigo-400/10",
-  kick: "text-red-400 bg-red-400/10",
-  ban: "text-red-600 bg-red-600/10",
-};
-
-const ACTION_META: Record<ModActionType, { label: string; cls: string }> = {
-  warn: { label: "Warn", cls: "text-yellow-400 bg-yellow-400/10" },
-  mute: { label: "Mute", cls: "text-indigo-400 bg-indigo-400/10" },
-  unmute: { label: "Unmute", cls: "text-green-400 bg-green-400/10" },
-  kick: { label: "Kick", cls: "text-red-400 bg-red-400/10" },
-  ban: { label: "Ban", cls: "text-red-500 bg-red-500/10" },
-  clearwarns: { label: "Clear", cls: "text-gray-300 bg-gray-400/10" },
-};
 
 export default function ModerationPage() {
   const params = useParams();
@@ -266,7 +247,7 @@ export default function ModerationPage() {
                           className="flex items-start gap-3 rounded-lg bg-background px-4 py-3"
                         >
                           <span
-                            className={`mt-0.5 rounded px-1.5 py-0.5 text-xs font-bold ${ACTION_COLORS.warn}`}
+                            className={`mt-0.5 rounded px-1.5 py-0.5 text-xs font-bold ${MOD_ACTION.warn.cls}`}
                           >
                             #{i + 1}
                           </span>
@@ -303,14 +284,7 @@ export default function ModerationPage() {
             </p>
             <p className="text-base font-semibold text-white">📋 Dziennik akcji</p>
           </div>
-          <button
-            onClick={() => fetchActions()}
-            disabled={actionsLoading}
-            className="flex shrink-0 items-center gap-1.5 rounded-lg bg-background px-3 py-1.5 text-xs text-gray-300 transition hover:text-white disabled:opacity-50"
-          >
-            <RotateCw className={`h-3.5 w-3.5 ${actionsLoading ? "animate-spin" : ""}`} />
-            {actionsLoading ? "Ładowanie…" : "Odśwież"}
-          </button>
+          <RefreshButton onClick={() => fetchActions()} loading={actionsLoading} />
         </div>
 
         {actionsLoading ? (
@@ -325,18 +299,17 @@ export default function ModerationPage() {
           </div>
         ) : (
           actions.map((a) => {
-            const meta = ACTION_META[a.type];
             return (
               <div
                 key={a.id}
                 className="flex flex-col gap-2 border-b border-border px-4 py-3 last:border-0 sm:flex-row sm:items-center sm:gap-3 sm:px-6"
               >
                 <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <span
-                    className={`w-16 shrink-0 rounded px-2 py-0.5 text-center text-xs font-bold ${meta.cls}`}
-                  >
-                    {meta.label}
-                  </span>
+                  <ModActionBadge
+                    type={a.type}
+                    variant="short"
+                    className="w-16 shrink-0 text-center font-bold"
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm text-white">{a.reason}</p>
                     <p className="truncate text-xs text-gray-400">

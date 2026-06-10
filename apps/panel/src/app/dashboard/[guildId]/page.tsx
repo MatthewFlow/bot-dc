@@ -13,6 +13,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Avatar } from "@/components/Avatar";
+import { ModActionBadge, TicketStatusBadge } from "@/components/badges";
 import { LeaderboardRows } from "@/components/Leaderboard";
 import { Skeleton } from "@/components/Skeleton";
 import { useGuildLoad } from "@/hooks/useGuildLoad";
@@ -20,9 +21,7 @@ import type {
   GuildStats,
   LeaderboardEntry,
   ModAction,
-  ModActionType,
   Ticket as TicketType,
-  TicketStatus,
   User,
 } from "@/lib/api";
 import {
@@ -32,25 +31,8 @@ import {
   getModActions,
   getTickets,
 } from "@/lib/api";
-
-const NF = new Intl.NumberFormat("pl-PL");
-
-/** Sformatuj liczbę; null → „—". */
-function fmt(n: number | null | undefined): string {
-  return n == null ? "—" : NF.format(n);
-}
-
-/** Zwięzły, względny czas po polsku (np. „przed chwilą", „12 min", „3 godz", „2 dni"). */
-function timeAgo(iso: string): string {
-  const ms = Date.now() - new Date(iso).getTime();
-  const min = Math.floor(ms / 60000);
-  if (min < 1) return "przed chwilą";
-  if (min < 60) return `${min} min`;
-  const h = Math.floor(min / 60);
-  if (h < 24) return `${h} godz`;
-  const d = Math.floor(h / 24);
-  return d === 1 ? "1 dzień" : `${d} dni`;
-}
+import { formatCount as fmt } from "@/lib/format";
+import { relativeTime as timeAgo } from "@/lib/time";
 
 const CARD_BASE =
   "surface-raised rounded-xl border border-border bg-card transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40";
@@ -191,12 +173,6 @@ function TopActive({
 
 // ── Ostatnie tickety ─────────────────────────────────────────────────────────
 
-const TICKET_BADGE: Record<TicketStatus, { label: string; cls: string }> = {
-  pending: { label: "Oczekuje", cls: "bg-yellow-500/15 text-yellow-400" },
-  open: { label: "W trakcie", cls: "bg-green-500/15 text-green-400" },
-  closed: { label: "Zamknięty", cls: "bg-gray-500/15 text-gray-300" },
-};
-
 function RecentTickets({
   loading,
   tickets,
@@ -215,7 +191,6 @@ function RecentTickets({
       ) : (
         <div className="flex flex-col">
           {tickets.map((t) => {
-            const badge = TICKET_BADGE[t.status];
             const resolved = Boolean(t.username);
             const main = t.username ?? t.userId;
             return (
@@ -241,11 +216,7 @@ function RecentTickets({
                     </p>
                   )}
                 </div>
-                <span
-                  className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${badge.cls}`}
-                >
-                  {badge.label}
-                </span>
+                <TicketStatusBadge status={t.status} className="shrink-0" />
                 <span className="hidden w-14 shrink-0 text-right text-xs text-gray-400 sm:block">
                   {timeAgo(t.createdAt)}
                 </span>
@@ -259,15 +230,6 @@ function RecentTickets({
 }
 
 // ── Aktywność na żywo (dziennik moderacji) ───────────────────────────────────
-
-const ACTIVITY_META: Record<ModActionType, { label: string; cls: string }> = {
-  warn: { label: "Ostrzeżenie", cls: "bg-yellow-400/10 text-yellow-400" },
-  mute: { label: "Wyciszenie", cls: "bg-indigo-400/10 text-indigo-400" },
-  unmute: { label: "Odciszenie", cls: "bg-green-400/10 text-green-400" },
-  kick: { label: "Wyrzucenie", cls: "bg-red-400/10 text-red-400" },
-  ban: { label: "Ban", cls: "bg-red-500/10 text-red-500" },
-  clearwarns: { label: "Wyczyszczono", cls: "bg-gray-400/10 text-gray-300" },
-};
 
 function ActivityFeed({
   loading,
@@ -287,7 +249,6 @@ function ActivityFeed({
       ) : (
         <div className="flex flex-col">
           {actions.map((a) => {
-            const meta = ACTIVITY_META[a.type];
             const resolved = Boolean(a.displayName || a.username);
             // Główna linia: pseudonim (display name); pod nią mniejszą czcionką @nazwa.
             const main = a.displayName ?? a.username ?? a.userId;
@@ -310,11 +271,7 @@ function ActivityFeed({
                   {handle && <p className="truncate text-xs text-gray-400">{handle}</p>}
                 </div>
                 <div className="flex shrink-0 flex-col items-end gap-1">
-                  <span
-                    className={`rounded px-2 py-0.5 text-xs font-semibold ${meta.cls}`}
-                  >
-                    {meta.label}
-                  </span>
+                  <ModActionBadge type={a.type} />
                   <span className="text-xs text-gray-400">{timeAgo(a.createdAt)}</span>
                 </div>
               </div>

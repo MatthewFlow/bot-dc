@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Avatar } from "@/components/Avatar";
+import { TicketStatusBadge } from "@/components/badges";
 import { ChannelSelect } from "@/components/ChannelSelect";
 import { ConfirmModal } from "@/components/confirmModal";
 import { CreateChannelButton } from "@/components/CreateChannelButton";
@@ -15,7 +16,7 @@ import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
 import { RoleSelect } from "@/components/RoleSelect";
 import { SaveButton } from "@/components/SaveButton";
-import { Skeleton, SkeletonRow } from "@/components/Skeleton";
+import { PageSkeleton, Skeleton, SkeletonRow } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
 import { useAutoSave } from "@/hooks/useAutoSave";
@@ -33,6 +34,7 @@ import {
   updateGuildConfig,
 } from "@/lib/api";
 import { previewReplacer, TICKET_VARS, VARIABLE_INFO } from "@/lib/embed";
+import { waitingSince } from "@/lib/time";
 
 const DEFAULT_TICKET_PANEL_EMBED = {
   title: "📩 Złóż ticket",
@@ -53,12 +55,7 @@ const FILTER_LABELS: Record<StatusFilter, string> = {
 
 function TicketsSkeleton() {
   return (
-    <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
-      <div>
-        <Skeleton className="mb-2 h-3 w-24" />
-        <Skeleton className="mb-2 h-7 w-48" />
-        <Skeleton className="h-3 w-64" />
-      </div>
+    <PageSkeleton>
       <Skeleton className="h-32 w-full rounded-xl" />
       <div className="surface-raised rounded-xl bg-card">
         {[1, 2, 3].map((i) => (
@@ -67,22 +64,7 @@ function TicketsSkeleton() {
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-const STATUS_BADGE: Record<TicketStatus, { label: string; cls: string }> = {
-  pending: { label: "Oczekuje", cls: "bg-yellow-500/15 text-yellow-400" },
-  open: { label: "W trakcie", cls: "bg-green-500/15 text-green-400" },
-  closed: { label: "Zamknięty", cls: "bg-gray-500/15 text-gray-300" },
-};
-
-function StatusBadge({ status }: { status: TicketStatus }) {
-  const b = STATUS_BADGE[status];
-  return (
-    <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${b.cls}`}>
-      {b.label}
-    </span>
+    </PageSkeleton>
   );
 }
 
@@ -90,19 +72,6 @@ function StatusBadge({ status }: { status: TicketStatus }) {
 function UserName({ name, id }: { name?: string | null; id?: string }) {
   if (name) return <span className="font-medium text-gray-300">{name}</span>;
   return <span className="font-mono text-gray-400">{id ?? "—"}</span>;
-}
-
-/** Zwraca zwięzły czas oczekiwania od podanej daty, np. „2h 15min", „3 dni". */
-function waitingSince(iso: string): string {
-  const ms = Date.now() - new Date(iso).getTime();
-  if (ms < 0) return "przed chwilą";
-  const min = Math.floor(ms / 60000);
-  if (min < 1) return "przed chwilą";
-  if (min < 60) return `${min}min`;
-  const h = Math.floor(min / 60);
-  if (h < 24) return `${h}h ${min % 60}min`;
-  const d = Math.floor(h / 24);
-  return d === 1 ? "1 dzień" : `${d} dni`;
 }
 
 export default function TicketsPage() {
@@ -544,7 +513,7 @@ export default function TicketsPage() {
                   <div className="min-w-0 flex-1">
                     {/* Nagłówek: status + autor */}
                     <div className="flex flex-wrap items-center gap-2">
-                      <StatusBadge status={ticket.status} />
+                      <TicketStatusBadge status={ticket.status} />
                       <Avatar
                         src={ticket.avatar}
                         name={ticket.username ?? ticket.userId}

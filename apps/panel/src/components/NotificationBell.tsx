@@ -19,20 +19,13 @@ import {
   getGuildFeedback,
   markFeedbackSeen,
 } from "@/lib/api";
+import { dayAgo } from "@/lib/time";
 
 const CAT: Record<FeedbackCategory, { icon: LucideIcon; cls: string }> = {
   bug: { icon: Bug, cls: "text-red-400" },
   suggestion: { icon: Lightbulb, cls: "text-primary" },
   other: { icon: MessageCircle, cls: "text-gray-300" },
 };
-
-function timeAgo(iso: string): string {
-  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
-  if (days <= 0) return "dziś";
-  if (days === 1) return "wczoraj";
-  if (days < 7) return `${days} dni temu`;
-  return new Date(iso).toLocaleDateString("pl-PL");
-}
 
 export function NotificationBell({ guildId }: { guildId: string }) {
   const toast = useToast();
@@ -118,7 +111,7 @@ export function NotificationBell({ guildId }: { guildId: string }) {
                       <div className="min-w-0 flex-1">
                         <p className="line-clamp-2 text-sm text-gray-300">{f.message}</p>
                         <p className="mt-1 text-xs text-gray-400">
-                          {f.username} · {timeAgo(f.createdAt)}
+                          {f.username} · {dayAgo(f.createdAt)}
                         </p>
                       </div>
                       <button
