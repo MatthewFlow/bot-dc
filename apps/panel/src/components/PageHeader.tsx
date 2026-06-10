@@ -1,5 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 
+import { cn } from "@/lib/cn";
+
 interface PageHeaderProps {
   category: string;
   title: React.ReactNode;
@@ -22,7 +24,10 @@ export function PageHeader({
 }: PageHeaderProps) {
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-violet-600/25 via-indigo-700/15 to-amber-500/10 p-6 sm:p-7 ${className}`}
+      className={cn(
+        "relative mb-8 overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-violet-600/25 via-indigo-700/15 to-amber-500/10 p-6 sm:p-7",
+        className,
+      )}
     >
       <div
         aria-hidden
