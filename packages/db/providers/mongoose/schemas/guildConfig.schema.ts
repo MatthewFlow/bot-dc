@@ -29,7 +29,12 @@ export type ServerLogConfig = {
 
 /** Dodatkowe ustawienia systemu poziomów. Brak obiektu = wartości domyślne. */
 export type LevelingConfig = {
-  xpMultiplier: number;
+  /** Płaskie XP za wiadomość (0–8). */
+  messageXp?: number;
+  /** Płaskie XP za każdą minutę na kanale głosowym powyżej 1. minuty (0–8). */
+  voiceXp?: number;
+  /** Legacy: mnożnik bazowego XP (15/wiadomość). Używany tylko gdy `messageXp` nieustawione. */
+  xpMultiplier?: number;
   noXpChannelIds: string[];
   noXpRoleIds: string[];
   levelUpEnabled: boolean;
@@ -144,7 +149,9 @@ const autoModSchema = new Schema<AutoModConfig>(
 
 const levelingSchema = new Schema<LevelingConfig>(
   {
-    xpMultiplier: { type: Number, default: 1 },
+    messageXp: { type: Number },
+    voiceXp: { type: Number },
+    xpMultiplier: { type: Number },
     noXpChannelIds: { type: [String], default: [] },
     noXpRoleIds: { type: [String], default: [] },
     levelUpEnabled: { type: Boolean, default: true },

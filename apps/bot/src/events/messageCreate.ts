@@ -1,9 +1,8 @@
-import { XP_COOLDOWN_MS, XP_PER_MESSAGE, xpRepository } from "@jurassic-haven/db";
+import { messageXpFor, XP_COOLDOWN_MS, xpRepository } from "@jurassic-haven/db";
 import type { Message } from "discord.js";
 
 import { runAutoMod } from "../automod/automod";
-import { applyAutoRole } from "../levels/autorole";
-import { notifyLevelUp } from "../levels/levelUpNotify";
+import { applyLevelProgress } from "../levels/award";
 import { getCachedGuildConfig } from "../utils/configCache";
 
 export async function onMessageCreate(message: Message) {
@@ -27,8 +26,9 @@ export async function onMessageCreate(message: Message) {
   if (lvl?.noXpChannelIds?.includes(message.channelId)) return;
   if (lvl?.noXpRoleIds?.some((id) => member.roles.cache.has(id))) return;
 
-  const multiplier = lvl?.xpMultiplier && lvl.xpMultiplier > 0 ? lvl.xpMultiplier : 1;
-  const amount = Math.max(1, Math.round(XP_PER_MESSAGE * multiplier));
+  // Płaskie XP za wiadomość (0–8); 0 = wyłączone. Legacy `xpMultiplier` jako fallback.
+  const amount = messageXpFor(lvl);
+  if (amount <= 0) return;
 
   const res = await xpRepository.addXpWithCooldown({
     guildId: message.guild.id,
@@ -40,28 +40,5 @@ export async function onMessageCreate(message: Message) {
 
   if (res.gained <= 0) return;
 
-  await applyAutoRole(member, res.newLevel).catch(() => {});
-
-  if (res.newLevel > res.oldLevel) {
-    const channelOn = lvl?.levelUpEnabled !== false; // default on
-    const dm = lvl?.levelUpDm === true;
-
-    if (channelOn || dm) {
-      const target = cfg?.roleRewards
-        ?.slice()
-        .sort((a, b) => a.level - b.level)
-        .filter((r) => r.level <= res.newLevel)
-        .at(-1);
-
-      await notifyLevelUp(
-        member,
-        res.newLevel,
-        target ? `<@&${target.roleId}>` : undefined,
-        {
-          dm,
-          suppressChannel: !channelOn,
-        },
-      );
-    }
-  }
+  await applyLevelProgress(member, res, cfg);
 }

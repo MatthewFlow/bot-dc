@@ -53,11 +53,15 @@ export type {
   XpEntry,
 } from "./repositories/xpRepository";
 export {
+  clampSliderXp,
   levelFromXp,
+  messageXpFor,
+  VOICE_XP_INTERVAL_MS,
   XP_COOLDOWN_MS,
   XP_PER_LEVEL,
   XP_PER_MESSAGE,
   XP_SAVE_DEBOUNCE_MS,
+  XP_SLIDER_MAX,
   XP_SYNCALL_DELAY_MS,
   xpToNextLevel,
 } from "./xpHelpers";

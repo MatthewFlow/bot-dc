@@ -1,6 +1,6 @@
 "use client";
 
-import { Crown, RotateCw, TrendingUp } from "lucide-react";
+import { Crown, TrendingUp } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -12,9 +12,10 @@ import { EmbedPreview } from "@/components/EmbedPreview";
 import { HowItWorks } from "@/components/HowItWorks";
 import { LeaderboardRows } from "@/components/Leaderboard";
 import { PageHeader } from "@/components/PageHeader";
+import { RefreshButton } from "@/components/RefreshButton";
 import { RoleSelect } from "@/components/RoleSelect";
 import { SaveButton } from "@/components/SaveButton";
-import { Skeleton, SkeletonRow } from "@/components/Skeleton";
+import { PageSkeleton, Skeleton, SkeletonRow } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -38,7 +39,8 @@ import {
 import { LEVEL_VARS, previewReplacer } from "@/lib/embed";
 
 const DEFAULT_LEVELING: LevelingConfig = {
-  xpMultiplier: 1,
+  messageXp: 5,
+  voiceXp: 0,
   noXpChannelIds: [],
   noXpRoleIds: [],
   levelUpEnabled: true,
@@ -75,14 +77,58 @@ function LvToggle({
   );
 }
 
+/** Suwak XP 0–8 z aktualną wartością w odznace. */
+function XpSlider({
+  label,
+  desc,
+  value,
+  onChange,
+}: {
+  label: string;
+  desc?: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  return (
+    <div>
+      <div className="mb-1.5 flex items-center justify-between gap-2">
+        <label className="text-xs text-gray-400">{label}</label>
+        <span className="shrink-0 rounded bg-primary/20 px-2 py-0.5 text-xs font-semibold text-primary">
+          {value} XP
+        </span>
+      </div>
+      <input
+        type="range"
+        min={0}
+        max={8}
+        step={1}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="block w-full cursor-pointer accent-primary"
+      />
+      {/* Podziałka 0–8 — przedziały po 1 XP, klikalne. */}
+      <div className="mt-1 flex justify-between px-0.5">
+        {Array.from({ length: 9 }, (_, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => onChange(i)}
+            className={`w-3 text-center text-[10px] tabular-nums transition ${
+              i === value ? "font-bold text-primary" : "text-gray-500 hover:text-gray-300"
+            }`}
+          >
+            {i}
+          </button>
+        ))}
+      </div>
+      {desc && <p className="mt-1 text-xs text-gray-500">{desc}</p>}
+    </div>
+  );
+}
+
 function LevelsSkeleton() {
   return (
-    <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
-      <div>
-        <Skeleton className="mb-2 h-3 w-24" />
-        <Skeleton className="mb-2 h-7 w-48" />
-        <Skeleton className="h-3 w-64" />
-      </div>
+    <PageSkeleton>
       <div className="flex flex-col gap-6 lg:flex-row">
         <div className="flex-1 surface-raised rounded-xl bg-card">
           <div className="flex items-center justify-between border-b border-border px-6 py-4">
@@ -115,7 +161,7 @@ function LevelsSkeleton() {
           </div>
         ))}
       </div>
-    </div>
+    </PageSkeleton>
   );
 }
 
@@ -239,7 +285,7 @@ export default function LevelsPage() {
 
       <HowItWorks
         steps={[
-          "Za pisanie na czacie członkowie zdobywają XP (z cooldownem antyspamowym).",
+          "Za pisanie na czacie i obecność na kanałach głosowych członkowie zdobywają XP.",
           "Po przekroczeniu progu levela bot automatycznie nadaje przypisaną rolę.",
           "Wyższy level = wyższy tier z listy; opcjonalnie powiadomienie o awansie.",
           "Leaderboard pokazuje ranking najaktywniejszych członków serwera.",
@@ -366,21 +412,18 @@ export default function LevelsPage() {
         </div>
         <div className="grid grid-cols-1 gap-6 p-6 lg:grid-cols-2">
           <div className="flex flex-col gap-5">
-            <div>
-              <label className="mb-1 block text-xs text-gray-400">Mnożnik XP</label>
-              <div className="flex items-center gap-2 text-sm text-gray-300">
-                <input
-                  type="number"
-                  min={0.1}
-                  max={10}
-                  step={0.1}
-                  value={lv.xpMultiplier}
-                  onChange={(e) => setLv({ xpMultiplier: Number(e.target.value) })}
-                  className="w-24 rounded-lg bg-background px-3 py-2 text-center text-sm text-white outline-none focus:ring-2 focus:ring-primary"
-                />
-                <span>× (np. 2 = podwójne XP)</span>
-              </div>
-            </div>
+            <XpSlider
+              label="XP za wiadomość"
+              desc="Ile XP członek dostaje za wiadomość (z cooldownem antyspamowym). 0 = wyłączone."
+              value={lv.messageXp ?? 0}
+              onChange={(v) => setLv({ messageXp: v })}
+            />
+            <XpSlider
+              label="XP za minutę na kanale głosowym"
+              desc="Naliczane co minutę po przekroczeniu 1 min na głosówce (poza AFK / wyciszonymi). 0 = wyłączone."
+              value={lv.voiceXp ?? 0}
+              onChange={(v) => setLv({ voiceXp: v })}
+            />
             <div className="flex flex-col gap-4 border-t border-border pt-4">
               <LvToggle
                 checked={lv.levelUpEnabled}
@@ -515,16 +558,10 @@ export default function LevelsPage() {
               <p className="text-xs text-gray-400">Najaktywniejsi członkowie serwera</p>
             </div>
           </div>
-          <button
+          <RefreshButton
             onClick={() => fetchLeaderboard(true)}
-            disabled={leaderboardLoading}
-            className="flex items-center gap-1.5 rounded-lg bg-background px-3 py-1.5 text-xs text-gray-300 transition hover:text-white disabled:opacity-50"
-          >
-            <RotateCw
-              className={`h-3.5 w-3.5 ${leaderboardLoading ? "animate-spin" : ""}`}
-            />
-            {leaderboardLoading ? "Ładowanie…" : "Odśwież"}
-          </button>
+            loading={leaderboardLoading}
+          />
         </div>
 
         <LeaderboardRows entries={leaderboard} loading={leaderboardLoading} rows={10} />

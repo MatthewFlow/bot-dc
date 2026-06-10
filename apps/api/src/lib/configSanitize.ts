@@ -152,13 +152,18 @@ function clampMultiplier(v: unknown): number {
 function sanitizeLeveling(v: unknown): LevelingConfig | undefined {
   if (!v || typeof v !== "object" || Array.isArray(v)) return undefined;
   const o = v as Record<string, unknown>;
-  return {
-    xpMultiplier: clampMultiplier(o.xpMultiplier),
+  const out: LevelingConfig = {
     noXpChannelIds: strArray(o.noXpChannelIds, 100, 32),
     noXpRoleIds: strArray(o.noXpRoleIds, 100, 32),
     levelUpEnabled: o.levelUpEnabled !== false,
     levelUpDm: o.levelUpDm === true,
   };
+  // Płaskie XP 0–8 (za wiadomość / za minutę na głosie).
+  if (o.messageXp != null) out.messageXp = clampNum(o.messageXp, 0, 0, 8);
+  if (o.voiceXp != null) out.voiceXp = clampNum(o.voiceXp, 0, 0, 8);
+  // Legacy mnożnik — zachowujemy, jeśli ktoś jeszcze go przysyła.
+  if (o.xpMultiplier != null) out.xpMultiplier = clampMultiplier(o.xpMultiplier);
+  return out;
 }
 
 function sanitizeServerLog(v: unknown): ServerLogConfig | undefined {
