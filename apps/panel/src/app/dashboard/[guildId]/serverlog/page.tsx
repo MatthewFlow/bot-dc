@@ -10,7 +10,7 @@ import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
 import { RoleSelect } from "@/components/RoleSelect";
 import { SaveButton } from "@/components/SaveButton";
-import { Skeleton } from "@/components/Skeleton";
+import { PageSkeleton, Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { Switch } from "@/components/ui/switch";
 import { useAutoSave } from "@/hooks/useAutoSave";
@@ -76,14 +76,9 @@ function Toggle({
 
 function ServerLogSkeleton() {
   return (
-    <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
-      <div>
-        <Skeleton className="mb-2 h-3 w-24" />
-        <Skeleton className="mb-2 h-7 w-48" />
-        <Skeleton className="h-3 w-64" />
-      </div>
+    <PageSkeleton>
       <Skeleton className="h-80 w-full rounded-xl" />
-    </div>
+    </PageSkeleton>
   );
 }
 

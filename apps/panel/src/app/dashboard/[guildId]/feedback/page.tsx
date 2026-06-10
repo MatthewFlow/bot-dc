@@ -21,7 +21,7 @@ import { EmbedPreview } from "@/components/EmbedPreview";
 import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
 import { SaveButton } from "@/components/SaveButton";
-import { Skeleton } from "@/components/Skeleton";
+import { PageSkeleton, Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,7 @@ import {
   updateGuildConfig,
 } from "@/lib/api";
 import { TICKET_VARS } from "@/lib/embed";
+import { dayAgo } from "@/lib/time";
 
 const CARD = "surface-raised rounded-xl border border-border bg-card";
 
@@ -85,25 +86,11 @@ const CAT_META: Record<
   },
 };
 
-/** Względny czas po polsku (dziś / wczoraj / N dni temu / data). */
-function timeAgo(date: Date): string {
-  const days = Math.floor((Date.now() - date.getTime()) / 86_400_000);
-  if (days <= 0) return "dziś";
-  if (days === 1) return "wczoraj";
-  if (days < 7) return `${days} dni temu`;
-  return date.toLocaleDateString("pl-PL");
-}
-
 function FeedbackSkeleton() {
   return (
-    <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
-      <div>
-        <Skeleton className="mb-2 h-3 w-24" />
-        <Skeleton className="mb-2 h-7 w-48" />
-        <Skeleton className="h-3 w-64" />
-      </div>
+    <PageSkeleton>
       <Skeleton className="h-80 w-full rounded-xl" />
-    </div>
+    </PageSkeleton>
   );
 }
 
@@ -367,7 +354,7 @@ export default function FeedbackPage() {
                           className="ml-auto text-xs text-gray-400"
                           title={date.toLocaleString("pl-PL")}
                         >
-                          {timeAgo(date)}
+                          {dayAgo(date)}
                         </span>
                         <button
                           onClick={() => setConfirmId(f.id)}

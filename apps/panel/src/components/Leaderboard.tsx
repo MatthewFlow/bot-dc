@@ -1,8 +1,7 @@
 import { Avatar } from "@/components/Avatar";
 import { Skeleton } from "@/components/Skeleton";
 import type { LeaderboardEntry } from "@/lib/api";
-
-const NF = new Intl.NumberFormat("pl-PL");
+import { formatNumber } from "@/lib/format";
 
 /**
  * Wiersze rankingu XP — wspólny komponent dla przeglądu („Najaktywniejsi")
@@ -74,7 +73,7 @@ export function LeaderboardRows({
             </div>
           </div>
           <div className="w-16 shrink-0 text-right">
-            <p className="text-sm font-semibold text-gray-200">{NF.format(e.xp)}</p>
+            <p className="text-sm font-semibold text-gray-200">{formatNumber(e.xp)}</p>
             <p className="text-xs text-gray-400">Lv. {e.level}</p>
           </div>
         </div>

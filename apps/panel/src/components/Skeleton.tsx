@@ -1,5 +1,28 @@
+import type { ReactNode } from "react";
+
 export function Skeleton({ className = "" }: { className?: string }) {
   return <div className={`animate-pulse rounded bg-white/5 ${className}`} />;
+}
+
+/** Szkielet nagłówka strony (eyebrow + tytuł + opis) — wspólny dla wszystkich podstron. */
+export function PageSkeletonHeader() {
+  return (
+    <div>
+      <Skeleton className="mb-2 h-3 w-24" />
+      <Skeleton className="mb-2 h-7 w-48" />
+      <Skeleton className="h-3 w-64" />
+    </div>
+  );
+}
+
+/** Standardowy szkielet podstrony serwera: kontener + nagłówek + dowolne ciało. */
+export function PageSkeleton({ children }: { children?: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
+      <PageSkeletonHeader />
+      {children}
+    </div>
+  );
 }
 
 export function SkeletonRow() {
