@@ -3,6 +3,7 @@ export type { DiscordEmbed, EmbedConfig, EmbedFieldConfig } from "./embed";
 export { isEmbedEmpty, toDiscordEmbed } from "./embed";
 export {
   botStatusRepository,
+  buttonRoleRepository,
   feedbackRepository,
   guildConfigRepository,
   modActionRepository,
@@ -17,6 +18,7 @@ export type {
   BotStatusSnapshot,
   IBotStatusRepository,
 } from "./repositories/botStatusRepository";
+export type { ButtonRole, ButtonRoleEntry } from "./repositories/buttonRoleRepository";
 export type {
   AddFeedbackOpts,
   Feedback,
