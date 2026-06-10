@@ -34,6 +34,11 @@ export class ReactionRoleProvider implements IReactionRoleRepository {
     }));
   }
 
+  async getMessageIdsByGuild(guildId: string): Promise<string[]> {
+    const docs = await ReactionRoleModel.find({ guildId }, { messageId: 1 }).lean();
+    return docs.map((doc) => doc.messageId);
+  }
+
   async create(data: ReactionRole): Promise<ReactionRole> {
     const doc = await ReactionRoleModel.create(data);
     return {
