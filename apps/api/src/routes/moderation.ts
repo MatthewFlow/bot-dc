@@ -7,68 +7,11 @@ import {
 import { Hono } from "hono";
 
 import { canAccessGuild } from "../lib/guildGuard";
+import { createMemberResolver, type ResolvedMember } from "../lib/memberResolver";
 import { authMiddleware } from "../middleware/authMiddleware";
 import type { AppVariables } from "../types";
 
 const DISCORD_API = "https://discord.com/api/v10";
-
-/** Dane członka rozwiązane z Discorda. `displayName` = pseudonim (nick/global), `username` = @handle. */
-type ResolvedMember = {
-  displayName: string | null;
-  username: string | null;
-  avatar: string | null;
-};
-
-/**
- * Tworzy resolver członków serwera z własnym cache (po userId), żeby nie odpytywać
- * Discorda wielokrotnie o ten sam ID. Best-effort — przy błędzie zwraca null-e,
- * a panel pokaże fallback (ID).
- */
-function createMemberResolver(guildId: string, botToken: string | undefined) {
-  const cache = new Map<string, ResolvedMember>();
-
-  return async function resolve(userId?: string): Promise<ResolvedMember> {
-    const empty: ResolvedMember = { displayName: null, username: null, avatar: null };
-    if (!userId) return empty;
-
-    const cached = cache.get(userId);
-    if (cached) return cached;
-
-    let resolved = empty;
-    if (botToken) {
-      try {
-        const res = await fetch(`${DISCORD_API}/guilds/${guildId}/members/${userId}`, {
-          headers: { Authorization: `Bot ${botToken}` },
-        });
-        if (res.ok) {
-          const member = (await res.json()) as {
-            nick?: string | null;
-            avatar: string | null;
-            user: {
-              username: string;
-              global_name?: string | null;
-              avatar: string | null;
-            };
-          };
-          const displayName =
-            member.nick ?? member.user.global_name ?? member.user.username;
-          const avatarHash = member.avatar ?? member.user.avatar;
-          resolved = {
-            displayName,
-            username: member.user.username,
-            avatar: avatarHash
-              ? `https://cdn.discordapp.com/avatars/${userId}/${avatarHash}.png`
-              : null,
-          };
-        }
-      } catch {
-        // ignore — zostawiamy null-e, panel pokaże fallback (ID)
-      }
-    }
-    cache.set(userId, resolved);
-    return resolved;
-  };
-}
 
 /** Loguje zdarzenie ticketu na kanał logów (jeśli ustawiony). Best-effort. */
 async function postTicketLog(

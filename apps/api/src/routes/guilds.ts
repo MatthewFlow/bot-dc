@@ -11,6 +11,7 @@ import { Hono } from "hono";
 
 import { sanitizeConfigPatch } from "../lib/configSanitize";
 import { canAccessGuild, fetchAccessibleGuilds } from "../lib/guildGuard";
+import { createMemberResolver } from "../lib/memberResolver";
 import { authMiddleware } from "../middleware/authMiddleware";
 import type { AppVariables } from "../types";
 
@@ -505,46 +506,19 @@ guildRoutes.get("/:guildId/leaderboard", async (c) => {
   try {
     const entries = await xpRepository.getLeaderboard(guildId, limit);
 
+    // Wspólny resolver: cache po ID, retry na 429 i fallback /users/{id} dla byłych
+    // członków — minimalizuje sytuacje, gdy panel pokazuje gołe ID zamiast nazwy.
+    const resolve = createMemberResolver(guildId, botToken);
     const enriched = await Promise.all(
       entries.map(async (entry, idx) => {
-        const res = await fetch(
-          `${DISCORD_API}/guilds/${guildId}/members/${entry.userId}`,
-          {
-            headers: { Authorization: `Bot ${botToken}` },
-          },
-        );
-
-        // displayName = pseudonim (nick/global), username = @handle. Gdy nie uda
-        // się pobrać członka, oba fallbackują na ID.
-        let displayName = entry.userId;
-        let username: string | null = null;
-        let avatar: string | null = null;
-
-        if (res.ok) {
-          const member = (await res.json()) as {
-            nick?: string | null;
-            user: {
-              username: string;
-              global_name?: string | null;
-              avatar: string | null;
-              id: string;
-            };
-            avatar: string | null;
-          };
-          displayName = member.nick ?? member.user.global_name ?? member.user.username;
-          username = member.user.username;
-          const avatarHash = member.avatar ?? member.user.avatar;
-          if (avatarHash) {
-            avatar = `https://cdn.discordapp.com/avatars/${entry.userId}/${avatarHash}.png`;
-          }
-        }
-
+        const m = await resolve(entry.userId);
         return {
           position: idx + 1,
           userId: entry.userId,
-          displayName,
-          username,
-          avatar,
+          // displayName fallbackuje na ID tylko gdy konto jest naprawdę nieosiągalne.
+          displayName: m.displayName ?? entry.userId,
+          username: m.username,
+          avatar: m.avatar,
           xp: entry.xp,
           level: levelFromXp(entry.xp),
         };
