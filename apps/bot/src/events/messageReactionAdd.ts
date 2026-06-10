@@ -1,10 +1,13 @@
-import { guildConfigRepository, reactionRoleRepository } from "@jurassic-haven/db";
+import { reactionRoleRepository } from "@jurassic-haven/db";
 import type {
   MessageReaction,
   PartialMessageReaction,
   PartialUser,
   User,
 } from "discord.js";
+
+import { getCachedGuildConfig } from "../utils/configCache";
+import { isReactionRoleMessage } from "../utils/reactionRoleCache";
 
 export async function onMessageReactionAdd(
   reaction: MessageReaction | PartialMessageReaction,
@@ -19,6 +22,12 @@ export async function onMessageReactionAdd(
       return;
     }
   }
+
+  const guildId = reaction.message.guildId;
+  if (!guildId) return;
+
+  // Cache-gated: ordinary reactions never reach the DB — only panel messages do.
+  if (!(await isReactionRoleMessage(guildId, reaction.message.id))) return;
 
   const config = await reactionRoleRepository.getByMessageId(reaction.message.id);
   if (!config) return;
@@ -40,7 +49,7 @@ export async function onMessageReactionAdd(
     console.error(`[reactionAdd] Nie udało się nadać roli ${entry.roleId}:`, e);
   });
 
-  const cfg = await guildConfigRepository.get(guild.id);
+  const cfg = await getCachedGuildConfig(guild.id);
   if (cfg?.verifiedRoleId && entry.roleId === cfg.verifiedRoleId && cfg.joinRoleId) {
     await member.roles.remove(cfg.joinRoleId).catch((e) => {
       console.error(
