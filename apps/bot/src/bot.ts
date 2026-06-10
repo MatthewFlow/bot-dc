@@ -13,6 +13,7 @@ import { onMessageReactionRemove } from "./events/messageReactionRemove";
 import { onThreadDelete } from "./events/threadDelete";
 import { onThreadUpdate } from "./events/threadUpdate";
 import { handleFeedbackSubmit, showFeedbackModal } from "./feedback/feedback";
+import { startVoiceXp } from "./levels/voiceXp";
 import {
   onGuildMemberUpdateLog,
   onMemberJoinLog,
@@ -37,6 +38,7 @@ export function createBot() {
       GatewayIntentBits.GuildMessages,
       GatewayIntentBits.MessageContent,
       GatewayIntentBits.GuildMessageReactions,
+      GatewayIntentBits.GuildVoiceStates,
     ],
     partials: [Partials.Message, Partials.Reaction, Partials.User],
   });
@@ -66,6 +68,9 @@ export function createBot() {
         .catch(() => {});
     await beat();
     setInterval(beat, HEARTBEAT_MS);
+
+    // Naliczanie XP za obecność na kanałach głosowych (co minutę powyżej 1. min).
+    startVoiceXp(client);
   });
 
   client.on("guildCreate", onGuildCreate);

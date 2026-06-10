@@ -64,7 +64,12 @@ export type ServerLogConfig = {
 };
 
 export type LevelingConfig = {
-  xpMultiplier: number;
+  /** Płaskie XP za wiadomość (0–8). */
+  messageXp?: number;
+  /** Płaskie XP za każdą minutę na kanale głosowym powyżej 1. minuty (0–8). */
+  voiceXp?: number;
+  /** Legacy mnożnik bazowego XP — zastąpiony przez `messageXp`. */
+  xpMultiplier?: number;
   noXpChannelIds: string[];
   noXpRoleIds: string[];
   levelUpEnabled: boolean;
