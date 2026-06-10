@@ -6,6 +6,8 @@ import type {
   User,
 } from "discord.js";
 
+import { isReactionRoleMessage } from "../utils/reactionRoleCache";
+
 export async function onMessageReactionRemove(
   reaction: MessageReaction | PartialMessageReaction,
   user: User | PartialUser,
@@ -19,6 +21,12 @@ export async function onMessageReactionRemove(
       return;
     }
   }
+
+  const guildId = reaction.message.guildId;
+  if (!guildId) return;
+
+  // Cache-gated: ordinary reactions never reach the DB — only panel messages do.
+  if (!(await isReactionRoleMessage(guildId, reaction.message.id))) return;
 
   const config = await reactionRoleRepository.getByMessageId(reaction.message.id);
   if (!config) return;
