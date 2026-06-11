@@ -2,7 +2,7 @@
 
 import { SmilePlus } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { type CSSProperties, useState } from "react";
 
 import { ChannelSelect } from "@/components/ChannelSelect";
 import { ConfirmModal } from "@/components/confirmModal";
@@ -201,7 +201,7 @@ export default function ReactionRolesPage() {
   }
 
   return (
-    <div className="flex flex-col p-4 sm:p-6 lg:p-8">
+    <div className="jh-in flex flex-col p-4 sm:p-6 lg:p-8">
       <PageHeader
         category="Assignment Grid"
         icon={SmilePlus}
@@ -345,10 +345,11 @@ export default function ReactionRolesPage() {
                 Brak wiadomości. Opublikuj pierwszą po lewej.
               </div>
             ) : (
-              list.map((rr) => (
+              list.map((rr, i) => (
                 <div
                   key={rr.messageId}
-                  className={`border-b border-border px-6 py-4 last:border-0 ${editingMessageId === rr.messageId ? "bg-primary/5" : ""}`}
+                  style={{ "--i": i } as CSSProperties}
+                  className={`jh-stagger border-b border-border px-6 py-4 last:border-0 ${editingMessageId === rr.messageId ? "bg-primary/5" : ""}`}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">

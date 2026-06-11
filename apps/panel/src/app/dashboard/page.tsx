@@ -2,7 +2,7 @@
 
 import { ChevronRight, LogOut, Plus, Search, ServerOff } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useState } from "react";
 
 import { AnimatedBackground } from "@/components/AnimatedBackground";
 import { Avatar } from "@/components/Avatar";
@@ -182,11 +182,12 @@ export default function DashboardPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
-            {filtered.map((guild) => (
+            {filtered.map((guild, i) => (
               <button
                 key={guild.id}
                 onClick={() => router.push(`/dashboard/${guild.id}`)}
-                className="group flex items-center gap-4 surface-raised rounded-xl border border-border bg-card p-4 text-left outline-none transition hover:-translate-y-0.5 hover:border-white/10 hover:bg-elevated focus-visible:ring-2 focus-visible:ring-primary/40"
+                style={{ "--i": i } as CSSProperties}
+                className="jh-stagger group flex items-center gap-4 surface-raised rounded-xl border border-border bg-card p-4 text-left outline-none transition hover:-translate-y-0.5 hover:border-white/10 hover:bg-elevated focus-visible:ring-2 focus-visible:ring-primary/40"
               >
                 <Avatar src={guildIconUrl(guild)} name={guild.name} size="lg" />
                 <span className="min-w-0 flex-1 truncate font-medium text-white">

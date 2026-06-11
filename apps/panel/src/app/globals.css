@@ -32,6 +32,12 @@
   --shadow-elevated: 0 4px 10px rgba(0, 0, 0, 0.35), 0 14px 30px rgba(0, 0, 0, 0.3);
   --shadow-button: 0 1px 2px rgba(0, 0, 0, 0.35);
   --shadow-popover: 0 8px 24px rgba(0, 0, 0, 0.45);
+
+  /* ── Motion tokens — jeden easing + 3 czasy, by ruch był spójny w całym panelu. */
+  --ease-out: cubic-bezier(0.2, 0.6, 0.2, 1);
+  --dur-fast: 150ms;
+  --dur: 250ms;
+  --dur-slow: 400ms;
 }
 
 @theme inline {
@@ -95,6 +101,54 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* ── Motion layer — tylko transform/opacity (kompozytowane przez GPU). ───────
+   `jh-in`      — wejście treści/karty (fade + lekki unos).
+   `jh-stagger` — wariant kaskadowy: element ustawia `--i` (indeks) na opóźnienie.
+   `jh-card`    — uniesienie karty na hover. */
+@keyframes jh-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.jh-in {
+  animation: jh-fade-up var(--dur) var(--ease-out) both;
+}
+
+.jh-stagger {
+  animation: jh-fade-up var(--dur) var(--ease-out) both;
+  /* Limit, by długie listy nie czekały sekundami; po ~12. elemencie pełna prędkość. */
+  animation-delay: calc(min(var(--i, 0), 12) * 35ms);
+}
+
+.jh-card {
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+.jh-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-elevated);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jh-in,
+  .jh-stagger {
+    animation: none;
+  }
+  .jh-card {
+    transition: none;
+  }
+  .jh-card:hover {
+    transform: none;
   }
 }
 
