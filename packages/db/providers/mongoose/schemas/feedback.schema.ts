@@ -1,4 +1,4 @@
-import { model, Schema } from "mongoose";
+import { type Model, model, Schema } from "mongoose";
 
 import type { FeedbackCategory } from "../../../repositories/feedbackRepository";
 
@@ -32,7 +32,10 @@ const feedbackSchema = new Schema<FeedbackDocument>(
 feedbackSchema.index({ userId: 1, createdAt: -1 });
 feedbackSchema.index({ guildId: 1, createdAt: -1 });
 
-export const FeedbackModel = model<FeedbackDocument>("Feedback", feedbackSchema);
+export const FeedbackModel: Model<FeedbackDocument> = model<FeedbackDocument>(
+  "Feedback",
+  feedbackSchema,
+);
 
 /** Stan „przeczytane do" — per admin (userId) i serwer (guildId). */
 export type FeedbackReadDocument = {
@@ -52,7 +55,7 @@ const feedbackReadSchema = new Schema<FeedbackReadDocument>(
 
 feedbackReadSchema.index({ userId: 1, guildId: 1 }, { unique: true });
 
-export const FeedbackReadModel = model<FeedbackReadDocument>(
+export const FeedbackReadModel: Model<FeedbackReadDocument> = model<FeedbackReadDocument>(
   "FeedbackRead",
   feedbackReadSchema,
 );

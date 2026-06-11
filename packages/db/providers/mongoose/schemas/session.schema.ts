@@ -1,4 +1,4 @@
-import { model, Schema } from "mongoose";
+import { type Model, model, Schema } from "mongoose";
 
 export type SessionDocument = {
   userId: string;
@@ -19,4 +19,7 @@ const sessionSchema = new Schema<SessionDocument>(
 // TTL index — MongoDB removes the document once expiresAt is reached.
 sessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
-export const SessionModel = model<SessionDocument>("Session", sessionSchema);
+export const SessionModel: Model<SessionDocument> = model<SessionDocument>(
+  "Session",
+  sessionSchema,
+);

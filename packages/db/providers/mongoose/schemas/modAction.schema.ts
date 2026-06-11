@@ -1,4 +1,4 @@
-import { model, Schema } from "mongoose";
+import { type Model, model, Schema } from "mongoose";
 
 export type ModActionType = "warn" | "mute" | "unmute" | "kick" | "ban" | "clearwarns";
 
@@ -32,4 +32,7 @@ const modActionSchema = new Schema<ModActionDocument>(
 modActionSchema.index({ guildId: 1, createdAt: -1 });
 modActionSchema.index({ guildId: 1, userId: 1 });
 
-export const ModActionModel = model<ModActionDocument>("ModAction", modActionSchema);
+export const ModActionModel: Model<ModActionDocument> = model<ModActionDocument>(
+  "ModAction",
+  modActionSchema,
+);

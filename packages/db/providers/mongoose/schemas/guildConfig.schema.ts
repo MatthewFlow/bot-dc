@@ -1,4 +1,4 @@
-import { model, Schema } from "mongoose";
+import { type Model, model, Schema } from "mongoose";
 
 import type { EmbedConfig } from "../../../embed";
 
@@ -207,7 +207,7 @@ const guildConfigSchema = new Schema<GuildConfigDocument>(
   { versionKey: false },
 );
 
-export const GuildConfigModel = model<GuildConfigDocument>(
+export const GuildConfigModel: Model<GuildConfigDocument> = model<GuildConfigDocument>(
   "GuildConfig",
   guildConfigSchema,
 );

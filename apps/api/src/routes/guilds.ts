@@ -13,6 +13,7 @@ import { channelInGuild } from "../lib/channelGuard";
 import { sanitizeConfigPatch } from "../lib/configSanitize";
 import { canAccessGuild, fetchAccessibleGuilds } from "../lib/guildGuard";
 import { createMemberResolver } from "../lib/memberResolver";
+import { channelIdSchema, nameSchema, parseBody } from "../lib/validation";
 import { authMiddleware } from "../middleware/authMiddleware";
 import type { AppVariables } from "../types";
 
@@ -167,11 +168,9 @@ guildRoutes.post("/:guildId/channels", async (c) => {
   const botToken = process.env.DISCORD_TOKEN;
   if (!botToken) return c.json({ error: "Missing bot token" }, 500);
 
-  const body = (await c.req.json().catch(() => null)) as { name?: unknown } | null;
-  const name = typeof body?.name === "string" ? body.name.trim() : "";
-  if (!name || name.length > 100) {
-    return c.json({ error: "Invalid channel name" }, 400);
-  }
+  const parsed = await parseBody(c, nameSchema);
+  if (!parsed.ok) return parsed.res;
+  const name = parsed.data.name;
 
   try {
     const res = await fetch(`${DISCORD_API}/guilds/${guildId}/channels`, {
@@ -209,9 +208,9 @@ guildRoutes.post("/:guildId/ticket-panel", async (c) => {
   const botToken = process.env.DISCORD_TOKEN;
   if (!botToken) return c.json({ error: "Missing bot token" }, 500);
 
-  const body = (await c.req.json().catch(() => null)) as { channelId?: unknown } | null;
-  const channelId = typeof body?.channelId === "string" ? body.channelId : "";
-  if (!channelId) return c.json({ error: "Missing channelId" }, 400);
+  const parsed = await parseBody(c, channelIdSchema);
+  if (!parsed.ok) return parsed.res;
+  const channelId = parsed.data.channelId;
 
   // Embed + przycisk z konfiguracji guildu (fallback do domyślnych).
   // custom_id "ticket_open" obsługuje bot — musi pozostać niezmienny.
@@ -470,11 +469,9 @@ guildRoutes.post("/:guildId/roles", async (c) => {
   const botToken = process.env.DISCORD_TOKEN;
   if (!botToken) return c.json({ error: "Missing bot token" }, 500);
 
-  const body = (await c.req.json().catch(() => null)) as { name?: unknown } | null;
-  const name = typeof body?.name === "string" ? body.name.trim() : "";
-  if (!name || name.length > 100) {
-    return c.json({ error: "Invalid role name" }, 400);
-  }
+  const parsed = await parseBody(c, nameSchema);
+  if (!parsed.ok) return parsed.res;
+  const name = parsed.data.name;
 
   try {
     const res = await fetch(`${DISCORD_API}/guilds/${guildId}/roles`, {

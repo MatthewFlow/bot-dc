@@ -1,4 +1,4 @@
-import { model, Schema } from "mongoose";
+import { type Model, model, Schema } from "mongoose";
 
 import type { EmbedConfig } from "../../../embed";
 
@@ -39,4 +39,7 @@ const buttonRoleSchema = new Schema<ButtonRoleDocument>(
 buttonRoleSchema.index({ guildId: 1 });
 buttonRoleSchema.index({ messageId: 1 });
 
-export const ButtonRoleModel = model<ButtonRoleDocument>("ButtonRole", buttonRoleSchema);
+export const ButtonRoleModel: Model<ButtonRoleDocument> = model<ButtonRoleDocument>(
+  "ButtonRole",
+  buttonRoleSchema,
+);

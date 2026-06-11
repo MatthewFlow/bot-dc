@@ -8,12 +8,12 @@ import { Hono } from "hono";
 
 import { channelInGuild } from "../lib/channelGuard";
 import { canAccessGuild } from "../lib/guildGuard";
+import { buttonRolesSchema, parseBody } from "../lib/validation";
 import { authMiddleware } from "../middleware/authMiddleware";
 import type { AppVariables } from "../types";
 
 const DISCORD_API = "https://discord.com/api/v10";
 const BUTTON_STYLE_SECONDARY = 2;
-const MAX_BUTTONS = 25; // 5 rows × 5 buttons (Discord limit)
 
 type ButtonRoleInputEntry = { label: string; emoji?: string; roleId: string };
 
@@ -66,51 +66,24 @@ buttonRoleRoutes.get("/:guildId/button-roles", async (c) => {
 
 buttonRoleRoutes.post("/:guildId/button-roles", async (c) => {
   const guildId = c.req.param("guildId");
-  const body = (await c.req.json().catch(() => null)) as {
-    channelId?: string;
-    embed?: EmbedConfig;
-    entries?: ButtonRoleInputEntry[];
-  } | null;
-
-  if (!body?.channelId || !body.embed || !body.entries?.length) {
-    return c.json({ error: "Missing required fields" }, 400);
-  }
-  if (body.entries.length > MAX_BUTTONS) {
-    return c.json({ error: `Too many buttons (max ${MAX_BUTTONS})` }, 400);
-  }
-
-  // Validate + normalize each entry.
-  const entries: ButtonRoleInputEntry[] = [];
-  for (const e of body.entries) {
-    const label = typeof e?.label === "string" ? e.label.trim() : "";
-    const roleId = typeof e?.roleId === "string" ? e.roleId.trim() : "";
-    if (!label || label.length > 80 || !roleId || roleId.length > 32) {
-      return c.json({ error: "Each button needs a label (≤80) and a role" }, 400);
-    }
-    const emoji = typeof e?.emoji === "string" ? e.emoji.trim() : undefined;
-    entries.push({ label, roleId, emoji: emoji || undefined });
-  }
-
-  // One button per role: duplicate roleIds would collide on custom_id "br:<roleId>".
-  const roleIds = new Set(entries.map((e) => e.roleId));
-  if (roleIds.size !== entries.length) {
-    return c.json({ error: "Each role can only have one button" }, 400);
-  }
+  const parsed = await parseBody(c, buttonRolesSchema);
+  if (!parsed.ok) return parsed.res;
+  const { channelId, embed: rawEmbed, entries } = parsed.data;
 
   const botToken = process.env.DISCORD_TOKEN;
   if (!botToken) return c.json({ error: "Missing bot token" }, 500);
 
   // Target channel must belong to this guild (same guard as the other send paths).
-  if (!(await channelInGuild(body.channelId, guildId, botToken))) {
+  if (!(await channelInGuild(channelId, guildId, botToken))) {
     return c.json({ error: "Channel does not belong to this guild" }, 400);
   }
 
-  const embed = toDiscordEmbed(body.embed);
+  const embed = toDiscordEmbed(rawEmbed as EmbedConfig);
   if (isEmbedEmpty(embed)) return c.json({ error: "Embed is empty" }, 400);
 
   const payload = { embeds: [embed], components: buildComponents(entries) };
 
-  const msgRes = await fetch(`${DISCORD_API}/channels/${body.channelId}/messages`, {
+  const msgRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
     method: "POST",
     headers: { Authorization: `Bot ${botToken}`, "Content-Type": "application/json" },
     body: JSON.stringify(payload),
@@ -126,9 +99,9 @@ buttonRoleRoutes.post("/:guildId/button-roles", async (c) => {
 
   const created = await buttonRoleRepository.create({
     guildId,
-    channelId: body.channelId,
+    channelId,
     messageId: msg.id,
-    embed: body.embed,
+    embed: rawEmbed as EmbedConfig,
     entries,
   });
 

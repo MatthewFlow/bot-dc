@@ -1,4 +1,4 @@
-import { model, Schema } from "mongoose";
+import { type Model, model, Schema } from "mongoose";
 
 export type WarnDocument = {
   guildId: string;
@@ -21,4 +21,4 @@ const warnSchema = new Schema<WarnDocument>(
 
 warnSchema.index({ guildId: 1, userId: 1 });
 
-export const WarnModel = model<WarnDocument>("Warn", warnSchema);
+export const WarnModel: Model<WarnDocument> = model<WarnDocument>("Warn", warnSchema);

@@ -1,18 +1,10 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "lib": ["ESNext"],
-    "types": ["node"],
-    "strict": true,
-    "skipLibCheck": true,
-    "noEmit": true,
+    "types": ["node", "bun"],
     "allowImportingTsExtensions": true,
-    "verbatimModuleSyntax": true,
-    "moduleDetection": "force",
-    "noUnusedLocals": false,
-    "noUnusedParameters": false
+    "declaration": true,
+    "isolatedDeclarations": true
   },
   "include": ["./**/*.ts"]
 }

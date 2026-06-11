@@ -1,4 +1,4 @@
-import { model, Schema } from "mongoose";
+import { type Model, model, Schema } from "mongoose";
 
 export type XpDocument = {
   guildId: string;
@@ -20,4 +20,4 @@ const xpSchema = new Schema<XpDocument>(
 xpSchema.index({ guildId: 1, userId: 1 }, { unique: true });
 xpSchema.index({ guildId: 1, xp: -1 });
 
-export const XpModel = model<XpDocument>("Xp", xpSchema);
+export const XpModel: Model<XpDocument> = model<XpDocument>("Xp", xpSchema);

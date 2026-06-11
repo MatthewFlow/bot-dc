@@ -1,4 +1,4 @@
-import { model, Schema } from "mongoose";
+import { type Model, model, Schema } from "mongoose";
 
 export type TicketStatus = "pending" | "open" | "closed";
 
@@ -36,4 +36,7 @@ const ticketSchema = new Schema<TicketDocument>(
 ticketSchema.index({ guildId: 1, userId: 1 });
 ticketSchema.index({ guildId: 1, status: 1 });
 
-export const TicketModel = model<TicketDocument>("Ticket", ticketSchema);
+export const TicketModel: Model<TicketDocument> = model<TicketDocument>(
+  "Ticket",
+  ticketSchema,
+);

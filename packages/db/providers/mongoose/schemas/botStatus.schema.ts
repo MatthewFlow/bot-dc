@@ -1,4 +1,4 @@
-import { model, Schema } from "mongoose";
+import { type Model, model, Schema } from "mongoose";
 
 /**
  * Pojedynczy dokument (_id: "bot") z heartbeatem bota. Bot nadpisuje go co kilka
@@ -23,4 +23,7 @@ const botStatusSchema = new Schema<BotStatusDocument>(
   { versionKey: false },
 );
 
-export const BotStatusModel = model<BotStatusDocument>("BotStatus", botStatusSchema);
+export const BotStatusModel: Model<BotStatusDocument> = model<BotStatusDocument>(
+  "BotStatus",
+  botStatusSchema,
+);

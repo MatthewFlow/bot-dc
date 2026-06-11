@@ -1,4 +1,4 @@
-import { model, Schema } from "mongoose";
+import { type Model, model, Schema } from "mongoose";
 
 import type { EmbedConfig } from "../../../embed";
 
@@ -44,7 +44,7 @@ const reactionRoleSchema = new Schema<ReactionRoleDocument>(
 reactionRoleSchema.index({ guildId: 1 });
 reactionRoleSchema.index({ messageId: 1 });
 
-export const ReactionRoleModel = model<ReactionRoleDocument>(
+export const ReactionRoleModel: Model<ReactionRoleDocument> = model<ReactionRoleDocument>(
   "ReactionRole",
   reactionRoleSchema,
 );

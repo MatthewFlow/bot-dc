@@ -8,7 +8,7 @@ export function numberToHex(n: number): string {
 /** Hex „#RRGGBB" → liczba dziesiętna; undefined dla niepoprawnego formatu. */
 export function hexToNumber(hex: string): number | undefined {
   const m = /^#?([0-9a-fA-F]{6})$/.exec(hex.trim());
-  return m ? parseInt(m[1], 16) : undefined;
+  return m ? parseInt(m[1]!, 16) : undefined;
 }
 
 export const DEFAULT_EMBED_COLOR = 0x5865f2;
