@@ -208,6 +208,22 @@ export type ReactionRoleInput = {
   entries: ReactionRoleEntry[];
 };
 
+export type ButtonRoleEntry = { label: string; emoji?: string; roleId: string };
+
+export type ButtonRole = {
+  guildId: string;
+  channelId: string;
+  messageId: string;
+  embed?: EmbedConfig;
+  entries: ButtonRoleEntry[];
+};
+
+export type ButtonRoleInput = {
+  channelId: string;
+  embed: EmbedConfig;
+  entries: ButtonRoleEntry[];
+};
+
 export type LeaderboardEntry = {
   position: number;
   userId: string;
@@ -492,6 +508,38 @@ export async function deleteReactionRole(
     { method: "DELETE" },
   );
   if (!res.ok) throw new Error("Failed to delete reaction role");
+}
+
+export async function getButtonRoles(guildId: string): Promise<ButtonRole[]> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/button-roles`);
+  if (!res.ok) throw new Error("Failed to fetch button roles");
+  return res.json();
+}
+
+export async function publishButtonRole(
+  guildId: string,
+  data: ButtonRoleInput,
+): Promise<void> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/button-roles`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(err?.error || "Failed to publish button role");
+  }
+}
+
+export async function deleteButtonRole(
+  guildId: string,
+  messageId: string,
+): Promise<void> {
+  const res = await fetchWithRetry(
+    `${API_URL}/guilds/${guildId}/button-roles/${messageId}`,
+    { method: "DELETE" },
+  );
+  if (!res.ok) throw new Error("Failed to delete button role");
 }
 
 export async function getWarnings(guildId: string, userId: string): Promise<Warn[]> {

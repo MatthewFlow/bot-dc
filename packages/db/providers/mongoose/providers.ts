@@ -1,4 +1,5 @@
 import { BotStatusProvider } from "./botStatusProvider";
+import { ButtonRoleProvider } from "./buttonRoleProvider";
 import { FeedbackProvider } from "./feedbackProvider";
 import { GuildConfigProvider } from "./guildConfigProvider";
 import { ModActionProvider } from "./modActionProvider";
@@ -11,6 +12,7 @@ import { XpProvider } from "./xpProvider";
 export const guildConfigRepository = new GuildConfigProvider();
 export const xpRepository = new XpProvider();
 export const reactionRoleRepository = new ReactionRoleProvider();
+export const buttonRoleRepository = new ButtonRoleProvider();
 export const warnRepository = new WarnProvider();
 export const ticketRepository = new TicketProvider();
 export const modActionRepository = new ModActionProvider();

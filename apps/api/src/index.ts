@@ -4,6 +4,7 @@ import { cors } from "hono/cors";
 
 import { rateLimit } from "./middleware/rateLimit";
 import { authRoutes } from "./routes/authRoutes";
+import { buttonRoleRoutes } from "./routes/buttonRoles";
 import { feedbackRoutes } from "./routes/feedback";
 import { guildRoutes } from "./routes/guilds";
 import { moderationRoutes } from "./routes/moderation";
@@ -44,6 +45,7 @@ app.use("/feedback", rateLimit({ windowMs: 60_000, max: 10 }));
 app.route("/auth", authRoutes);
 app.route("/guilds", guildRoutes);
 app.route("/guilds", reactionRoleRoutes);
+app.route("/guilds", buttonRoleRoutes);
 app.route("/guilds", moderationRoutes);
 app.route("/feedback", feedbackRoutes);
 app.route("/bot", statusRoutes);

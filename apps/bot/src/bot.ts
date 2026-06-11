@@ -1,6 +1,7 @@
 import { botStatusRepository } from "@jurassic-haven/db";
 import { Client, GatewayIntentBits, Partials } from "discord.js";
 
+import { handleButtonRoleClick } from "./buttonroles/handler";
 import { handleCommand } from "./commands/handlers/handler";
 import { clearGuildCommands, registerCommands } from "./commands/register";
 import { onGuildCreate } from "./events/guildCreate";
@@ -101,6 +102,8 @@ export function createBot() {
         await handleTicketClaim(interaction);
       else if (interaction.customId === "feedback_open")
         await showFeedbackModal(interaction);
+      else if (interaction.customId.startsWith("br:"))
+        await handleButtonRoleClick(interaction);
       return;
     }
     if (interaction.isModalSubmit()) {
