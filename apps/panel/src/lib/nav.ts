@@ -72,9 +72,9 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: UserPlus,
       },
       {
-        label: "Role",
+        label: "Self-Roles",
         href: "/roles",
-        desc: "Samoprzydzielane role (przyciski / reakcje)",
+        desc: "Role do samodzielnego wzięcia (przyciski / reakcje)",
         icon: MousePointerClick,
       },
     ],
