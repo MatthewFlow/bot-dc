@@ -9,12 +9,12 @@ import {
   ShieldAlert,
   ShieldBan,
   SlidersHorizontal,
+  SmilePlus,
   Ticket,
   TrendingUp,
   UserPlus,
   Users,
   Wrench,
-  Zap,
 } from "lucide-react";
 
 export type NavItem = {
@@ -76,7 +76,7 @@ export const NAV_GROUPS: NavGroup[] = [
         label: "Reaction Roles",
         href: "/reaction-roles",
         desc: "Role za reakcje pod wiadomością",
-        icon: Zap,
+        icon: SmilePlus,
       },
       {
         label: "Button Roles",
