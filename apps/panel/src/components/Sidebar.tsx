@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
+import Image from "next/image";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -100,9 +101,11 @@ export function Sidebar({
       {/* Logo serwera */}
       <div className="flex items-center gap-3 border-b border-border px-4 py-4">
         {iconUrl ? (
-          <img
+          <Image
             src={iconUrl}
             alt={guildName}
+            width={32}
+            height={32}
             className="h-8 w-8 shrink-0 rounded-lg object-cover"
           />
         ) : (

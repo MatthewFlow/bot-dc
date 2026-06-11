@@ -311,15 +311,8 @@ function setCached(key: string, data: unknown): void {
   readCache.set(key, { data, at: Date.now() });
 }
 
-/**
- * Cache + dedup: zwraca świeży cache, dołącza do trwającego żądania, albo startuje
- * nowe. Dzięki temu prefetch z sidebaru i fetch przy wejściu na stronę nie dublują
- * tego samego zapytania do (wolnego) proxy Discorda.
- */
-function cachedFetch<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
-  const cached = getCached<T>(key);
-  if (cached !== undefined) return Promise.resolve(cached);
-
+/** Odpala (i deduplikuje) pobranie, zapisując świeży wynik do cache. */
+function revalidate<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
   const existing = inflight.get(key) as Promise<T> | undefined;
   if (existing) return existing;
 
@@ -334,6 +327,23 @@ function cachedFetch<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
   })();
   inflight.set(key, p);
   return p;
+}
+
+/**
+ * Stale-while-revalidate: jeśli cokolwiek jest w cache, zwracamy to NATYCHMIAST
+ * (także dane przeterminowane) i — gdy są nieświeże — odświeżamy je w tle, więc
+ * kolejne wejście jest już aktualne. Dopiero pierwsze wejście (pusty cache) czeka
+ * na sieć. Dzięki temu przełączanie stron jest instant i dane nie „mrugają".
+ * Współbieżne żądania tego samego klucza są deduplikowane.
+ */
+function cachedFetch<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
+  const hit = readCache.get(key);
+  if (hit) {
+    const stale = Date.now() - hit.at >= READ_CACHE_TTL;
+    if (stale) void revalidate(key, fetcher).catch(() => {});
+    return Promise.resolve(hit.data as T);
+  }
+  return revalidate(key, fetcher);
 }
 
 /** Drops cached reads for a guild (one kind, or all). Call after mutations. */
@@ -490,13 +500,14 @@ export async function getReactionRoles(guildId: string): Promise<ReactionRole[]>
 export async function publishReactionRole(
   guildId: string,
   data: ReactionRoleInput,
-): Promise<void> {
+): Promise<ReactionRole> {
   const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/reaction-roles`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error("Failed to publish reaction role");
+  return res.json();
 }
 
 export async function deleteReactionRole(
@@ -519,7 +530,7 @@ export async function getButtonRoles(guildId: string): Promise<ButtonRole[]> {
 export async function publishButtonRole(
   guildId: string,
   data: ButtonRoleInput,
-): Promise<void> {
+): Promise<ButtonRole> {
   const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/button-roles`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -529,6 +540,7 @@ export async function publishButtonRole(
     const err = (await res.json().catch(() => null)) as { error?: string } | null;
     throw new Error(err?.error || "Failed to publish button role");
   }
+  return res.json();
 }
 
 export async function deleteButtonRole(

@@ -11,6 +11,12 @@ import { EmbedPreview } from "@/components/EmbedPreview";
 import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
 import { RoleSelect } from "@/components/RoleSelect";
+import {
+  PageSkeleton,
+  Skeleton,
+  SkeletonForm,
+  SkeletonTable,
+} from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
 import { useGuildLoad } from "@/hooks/useGuildLoad";
@@ -105,23 +111,46 @@ export default function ButtonRolesPage() {
   async function handlePublish() {
     if (!isFormValid) return;
     setPublishing(true);
+
+    // Snapshot stanu sprzed publikacji — do optymistycznego UI i ewentualnego rollbacku.
+    const embed = form.embed;
+    const channelId = form.channelId;
+    const entries = filledEntries.map((e) => ({
+      label: e.label.trim(),
+      emoji: e.emoji?.trim() || undefined,
+      roleId: e.roleId,
+    }));
+    const prevList = list;
+    const prevForm = form;
+    const prevEditing = editingMessageId;
+
+    const tempId = `temp-${Date.now()}`;
+    const optimistic: ButtonRole = {
+      guildId,
+      channelId,
+      messageId: tempId,
+      embed,
+      entries,
+    };
+
+    // Od razu pokaż nową pozycję (zastępując edytowaną) i wyczyść formularz.
+    setList((l) => [
+      optimistic,
+      ...(prevEditing ? l.filter((b) => b.messageId !== prevEditing) : l),
+    ]);
+    setForm(EMPTY_FORM);
+    setEditingMessageId(null);
+
     try {
-      if (editingMessageId) {
-        await deleteButtonRole(guildId, editingMessageId);
-      }
-      await publishButtonRole(guildId, {
-        channelId: form.channelId,
-        embed: form.embed,
-        entries: filledEntries.map((e) => ({
-          label: e.label.trim(),
-          emoji: e.emoji?.trim() || undefined,
-          roleId: e.roleId,
-        })),
-      });
-      setList(await getButtonRoles(guildId));
-      setForm(EMPTY_FORM);
-      setEditingMessageId(null);
+      if (prevEditing) await deleteButtonRole(guildId, prevEditing);
+      const created = await publishButtonRole(guildId, { channelId, embed, entries });
+      // Zamień placeholder na realny rekord (z prawdziwym messageId).
+      setList((l) => l.map((b) => (b.messageId === tempId ? created : b)));
     } catch (e) {
+      // Rollback: przywróć listę i formularz, żeby dało się poprawić i ponowić.
+      setList(prevList);
+      setForm(prevForm);
+      setEditingMessageId(prevEditing);
       toast(e instanceof Error ? e.message : "Nie udało się opublikować.", "error");
     } finally {
       setPublishing(false);
@@ -130,12 +159,15 @@ export default function ButtonRolesPage() {
 
   async function handleDelete(messageId: string) {
     setPendingDelete(null);
+    const prevList = list;
+    // Optymistycznie zdejmij z listy; przywróć przy błędzie.
+    setList((l) => l.filter((b) => b.messageId !== messageId));
+    if (editingMessageId === messageId) cancelEdit();
     try {
       await deleteButtonRole(guildId, messageId);
-      setList((l) => l.filter((b) => b.messageId !== messageId));
-      if (editingMessageId === messageId) cancelEdit();
       toast("Wiadomość usunięta.", "success");
     } catch {
+      setList(prevList);
       toast("Nie udało się usunąć.", "error");
     }
   }
@@ -150,9 +182,17 @@ export default function ButtonRolesPage() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <p className="text-gray-300">Loading...</p>
-      </div>
+      <PageSkeleton>
+        <div className="flex flex-col gap-8 lg:flex-row">
+          <div className="w-full lg:w-96">
+            <SkeletonForm />
+          </div>
+          <div className="flex flex-1 flex-col gap-4">
+            <Skeleton className="h-44 w-full rounded-xl" />
+            <SkeletonTable rows={3} />
+          </div>
+        </div>
+      </PageSkeleton>
     );
   }
 

@@ -11,6 +11,12 @@ import { EmbedPreview } from "@/components/EmbedPreview";
 import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
 import { RoleSelect } from "@/components/RoleSelect";
+import {
+  PageSkeleton,
+  Skeleton,
+  SkeletonForm,
+  SkeletonTable,
+} from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
 import { useGuildLoad } from "@/hooks/useGuildLoad";
@@ -107,20 +113,48 @@ export default function ReactionRolesPage() {
   async function handlePublish() {
     if (!isFormValid) return;
     setPublishing(true);
+
+    // Snapshot stanu sprzed publikacji — do optymistycznego UI i ewentualnego rollbacku.
+    const embed = form.embed;
+    const channelId = form.channelId;
+    const entries = form.entries.filter((e) => e.emoji.trim() && e.roleId);
+    const prevList = list;
+    const prevForm = form;
+    const prevEditing = editingMessageId;
+
+    const tempId = `temp-${Date.now()}`;
+    const optimistic: ReactionRole = {
+      guildId,
+      channelId,
+      messageId: tempId,
+      title: embed.title ?? "",
+      content: embed.description ?? "",
+      color:
+        typeof embed.color === "number"
+          ? `#${embed.color.toString(16).padStart(6, "0")}`
+          : undefined,
+      embed,
+      entries,
+    };
+
+    // Od razu pokaż nową pozycję (zastępując edytowaną) i wyczyść formularz.
+    setList((l) => [
+      optimistic,
+      ...(prevEditing ? l.filter((r) => r.messageId !== prevEditing) : l),
+    ]);
+    setForm(EMPTY_FORM);
+    setEditingMessageId(null);
+
     try {
-      if (editingMessageId) {
-        await deleteReactionRole(guildId, editingMessageId);
-      }
-      await publishReactionRole(guildId, {
-        channelId: form.channelId,
-        embed: form.embed,
-        entries: form.entries.filter((e) => e.emoji.trim() && e.roleId),
-      });
-      const updated = await getReactionRoles(guildId);
-      setList(updated);
-      setForm(EMPTY_FORM);
-      setEditingMessageId(null);
+      if (prevEditing) await deleteReactionRole(guildId, prevEditing);
+      const created = await publishReactionRole(guildId, { channelId, embed, entries });
+      // Zamień placeholder na realny rekord (z prawdziwym messageId).
+      setList((l) => l.map((r) => (r.messageId === tempId ? created : r)));
     } catch {
+      // Rollback: przywróć listę i formularz, żeby dało się poprawić i ponowić.
+      setList(prevList);
+      setForm(prevForm);
+      setEditingMessageId(prevEditing);
       toast("Nie udało się opublikować.", "error");
     } finally {
       setPublishing(false);
@@ -129,12 +163,15 @@ export default function ReactionRolesPage() {
 
   async function handleDelete(messageId: string) {
     setPendingDelete(null);
+    const prevList = list;
+    // Optymistycznie zdejmij z listy; przywróć przy błędzie.
+    setList((l) => l.filter((r) => r.messageId !== messageId));
+    if (editingMessageId === messageId) cancelEdit();
     try {
       await deleteReactionRole(guildId, messageId);
-      setList((l) => l.filter((r) => r.messageId !== messageId));
-      if (editingMessageId === messageId) cancelEdit();
       toast("Wiadomość usunięta.", "success");
     } catch {
+      setList(prevList);
       toast("Nie udało się usunąć.", "error");
     }
   }
@@ -149,9 +186,17 @@ export default function ReactionRolesPage() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <p className="text-gray-300">Loading...</p>
-      </div>
+      <PageSkeleton>
+        <div className="flex flex-col gap-8 lg:flex-row">
+          <div className="w-full lg:w-96">
+            <SkeletonForm />
+          </div>
+          <div className="flex flex-1 flex-col gap-4">
+            <Skeleton className="h-44 w-full rounded-xl" />
+            <SkeletonTable rows={3} />
+          </div>
+        </div>
+      </PageSkeleton>
     );
   }
 

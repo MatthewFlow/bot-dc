@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 interface AvatarProps {
   src: string | null | undefined;
   name: string;
@@ -6,14 +8,22 @@ interface AvatarProps {
 }
 
 const SIZES = {
-  sm: { box: "h-8 w-8", text: "text-xs" },
-  lg: { box: "h-12 w-12", text: "text-lg" },
+  sm: { box: "h-8 w-8", text: "text-xs", px: 32 },
+  lg: { box: "h-12 w-12", text: "text-lg", px: 48 },
 };
 
 export function Avatar({ src, name, size = "sm", className = "" }: AvatarProps) {
   const s = SIZES[size];
   if (src) {
-    return <img src={src} alt={name} className={`${s.box} rounded-full ${className}`} />;
+    return (
+      <Image
+        src={src}
+        alt={name}
+        width={s.px}
+        height={s.px}
+        className={`${s.box} rounded-full object-cover ${className}`}
+      />
+    );
   }
   return (
     <div
