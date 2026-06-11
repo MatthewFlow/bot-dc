@@ -65,6 +65,8 @@ export function CreateChannelButton({
     <div className="flex w-full flex-wrap items-center gap-2">
       <Input
         autoFocus
+        name="newChannelName"
+        aria-label="Nazwa nowego kanału"
         value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => {

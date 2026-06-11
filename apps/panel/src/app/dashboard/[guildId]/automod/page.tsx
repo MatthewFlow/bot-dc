@@ -182,10 +182,15 @@ export default function AutoModPage() {
                 />
 
                 <div>
-                  <label className="mb-1 block text-xs text-gray-400">
+                  <label
+                    className="mb-1 block text-xs text-gray-400"
+                    htmlFor="bannedWords"
+                  >
                     Niedozwolone słowa (jedno na linię)
                   </label>
                   <textarea
+                    id="bannedWords"
+                    name="bannedWords"
                     value={am.bannedWords.join("\n")}
                     onChange={(e) =>
                       setAm({
@@ -213,6 +218,8 @@ export default function AutoModPage() {
                       <span>Maks.</span>
                       <input
                         type="number"
+                        name="spamMaxMessages"
+                        aria-label="Maksymalna liczba wiadomości"
                         min={2}
                         max={50}
                         value={am.spamMaxMessages}
@@ -224,6 +231,8 @@ export default function AutoModPage() {
                       <span>wiadomości w</span>
                       <input
                         type="number"
+                        name="spamWindowSeconds"
+                        aria-label="Okno czasowe w sekundach"
                         min={1}
                         max={60}
                         value={am.spamWindowSeconds}
@@ -263,6 +272,8 @@ export default function AutoModPage() {
                     <span>Czas timeoutu:</span>
                     <input
                       type="number"
+                      name="muteDurationSeconds"
+                      aria-label="Czas timeoutu w sekundach"
                       min={10}
                       max={2419200}
                       value={am.muteDurationSeconds}

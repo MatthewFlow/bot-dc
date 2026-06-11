@@ -267,6 +267,8 @@ export default function ButtonRolesPage() {
                   {form.entries.map((entry, idx) => (
                     <div key={idx} className="flex items-center gap-2">
                       <input
+                        name={`br-label-${idx}`}
+                        aria-label="Etykieta przycisku"
                         value={entry.label}
                         onChange={(e) => updateEntry(idx, "label", e.target.value)}
                         placeholder="Etykieta"
@@ -274,6 +276,8 @@ export default function ButtonRolesPage() {
                         className="w-28 rounded-lg bg-background px-2 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
                       />
                       <input
+                        name={`br-emoji-${idx}`}
+                        aria-label="Emoji przycisku"
                         value={entry.emoji ?? ""}
                         onChange={(e) => updateEntry(idx, "emoji", e.target.value)}
                         placeholder="emoji"

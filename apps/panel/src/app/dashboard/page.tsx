@@ -127,6 +127,9 @@ export default function DashboardPage() {
                   className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
                 />
                 <input
+                  type="search"
+                  name="serverSearch"
+                  aria-label="Szukaj serwera"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Szukaj serwera…"

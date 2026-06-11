@@ -272,10 +272,15 @@ export default function TicketsPage() {
             />
             <div className="mt-4 grid grid-cols-[1fr_auto] gap-3 border-t border-border pt-4">
               <div>
-                <label className="mb-1 block text-xs text-gray-400">
+                <label
+                  className="mb-1 block text-xs text-gray-400"
+                  htmlFor="ticketBtnLabel"
+                >
                   Etykieta przycisku
                 </label>
                 <input
+                  id="ticketBtnLabel"
+                  name="ticketBtnLabel"
                   value={config.ticketPanelButton?.label ?? ""}
                   onChange={(e) =>
                     setConfig((c) => ({
@@ -292,8 +297,15 @@ export default function TicketsPage() {
                 />
               </div>
               <div>
-                <label className="mb-1 block text-xs text-gray-400">Emoji</label>
+                <label
+                  className="mb-1 block text-xs text-gray-400"
+                  htmlFor="ticketBtnEmoji"
+                >
+                  Emoji
+                </label>
                 <input
+                  id="ticketBtnEmoji"
+                  name="ticketBtnEmoji"
                   value={config.ticketPanelButton?.emoji ?? ""}
                   onChange={(e) =>
                     setConfig((c) => ({

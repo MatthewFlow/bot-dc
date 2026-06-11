@@ -65,6 +65,8 @@ export function CreateRoleButton({
     <div className="flex w-full flex-wrap items-center gap-2">
       <Input
         autoFocus
+        name="newRoleName"
+        aria-label="Nazwa nowej roli"
         value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => {

@@ -199,6 +199,8 @@ export default function ModerationPage() {
             <div className="p-6">
               <div className="flex gap-2">
                 <input
+                  name="warnUserId"
+                  aria-label="ID użytkownika"
                   value={searchId}
                   onChange={(e) => setSearchId(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}

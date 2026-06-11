@@ -1,5 +1,7 @@
 "use client";
 
+import { useId } from "react";
+
 import type { EmbedConfig, EmbedFieldConfig } from "@/lib/api";
 import { DEFAULT_EMBED_COLOR, hexToNumber, numberToHex } from "@/lib/embed";
 
@@ -30,6 +32,10 @@ export function EmbedEditor({
 }) {
   const set = (patch: Partial<EmbedConfig>) => onChange({ ...value, ...patch });
 
+  // Prefiks unikalny per instancja edytora (na stronie bywa ich kilka, np. welcome + goodbye).
+  const uid = useId();
+  const fieldId = (suffix: string) => `${uid}-${suffix}`;
+
   const fields = value.fields ?? [];
   const setFields = (next: EmbedFieldConfig[]) => set({ fields: next });
   const updateField = (i: number, patch: Partial<EmbedFieldConfig>) =>
@@ -40,8 +46,12 @@ export function EmbedEditor({
       {/* Treść */}
       <div className="flex flex-col gap-3">
         <div>
-          <label className={LABEL}>Tytuł</label>
+          <label className={LABEL} htmlFor={fieldId("title")}>
+            Tytuł
+          </label>
           <input
+            id={fieldId("title")}
+            name="embedTitle"
             value={value.title ?? ""}
             onChange={(e) => set({ title: e.target.value })}
             maxLength={256}
@@ -50,8 +60,12 @@ export function EmbedEditor({
           />
         </div>
         <div>
-          <label className={LABEL}>Opis</label>
+          <label className={LABEL} htmlFor={fieldId("description")}>
+            Opis
+          </label>
           <textarea
+            id={fieldId("description")}
+            name="embedDescription"
             value={value.description ?? ""}
             onChange={(e) => set({ description: e.target.value })}
             maxLength={4096}
@@ -72,8 +86,12 @@ export function EmbedEditor({
         </div>
         <div className="flex items-center gap-3">
           <div>
-            <label className={LABEL}>Kolor</label>
+            <label className={LABEL} htmlFor={fieldId("color")}>
+              Kolor
+            </label>
             <input
+              id={fieldId("color")}
+              name="embedColor"
               type="color"
               value={numberToHex(value.color ?? DEFAULT_EMBED_COLOR)}
               onChange={(e) => set({ color: hexToNumber(e.target.value) })}
@@ -81,8 +99,12 @@ export function EmbedEditor({
             />
           </div>
           <div className="flex-1">
-            <label className={LABEL}>Link tytułu (URL)</label>
+            <label className={LABEL} htmlFor={fieldId("url")}>
+              Link tytułu (URL)
+            </label>
             <input
+              id={fieldId("url")}
+              name="embedUrl"
               value={value.url ?? ""}
               onChange={(e) => set({ url: e.target.value })}
               placeholder="https://…"
@@ -95,6 +117,8 @@ export function EmbedEditor({
       {/* Autor */}
       <Group title="Autor (góra embeda)">
         <input
+          name="embedAuthorName"
+          aria-label="Nazwa autora"
           value={value.authorName ?? ""}
           onChange={(e) => set({ authorName: e.target.value })}
           maxLength={256}
@@ -102,6 +126,8 @@ export function EmbedEditor({
           className={INPUT}
         />
         <input
+          name="embedAuthorIconUrl"
+          aria-label="URL ikony autora"
           value={value.authorIconUrl ?? ""}
           onChange={(e) => set({ authorIconUrl: e.target.value })}
           placeholder="URL ikony autora"
@@ -112,8 +138,12 @@ export function EmbedEditor({
       {/* Media */}
       <Group title="Grafika">
         <div>
-          <label className={LABEL}>Miniatura (mały obrazek w rogu)</label>
+          <label className={LABEL} htmlFor={fieldId("thumbnail")}>
+            Miniatura (mały obrazek w rogu)
+          </label>
           <input
+            id={fieldId("thumbnail")}
+            name="embedThumbnailUrl"
             value={value.thumbnailUrl ?? ""}
             onChange={(e) => set({ thumbnailUrl: e.target.value })}
             placeholder="URL miniatury (np. {avatar})"
@@ -121,8 +151,12 @@ export function EmbedEditor({
           />
         </div>
         <div>
-          <label className={LABEL}>Duży obrazek</label>
+          <label className={LABEL} htmlFor={fieldId("image")}>
+            Duży obrazek
+          </label>
           <input
+            id={fieldId("image")}
+            name="embedImageUrl"
             value={value.imageUrl ?? ""}
             onChange={(e) => set({ imageUrl: e.target.value })}
             placeholder="URL obrazka"
@@ -134,6 +168,8 @@ export function EmbedEditor({
       {/* Stopka */}
       <Group title="Stopka">
         <input
+          name="embedFooterText"
+          aria-label="Tekst stopki"
           value={value.footerText ?? ""}
           onChange={(e) => set({ footerText: e.target.value })}
           maxLength={2048}
@@ -141,6 +177,8 @@ export function EmbedEditor({
           className={INPUT}
         />
         <input
+          name="embedFooterIconUrl"
+          aria-label="URL ikony stopki"
           value={value.footerIconUrl ?? ""}
           onChange={(e) => set({ footerIconUrl: e.target.value })}
           placeholder="URL ikony stopki"
@@ -149,6 +187,7 @@ export function EmbedEditor({
         <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-300">
           <input
             type="checkbox"
+            name="embedTimestamp"
             checked={Boolean(value.timestamp)}
             onChange={(e) => set({ timestamp: e.target.checked })}
             className="h-4 w-4 accent-primary"
@@ -172,6 +211,8 @@ export function EmbedEditor({
               </button>
             </div>
             <input
+              name={`embedField-${i}-name`}
+              aria-label={`Nazwa pola #${i + 1}`}
               value={f.name}
               onChange={(e) => updateField(i, { name: e.target.value })}
               maxLength={256}
@@ -179,6 +220,8 @@ export function EmbedEditor({
               className={`${INPUT} mb-2`}
             />
             <textarea
+              name={`embedField-${i}-value`}
+              aria-label={`Wartość pola #${i + 1}`}
               value={f.value}
               onChange={(e) => updateField(i, { value: e.target.value })}
               maxLength={1024}
@@ -189,6 +232,7 @@ export function EmbedEditor({
             <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs text-gray-300">
               <input
                 type="checkbox"
+                name={`embedField-${i}-inline`}
                 checked={Boolean(f.inline)}
                 onChange={(e) => updateField(i, { inline: e.target.checked })}
                 className="h-3.5 w-3.5 accent-primary"

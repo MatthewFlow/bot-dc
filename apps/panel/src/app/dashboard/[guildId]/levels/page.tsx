@@ -2,7 +2,7 @@
 
 import { Crown, TrendingUp } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 import { ChannelSelect } from "@/components/ChannelSelect";
 import { ConfirmModal } from "@/components/confirmModal";
@@ -89,15 +89,19 @@ function XpSlider({
   value: number;
   onChange: (v: number) => void;
 }) {
+  const sliderId = useId();
   return (
     <div>
       <div className="mb-1.5 flex items-center justify-between gap-2">
-        <label className="text-xs text-gray-400">{label}</label>
+        <label className="text-xs text-gray-400" htmlFor={sliderId}>
+          {label}
+        </label>
         <span className="shrink-0 rounded bg-primary/20 px-2 py-0.5 text-xs font-semibold text-primary">
           {value} XP
         </span>
       </div>
       <input
+        id={sliderId}
         type="range"
         min={0}
         max={8}
@@ -358,8 +362,12 @@ export default function LevelsPage() {
             <p className="mb-4 text-sm font-semibold text-white">Dodaj próg</p>
             <div className="flex flex-col gap-3">
               <div>
-                <label className="mb-1 block text-xs text-gray-400">Level</label>
+                <label className="mb-1 block text-xs text-gray-400" htmlFor="newLevel">
+                  Level
+                </label>
                 <input
+                  id="newLevel"
+                  name="newLevel"
                   type="number"
                   min={1}
                   value={newLevel}

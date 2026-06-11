@@ -272,6 +272,8 @@ export default function ReactionRolesPage() {
                   {form.entries.map((entry, idx) => (
                     <div key={idx} className="flex items-center gap-2">
                       <input
+                        name={`rr-emoji-${idx}`}
+                        aria-label="Emoji"
                         value={entry.emoji}
                         onChange={(e) => updateEntry(idx, "emoji", e.target.value)}
                         placeholder="emoji"

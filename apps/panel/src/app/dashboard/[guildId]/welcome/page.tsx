@@ -275,6 +275,8 @@ export default function WelcomePage() {
               </p>
               <textarea
                 ref={textareaRef}
+                name="welcomeMessage"
+                aria-label="Treść wiadomości (Markdown + zmienne)"
                 value={message}
                 onChange={(e) => setConfig((c) => ({ ...c, [field]: e.target.value }))}
                 rows={4}

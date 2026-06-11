@@ -279,8 +279,15 @@ export default function FeedbackPage() {
 
               {/* Treść */}
               <div>
-                <label className="mb-1 block text-xs text-gray-400">Treść</label>
+                <label
+                  className="mb-1 block text-xs text-gray-400"
+                  htmlFor="feedbackMessage"
+                >
+                  Treść
+                </label>
                 <textarea
+                  id="feedbackMessage"
+                  name="feedbackMessage"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   maxLength={2000}
