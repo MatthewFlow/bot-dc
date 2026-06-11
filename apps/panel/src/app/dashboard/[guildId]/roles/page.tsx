@@ -245,11 +245,11 @@ export default function RolesPage() {
   if (loading) {
     return (
       <PageSkeleton>
-        <div className="flex flex-col gap-8 lg:flex-row">
-          <div className="w-full lg:w-96">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:items-start">
+          <div className="w-full">
             <SkeletonForm />
           </div>
-          <div className="flex flex-1 flex-col gap-4">
+          <div className="flex flex-col gap-4">
             <Skeleton className="h-44 w-full rounded-xl" />
             <SkeletonTable rows={3} />
           </div>
@@ -286,9 +286,9 @@ export default function RolesPage() {
         ]}
       />
 
-      <div className="flex flex-col gap-8 lg:flex-row">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:items-start">
         {/* Form */}
-        <div className="w-full lg:w-96">
+        <div className="w-full">
           <div className="surface-raised rounded-xl bg-card">
             <div className="flex items-center justify-between border-b border-border px-6 py-4">
               <p className="text-sm font-semibold text-white">
@@ -412,7 +412,7 @@ export default function RolesPage() {
         </div>
 
         {/* Preview + List */}
-        <div className="flex flex-1 flex-col gap-4">
+        <div className="flex flex-col gap-4">
           <div className="surface-raised rounded-xl bg-card">
             <div className="border-b border-border px-6 py-4">
               <p className="text-sm font-semibold text-white">Podgląd</p>

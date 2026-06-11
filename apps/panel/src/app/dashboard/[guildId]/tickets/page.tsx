@@ -248,13 +248,12 @@ export default function TicketsPage() {
         </div>
       )}
 
-      {/* Wygląd panelu ticketów — osobno edytor, osobno podgląd (jak w Self-Roles) */}
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+      {/* Wygląd panelu ticketów — edytor i podgląd po 50% w jednej linii */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
         {/* Edytor */}
         <PanelCard
           title="Panel ticketów"
           description="Zbuduj embed i przycisk, a potem opublikuj na kanał."
-          className="flex-1"
         >
           <EmbedEditor
             value={config.ticketPanelEmbed ?? DEFAULT_TICKET_PANEL_EMBED}
@@ -352,7 +351,7 @@ export default function TicketsPage() {
           replace={previewReplacer}
           buttonLabel={config.ticketPanelButton?.label || "Złóż ticket"}
           buttonEmoji={config.ticketPanelButton?.emoji || "📩"}
-          className="lg:sticky lg:top-20 lg:w-96"
+          className="lg:sticky lg:top-20"
         >
           {/* Dostępne zmienne — panel jest statyczny, więc tylko kontekst serwera */}
           <div className="mt-4">

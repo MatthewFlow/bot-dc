@@ -67,8 +67,8 @@ function WelcomeSkeleton() {
         <Skeleton className="mb-2 h-7 w-48" />
         <Skeleton className="h-3 w-64" />
       </div>
-      <div className="flex flex-col gap-6 xl:flex-row">
-        <div className="w-full max-w-lg">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
+        <div className="w-full">
           <div className="surface-raised rounded-xl bg-card">
             <div className="border-b border-border px-6 py-4">
               <Skeleton className="h-4 w-24" />
@@ -82,7 +82,7 @@ function WelcomeSkeleton() {
             </div>
           </div>
         </div>
-        <Skeleton className="h-96 flex-1 rounded-xl" />
+        <Skeleton className="h-96 w-full rounded-xl" />
       </div>
     </div>
   );
@@ -199,8 +199,8 @@ export default function WelcomePage() {
           "Zmiany zapisują się automatycznie — bot reaguje od razu, bez restartu.",
         ]}
       />
-      <div className="flex flex-col gap-6 xl:flex-row">
-        <div className="w-full max-w-lg">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
+        <div className="w-full">
           <PanelCard title="Wiadomość">
             {/* Welcome / Goodbye */}
             <div className="flex gap-1 rounded-lg bg-background p-1">
@@ -315,7 +315,7 @@ export default function WelcomePage() {
           </PanelCard>
         </div>
 
-        <div className="flex flex-1 flex-col gap-4">
+        <div className="flex flex-col gap-4">
           <PanelCard title="Podgląd" bodyClassName="p-6">
             {useEmbed && activeEmbed ? (
               <EmbedPreview embed={activeEmbed} replace={previewReplacer} />
