@@ -1,6 +1,6 @@
 "use client";
 
-import { DoorOpen } from "lucide-react";
+import { DoorClosed, DoorOpen, type LucideIcon } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useRef, useState } from "react";
 
@@ -10,6 +10,7 @@ import { EmbedEditor } from "@/components/EmbedEditor";
 import { EmbedPreview } from "@/components/EmbedPreview";
 import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
+import { PanelCard } from "@/components/PanelCard";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
@@ -20,6 +21,12 @@ import { getChannels, getGuildConfig, updateGuildConfig } from "@/lib/api";
 import { previewReplacer, WELCOME_VARS } from "@/lib/embed";
 
 type Tab = "welcome" | "goodbye";
+
+/** Zakładki z osobnymi ikonami: otwarte drzwi = wejście, zamknięte = wyjście. */
+const TABS: { id: Tab; label: string; Icon: LucideIcon }[] = [
+  { id: "welcome", label: "Welcome", Icon: DoorOpen },
+  { id: "goodbye", label: "Goodbye", Icon: DoorClosed },
+];
 
 const VARIABLES = [
   { label: "{user}", desc: "Oznaczenie użytkownika" },
@@ -61,22 +68,19 @@ function WelcomeSkeleton() {
         <Skeleton className="h-3 w-64" />
       </div>
       <div className="flex flex-col gap-6 xl:flex-row">
-        <div className="flex w-full max-w-lg flex-col gap-4">
-          <Skeleton className="h-10 w-full rounded-lg" />
-          <div className="space-y-3 surface-raised rounded-xl bg-card p-5">
-            <Skeleton className="h-3 w-16" />
-            <Skeleton className="h-10 w-full rounded-lg" />
-          </div>
-          <div className="space-y-3 surface-raised rounded-xl bg-card p-5">
-            <Skeleton className="h-3 w-24" />
-            <Skeleton className="h-24 w-full rounded-lg" />
-            <div className="flex gap-2">
-              {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="h-7 w-20 rounded" />
-              ))}
+        <div className="w-full max-w-lg">
+          <div className="surface-raised rounded-xl bg-card">
+            <div className="border-b border-border px-6 py-4">
+              <Skeleton className="h-4 w-24" />
+            </div>
+            <div className="flex flex-col gap-4 p-6">
+              <Skeleton className="h-10 w-full rounded-lg" />
+              <Skeleton className="h-10 w-full rounded-lg" />
+              <Skeleton className="h-9 w-full rounded-lg" />
+              <Skeleton className="h-24 w-full rounded-lg" />
+              <Skeleton className="h-12 w-full rounded-lg" />
             </div>
           </div>
-          <Skeleton className="h-12 w-full rounded-lg" />
         </div>
         <Skeleton className="h-96 flex-1 rounded-xl" />
       </div>
@@ -196,123 +200,123 @@ export default function WelcomePage() {
         ]}
       />
       <div className="flex flex-col gap-6 xl:flex-row">
-        <div className="flex w-full max-w-lg flex-col gap-4">
-          <div className="flex gap-1 rounded-lg bg-card p-1">
-            {(["welcome", "goodbye"] as Tab[]).map((t) => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                className={`flex-1 rounded-md py-2 text-sm font-medium transition ${tab === t ? "bg-primary text-black" : "text-gray-300 hover:text-white"}`}
-              >
-                {t === "welcome" ? "👋 Welcome" : "👋 Goodbye"}
-              </button>
-            ))}
-          </div>
-
-          <div className="surface-raised rounded-xl bg-card p-5">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-              Kanał
-            </p>
-            <div className="flex flex-wrap items-center gap-2">
-              <ChannelSelect
-                value={channelId ?? ""}
-                onChange={(val) =>
-                  setConfig((c) =>
-                    tab === "welcome"
-                      ? { ...c, welcomeChannelId: val || undefined }
-                      : { ...c, goodbyeChannelId: val || undefined },
-                  )
-                }
-                channels={channels}
-                placeholder="— Nie ustawiono —"
-                className="min-w-0 flex-1 px-4 py-2.5"
-              />
-              <CreateChannelButton
-                guildId={guildId}
-                defaultName={tab === "welcome" ? "powitania" : "pozegnania"}
-                onCreated={(ch) => {
-                  setChannels((prev) =>
-                    [...prev, ch].sort((a, b) => a.name.localeCompare(b.name)),
-                  );
-                  setConfig((c) =>
-                    tab === "welcome"
-                      ? { ...c, welcomeChannelId: ch.id }
-                      : { ...c, goodbyeChannelId: ch.id },
-                  );
-                }}
-              />
+        <div className="w-full max-w-lg">
+          <PanelCard title="Wiadomość">
+            {/* Welcome / Goodbye */}
+            <div className="flex gap-1 rounded-lg bg-background p-1">
+              {TABS.map(({ id, label, Icon }) => (
+                <button
+                  key={id}
+                  onClick={() => setTab(id)}
+                  className={`flex flex-1 items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition ${tab === id ? "bg-primary text-black" : "text-gray-300 hover:text-white"}`}
+                >
+                  <Icon size={15} />
+                  {label}
+                </button>
+              ))}
             </div>
-          </div>
 
-          {/* Tryb: prosty tekst vs embed */}
-          <div className="flex gap-1 rounded-lg bg-card p-1">
-            <button
-              onClick={() => toggleEmbed(false)}
-              className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${!useEmbed ? "bg-background text-white" : "text-gray-400 hover:text-gray-300"}`}
-            >
-              Prosty tekst
-            </button>
-            <button
-              onClick={() => toggleEmbed(true)}
-              className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${useEmbed ? "bg-background text-primary" : "text-gray-400 hover:text-gray-300"}`}
-            >
-              Embed (zaawansowany)
-            </button>
-          </div>
+            {/* Kanał */}
+            <div>
+              <label className="mb-1 block text-xs text-gray-400">Kanał</label>
+              <div className="flex flex-wrap items-center gap-2">
+                <ChannelSelect
+                  value={channelId ?? ""}
+                  onChange={(val) =>
+                    setConfig((c) =>
+                      tab === "welcome"
+                        ? { ...c, welcomeChannelId: val || undefined }
+                        : { ...c, goodbyeChannelId: val || undefined },
+                    )
+                  }
+                  channels={channels}
+                  placeholder="— Nie ustawiono —"
+                  className="min-w-0 flex-1 px-3 py-2.5"
+                />
+                <CreateChannelButton
+                  guildId={guildId}
+                  defaultName={tab === "welcome" ? "powitania" : "pozegnania"}
+                  onCreated={(ch) => {
+                    setChannels((prev) =>
+                      [...prev, ch].sort((a, b) => a.name.localeCompare(b.name)),
+                    );
+                    setConfig((c) =>
+                      tab === "welcome"
+                        ? { ...c, welcomeChannelId: ch.id }
+                        : { ...c, goodbyeChannelId: ch.id },
+                    );
+                  }}
+                />
+              </div>
+            </div>
 
-          {useEmbed && activeEmbed ? (
-            <div className="surface-raised rounded-xl bg-card p-5">
+            {/* Tryb: prosty tekst vs embed */}
+            <div className="flex gap-1 rounded-lg bg-background p-1">
+              <button
+                onClick={() => toggleEmbed(false)}
+                className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${!useEmbed ? "bg-elevated text-white" : "text-gray-400 hover:text-gray-300"}`}
+              >
+                Prosty tekst
+              </button>
+              <button
+                onClick={() => toggleEmbed(true)}
+                className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${useEmbed ? "bg-elevated text-primary" : "text-gray-400 hover:text-gray-300"}`}
+              >
+                Embed (zaawansowany)
+              </button>
+            </div>
+
+            {useEmbed && activeEmbed ? (
               <EmbedEditor
                 value={activeEmbed}
                 onChange={setActiveEmbed}
                 variables={WELCOME_VARS}
               />
-            </div>
-          ) : (
-            <div className="surface-raised rounded-xl bg-card p-5">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                Treść (Markdown + zmienne)
-              </p>
-              <textarea
-                ref={textareaRef}
-                name="welcomeMessage"
-                aria-label="Treść wiadomości (Markdown + zmienne)"
-                value={message}
-                onChange={(e) => setConfig((c) => ({ ...c, [field]: e.target.value }))}
-                rows={4}
-                className="w-full resize-none rounded-lg bg-background px-4 py-3 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
-              />
-              <div className="mt-3">
-                <p className="mb-2 text-xs text-gray-400">Kliknij zmienną aby wstawić:</p>
-                <div className="flex flex-wrap gap-2">
-                  {VARIABLES.map((v) => (
-                    <button
-                      key={v.label}
-                      onClick={() => insertVariable(v.label)}
-                      title={v.desc}
-                      className="rounded bg-background px-2.5 py-1 text-xs font-mono text-primary transition hover:bg-primary hover:text-black"
-                    >
-                      {v.label}
-                    </button>
-                  ))}
+            ) : (
+              <div>
+                <label className="mb-1 block text-xs text-gray-400">
+                  Treść (Markdown + zmienne)
+                </label>
+                <textarea
+                  ref={textareaRef}
+                  name="welcomeMessage"
+                  aria-label="Treść wiadomości (Markdown + zmienne)"
+                  value={message}
+                  onChange={(e) => setConfig((c) => ({ ...c, [field]: e.target.value }))}
+                  rows={4}
+                  className="w-full resize-none rounded-lg bg-background px-3 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+                />
+                <div className="mt-3">
+                  <p className="mb-2 text-xs text-gray-400">
+                    Kliknij zmienną aby wstawić:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {VARIABLES.map((v) => (
+                      <button
+                        key={v.label}
+                        onClick={() => insertVariable(v.label)}
+                        title={v.desc}
+                        className="rounded bg-background px-2.5 py-1 text-xs font-mono text-primary transition hover:bg-primary hover:text-black"
+                      >
+                        {v.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          <SaveButton
-            onClick={handleSave}
-            saving={saving}
-            autoSaveStatus={autoSaveStatus}
-            className="w-full px-6 py-3 font-semibold"
-          />
+            <SaveButton
+              onClick={handleSave}
+              saving={saving}
+              autoSaveStatus={autoSaveStatus}
+              className="w-full px-6 py-3 font-semibold"
+            />
+          </PanelCard>
         </div>
 
         <div className="flex flex-1 flex-col gap-4">
-          <div className="surface-raised rounded-xl bg-card p-6">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-wider text-gray-400">
-              Tak będzie to wyglądać w Discord
-            </p>
+          <PanelCard title="Podgląd" bodyClassName="p-6">
             {useEmbed && activeEmbed ? (
               <EmbedPreview embed={activeEmbed} replace={previewReplacer} />
             ) : (
@@ -358,7 +362,7 @@ export default function WelcomePage() {
                 ))}
               </div>
             </div>
-          </div>
+          </PanelCard>
         </div>
       </div>
     </div>

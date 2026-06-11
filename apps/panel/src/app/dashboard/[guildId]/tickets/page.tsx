@@ -11,9 +11,10 @@ import { ConfirmModal } from "@/components/confirmModal";
 import { CreateChannelButton } from "@/components/CreateChannelButton";
 import { CreateRoleButton } from "@/components/CreateRoleButton";
 import { EmbedEditor } from "@/components/EmbedEditor";
-import { EmbedPreview } from "@/components/EmbedPreview";
+import { EmbedPreviewCard } from "@/components/EmbedPreviewCard";
 import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
+import { PanelCard } from "@/components/PanelCard";
 import { RoleSelect } from "@/components/RoleSelect";
 import { SaveButton } from "@/components/SaveButton";
 import { PageSkeleton, Skeleton, SkeletonRow } from "@/components/Skeleton";
@@ -247,109 +248,125 @@ export default function TicketsPage() {
         </div>
       )}
 
-      {/* Wygląd panelu ticketów — edytor embeda + live podgląd */}
-      <div className="surface-raised rounded-xl bg-card">
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
-          <div>
-            <p className="text-sm font-semibold text-white">Wygląd panelu ticketów</p>
-            <p className="text-xs text-gray-400">
-              Embed i przycisk wysyłane przez „Wyślij panel” oraz /ticket_setup.
-            </p>
-          </div>
-          <SaveButton
-            onClick={handleSave}
-            saving={saving}
-            autoSaveStatus={autoSaveStatus}
-            className="px-4 py-1.5 text-xs"
+      {/* Wygląd panelu ticketów — osobno edytor, osobno podgląd (jak w Self-Roles) */}
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+        {/* Edytor */}
+        <PanelCard
+          title="Panel ticketów"
+          description="Zbuduj embed i przycisk, a potem opublikuj na kanał."
+          className="flex-1"
+        >
+          <EmbedEditor
+            value={config.ticketPanelEmbed ?? DEFAULT_TICKET_PANEL_EMBED}
+            onChange={(embed) => setConfig((c) => ({ ...c, ticketPanelEmbed: embed }))}
+            variables={TICKET_VARS}
           />
-        </div>
-        <div className="grid grid-cols-1 gap-6 p-6 lg:grid-cols-2">
-          <div>
-            <EmbedEditor
-              value={config.ticketPanelEmbed ?? DEFAULT_TICKET_PANEL_EMBED}
-              onChange={(embed) => setConfig((c) => ({ ...c, ticketPanelEmbed: embed }))}
-              variables={TICKET_VARS}
-            />
-            <div className="mt-4 grid grid-cols-[1fr_auto] gap-3 border-t border-border pt-4">
-              <div>
-                <label
-                  className="mb-1 block text-xs text-gray-400"
-                  htmlFor="ticketBtnLabel"
-                >
-                  Etykieta przycisku
-                </label>
-                <input
-                  id="ticketBtnLabel"
-                  name="ticketBtnLabel"
-                  value={config.ticketPanelButton?.label ?? ""}
-                  onChange={(e) =>
-                    setConfig((c) => ({
-                      ...c,
-                      ticketPanelButton: {
-                        ...c.ticketPanelButton,
-                        label: e.target.value,
-                      },
-                    }))
-                  }
-                  maxLength={80}
-                  placeholder="Złóż ticket"
-                  className="w-full rounded-lg bg-background px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
-              <div>
-                <label
-                  className="mb-1 block text-xs text-gray-400"
-                  htmlFor="ticketBtnEmoji"
-                >
-                  Emoji
-                </label>
-                <input
-                  id="ticketBtnEmoji"
-                  name="ticketBtnEmoji"
-                  value={config.ticketPanelButton?.emoji ?? ""}
-                  onChange={(e) =>
-                    setConfig((c) => ({
-                      ...c,
-                      ticketPanelButton: {
-                        ...c.ticketPanelButton,
-                        emoji: e.target.value,
-                      },
-                    }))
-                  }
-                  maxLength={8}
-                  placeholder="📩"
-                  className="w-16 rounded-lg bg-background px-3 py-2 text-center text-sm text-white outline-none focus:ring-2 focus:ring-primary"
-                />
-              </div>
+          <div className="grid grid-cols-[1fr_auto] gap-3 border-t border-border pt-4">
+            <div>
+              <label
+                className="mb-1 block text-xs text-gray-400"
+                htmlFor="ticketBtnLabel"
+              >
+                Etykieta przycisku
+              </label>
+              <input
+                id="ticketBtnLabel"
+                name="ticketBtnLabel"
+                value={config.ticketPanelButton?.label ?? ""}
+                onChange={(e) =>
+                  setConfig((c) => ({
+                    ...c,
+                    ticketPanelButton: {
+                      ...c.ticketPanelButton,
+                      label: e.target.value,
+                    },
+                  }))
+                }
+                maxLength={80}
+                placeholder="Złóż ticket"
+                className="w-full rounded-lg bg-background px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
+            <div>
+              <label
+                className="mb-1 block text-xs text-gray-400"
+                htmlFor="ticketBtnEmoji"
+              >
+                Emoji
+              </label>
+              <input
+                id="ticketBtnEmoji"
+                name="ticketBtnEmoji"
+                value={config.ticketPanelButton?.emoji ?? ""}
+                onChange={(e) =>
+                  setConfig((c) => ({
+                    ...c,
+                    ticketPanelButton: {
+                      ...c.ticketPanelButton,
+                      emoji: e.target.value,
+                    },
+                  }))
+                }
+                maxLength={8}
+                placeholder="📩"
+                className="w-16 rounded-lg bg-background px-3 py-2 text-center text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+              />
             </div>
           </div>
-          <div className="lg:sticky lg:top-20 lg:self-start">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-              Podgląd
-            </p>
-            <EmbedPreview
-              embed={config.ticketPanelEmbed ?? DEFAULT_TICKET_PANEL_EMBED}
-              replace={previewReplacer}
-              buttonLabel={config.ticketPanelButton?.label || "Złóż ticket"}
-              buttonEmoji={config.ticketPanelButton?.emoji || "📩"}
-            />
 
-            {/* Dostępne zmienne — panel jest statyczny, więc tylko kontekst serwera */}
-            <div className="mt-4">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                Dostępne zmienne
-              </p>
-              <div className="flex flex-col gap-2">
-                {TICKET_VARS.map((v) => (
-                  <div key={v} className="flex items-center gap-3">
-                    <span className="w-32 font-mono text-xs text-primary">{v}</span>
-                    <span className="text-xs text-gray-300">{VARIABLE_INFO[v]}</span>
-                  </div>
-                ))}
-              </div>
+          {/* Publikacja panelu na kanał */}
+          <div className="border-t border-border pt-4">
+            <label className="mb-1 block text-xs text-gray-400">Kanał publikacji</label>
+            <div className="flex flex-wrap items-center gap-2">
+              <ChannelSelect
+                value={panelChannelId}
+                onChange={setPanelChannelId}
+                channels={channels}
+                placeholder="— Wybierz kanał —"
+                className="min-w-0 flex-1 px-3 py-2.5"
+              />
+              <CreateChannelButton
+                guildId={guildId}
+                defaultName="tickety"
+                onCreated={(ch) => {
+                  setChannels((prev) =>
+                    [...prev, ch].sort((a, b) => a.name.localeCompare(b.name)),
+                  );
+                  setPanelChannelId(ch.id);
+                }}
+              />
+            </div>
+            <Button
+              onClick={handleSendPanel}
+              disabled={!panelChannelId || sendingPanel}
+              className="mt-3 w-full"
+            >
+              {sendingPanel ? "Publikowanie…" : "Opublikuj"}
+            </Button>
+          </div>
+        </PanelCard>
+
+        {/* Podgląd */}
+        <EmbedPreviewCard
+          embed={config.ticketPanelEmbed ?? DEFAULT_TICKET_PANEL_EMBED}
+          replace={previewReplacer}
+          buttonLabel={config.ticketPanelButton?.label || "Złóż ticket"}
+          buttonEmoji={config.ticketPanelButton?.emoji || "📩"}
+          className="lg:sticky lg:top-20 lg:w-96"
+        >
+          {/* Dostępne zmienne — panel jest statyczny, więc tylko kontekst serwera */}
+          <div className="mt-4">
+            <p className="mb-2 text-xs text-gray-400">Dostępne zmienne</p>
+            <div className="flex flex-col gap-2">
+              {TICKET_VARS.map((v) => (
+                <div key={v} className="flex items-center gap-3">
+                  <span className="w-32 font-mono text-xs text-primary">{v}</span>
+                  <span className="text-xs text-gray-300">{VARIABLE_INFO[v]}</span>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
+        </EmbedPreviewCard>
       </div>
 
       <div className="flex flex-col gap-6 lg:flex-row">
@@ -433,31 +450,6 @@ export default function TicketsPage() {
                   Tu trafiają logi otwarcia i zamknięcia ticketów.
                 </p>
               </div>
-            </div>
-          </div>
-
-          {/* Wyślij panel ticketów na kanał */}
-          <div className="surface-raised rounded-xl bg-card p-6">
-            <p className="mb-1 text-sm font-semibold text-white">Panel na kanale</p>
-            <p className="mb-3 text-xs text-gray-400">
-              Wyślij embed z przyciskiem „Złóż ticket” na wybrany kanał — bez komendy
-              /ticket_setup.
-            </p>
-            <div className="flex flex-wrap items-center gap-2">
-              <ChannelSelect
-                value={panelChannelId}
-                onChange={setPanelChannelId}
-                channels={channels}
-                placeholder="— Wybierz kanał —"
-                className="min-w-0 flex-1 px-3 py-2.5"
-              />
-              <Button
-                onClick={handleSendPanel}
-                disabled={!panelChannelId || sendingPanel}
-                className="shrink-0"
-              >
-                {sendingPanel ? "Wysyłanie…" : "Wyślij panel"}
-              </Button>
             </div>
           </div>
 
