@@ -1,5 +1,7 @@
 import type { ButtonInteraction } from "discord.js";
 
+import { getCachedGuildConfig } from "../utils/configCache";
+
 /**
  * Klik w przycisk roli. `customId` ma postać `br:<roleId>` — sam w sobie niesie
  * docelową rolę, więc nie potrzebujemy odczytu z bazy (Discord gwarantuje, że
@@ -38,6 +40,12 @@ export async function handleButtonRoleClick(interaction: ButtonInteraction) {
       });
     } else {
       await member.roles.add(roleId);
+      // Weryfikacja: nadanie verifiedRoleId zdejmuje joinRoleId (jak w reaction roles).
+      // Lookup configu tylko przy nadaniu i z 15s cache — klik nadal jest tani.
+      const cfg = await getCachedGuildConfig(guild.id);
+      if (cfg?.verifiedRoleId === roleId && cfg.joinRoleId) {
+        await member.roles.remove(cfg.joinRoleId).catch(() => {});
+      }
       await interaction.reply({
         ephemeral: true,
         content: `➕ Nadano rolę **${role.name}**.`,

@@ -1,6 +1,6 @@
 "use client";
 
-import { SmilePlus } from "lucide-react";
+import { MousePointerClick } from "lucide-react";
 import { useParams } from "next/navigation";
 import { type CSSProperties, useState } from "react";
 
@@ -20,40 +20,36 @@ import {
 import { useToast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
 import { useGuildLoad } from "@/hooks/useGuildLoad";
-import type {
-  Channel,
-  EmbedConfig,
-  ReactionRole,
-  ReactionRoleEntry,
-  Role,
-} from "@/lib/api";
+import type { ButtonRole, ButtonRoleEntry, Channel, EmbedConfig, Role } from "@/lib/api";
 import {
-  deleteReactionRole,
+  deleteButtonRole,
+  getButtonRoles,
   getChannels,
-  getReactionRoles,
   getRoles,
-  publishReactionRole,
+  publishButtonRole,
 } from "@/lib/api";
-import { hexToNumber, isEmbedEmpty } from "@/lib/embed";
+import { isEmbedEmpty } from "@/lib/embed";
 
 type FormState = {
   channelId: string;
   embed: EmbedConfig;
-  entries: ReactionRoleEntry[];
+  entries: ButtonRoleEntry[];
 };
 
 const EMPTY_FORM: FormState = {
   channelId: "",
   embed: { color: 0xd4a843 },
-  entries: [{ emoji: "", roleId: "" }],
+  entries: [{ label: "", emoji: "", roleId: "" }],
 };
 
-export default function ReactionRolesPage() {
+const MAX_BUTTONS = 25;
+
+export function ButtonRolesEditor() {
   const params = useParams();
   const guildId = params.guildId as string;
   const toast = useToast();
 
-  const [list, setList] = useState<ReactionRole[]>([]);
+  const [list, setList] = useState<ButtonRole[]>([]);
   const [channels, setChannels] = useState<Channel[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [publishing, setPublishing] = useState(false);
@@ -63,15 +59,15 @@ export default function ReactionRolesPage() {
 
   const { loading } = useGuildLoad(
     guildId,
-    (id) => Promise.all([getReactionRoles(id), getChannels(id), getRoles(id)]),
-    ([rr, ch, r]) => {
-      setList(rr);
+    (id) => Promise.all([getButtonRoles(id), getChannels(id), getRoles(id)]),
+    ([br, ch, r]) => {
+      setList(br);
       setChannels(ch);
       setRoles(r);
     },
   );
 
-  function updateEntry(idx: number, field: keyof ReactionRoleEntry, value: string) {
+  function updateEntry(idx: number, field: keyof ButtonRoleEntry, value: string) {
     setForm((f) => ({
       ...f,
       entries: f.entries.map((e, i) => (i === idx ? { ...e, [field]: value } : e)),
@@ -79,23 +75,23 @@ export default function ReactionRolesPage() {
   }
 
   function addEntry() {
-    setForm((f) => ({ ...f, entries: [...f.entries, { emoji: "", roleId: "" }] }));
+    setForm((f) =>
+      f.entries.length >= MAX_BUTTONS
+        ? f
+        : { ...f, entries: [...f.entries, { label: "", emoji: "", roleId: "" }] },
+    );
   }
 
   function removeEntry(idx: number) {
     setForm((f) => ({ ...f, entries: f.entries.filter((_, i) => i !== idx) }));
   }
 
-  function startEdit(rr: ReactionRole) {
-    setEditingMessageId(rr.messageId);
+  function startEdit(br: ButtonRole) {
+    setEditingMessageId(br.messageId);
     setForm({
-      channelId: rr.channelId,
-      embed: rr.embed ?? {
-        title: rr.title ?? "",
-        description: rr.content ?? "",
-        color: rr.color ? (hexToNumber(rr.color) ?? 0xd4a843) : 0xd4a843,
-      },
-      entries: rr.entries,
+      channelId: br.channelId,
+      embed: br.embed ?? { color: 0xd4a843 },
+      entries: br.entries.length ? br.entries : EMPTY_FORM.entries,
     });
   }
 
@@ -104,11 +100,13 @@ export default function ReactionRolesPage() {
     setForm(EMPTY_FORM);
   }
 
+  const filledEntries = form.entries.filter((e) => e.label.trim() && e.roleId);
+  const uniqueRoles = new Set(filledEntries.map((e) => e.roleId)).size;
   const isFormValid =
-    form.channelId &&
+    Boolean(form.channelId) &&
     !isEmbedEmpty(form.embed) &&
-    form.entries.length > 0 &&
-    form.entries.every((e) => e.emoji.trim() && e.roleId);
+    filledEntries.length > 0 &&
+    uniqueRoles === filledEntries.length;
 
   async function handlePublish() {
     if (!isFormValid) return;
@@ -117,22 +115,20 @@ export default function ReactionRolesPage() {
     // Snapshot stanu sprzed publikacji — do optymistycznego UI i ewentualnego rollbacku.
     const embed = form.embed;
     const channelId = form.channelId;
-    const entries = form.entries.filter((e) => e.emoji.trim() && e.roleId);
+    const entries = filledEntries.map((e) => ({
+      label: e.label.trim(),
+      emoji: e.emoji?.trim() || undefined,
+      roleId: e.roleId,
+    }));
     const prevList = list;
     const prevForm = form;
     const prevEditing = editingMessageId;
 
     const tempId = `temp-${Date.now()}`;
-    const optimistic: ReactionRole = {
+    const optimistic: ButtonRole = {
       guildId,
       channelId,
       messageId: tempId,
-      title: embed.title ?? "",
-      content: embed.description ?? "",
-      color:
-        typeof embed.color === "number"
-          ? `#${embed.color.toString(16).padStart(6, "0")}`
-          : undefined,
       embed,
       entries,
     };
@@ -140,22 +136,22 @@ export default function ReactionRolesPage() {
     // Od razu pokaż nową pozycję (zastępując edytowaną) i wyczyść formularz.
     setList((l) => [
       optimistic,
-      ...(prevEditing ? l.filter((r) => r.messageId !== prevEditing) : l),
+      ...(prevEditing ? l.filter((b) => b.messageId !== prevEditing) : l),
     ]);
     setForm(EMPTY_FORM);
     setEditingMessageId(null);
 
     try {
-      if (prevEditing) await deleteReactionRole(guildId, prevEditing);
-      const created = await publishReactionRole(guildId, { channelId, embed, entries });
+      if (prevEditing) await deleteButtonRole(guildId, prevEditing);
+      const created = await publishButtonRole(guildId, { channelId, embed, entries });
       // Zamień placeholder na realny rekord (z prawdziwym messageId).
-      setList((l) => l.map((r) => (r.messageId === tempId ? created : r)));
-    } catch {
+      setList((l) => l.map((b) => (b.messageId === tempId ? created : b)));
+    } catch (e) {
       // Rollback: przywróć listę i formularz, żeby dało się poprawić i ponowić.
       setList(prevList);
       setForm(prevForm);
       setEditingMessageId(prevEditing);
-      toast("Nie udało się opublikować.", "error");
+      toast(e instanceof Error ? e.message : "Nie udało się opublikować.", "error");
     } finally {
       setPublishing(false);
     }
@@ -165,10 +161,10 @@ export default function ReactionRolesPage() {
     setPendingDelete(null);
     const prevList = list;
     // Optymistycznie zdejmij z listy; przywróć przy błędzie.
-    setList((l) => l.filter((r) => r.messageId !== messageId));
+    setList((l) => l.filter((b) => b.messageId !== messageId));
     if (editingMessageId === messageId) cancelEdit();
     try {
-      await deleteReactionRole(guildId, messageId);
+      await deleteButtonRole(guildId, messageId);
       toast("Wiadomość usunięta.", "success");
     } catch {
       setList(prevList);
@@ -204,22 +200,22 @@ export default function ReactionRolesPage() {
     <div className="jh-in flex flex-col p-4 sm:p-6 lg:p-8">
       <PageHeader
         category="Assignment Grid"
-        icon={SmilePlus}
+        icon={MousePointerClick}
         title={
           <>
-            Reaction <span className="italic text-primary">Roles</span>
+            Button <span className="italic text-primary">Roles</span>
           </>
         }
-        description="Bot publikuje embed z emoji — reakcja nadaje rolę."
+        description="Bot publikuje embed z przyciskami — klik nadaje lub zdejmuje rolę."
       />
 
       <HowItWorks
         className="mb-8"
         steps={[
           "Zbuduj embed: wybierz kanał, tytuł, treść i kolor (pełny edytor embeda).",
-          "Dodaj pary emoji → rola, np. ✅ → Zweryfikowany.",
-          "Kliknij Opublikuj — bot wyśle wiadomość i sam doda reakcje.",
-          "Klik reakcji nadaje przypisaną rolę, a jej zdjęcie — odbiera.",
+          "Dodaj przyciski: etykieta, opcjonalne emoji i rola (do 25 sztuk).",
+          "Kliknij Opublikuj — bot wyśle wiadomość z gotowymi przyciskami.",
+          "Klik przycisku nadaje rolę, a ponowny klik ją zdejmuje (odpowiedź widzi tylko klikający).",
         ]}
       />
 
@@ -260,24 +256,32 @@ export default function ReactionRolesPage() {
 
               <div>
                 <label className="mb-1 block text-xs text-gray-400">
-                  Pary emoji → rola
+                  Przyciski (etykieta · emoji · rola)
                 </label>
                 <p className="mb-2 text-xs text-gray-400">
-                  Standardowe emoji wpisz wprost (np. ✅). Custom emoji z serwera podaj
-                  jako <code className="text-gray-300">&lt;:nazwa:id&gt;</code> — w
-                  Discordzie uzyskasz ten zapis wpisując{" "}
-                  <code className="text-gray-300">\:nazwa:</code>.
+                  Emoji jest opcjonalne — standardowe wpisz wprost (np. ✅), custom jako{" "}
+                  <code className="text-gray-300">&lt;:nazwa:id&gt;</code>. Każda rola
+                  może mieć tylko jeden przycisk.
                 </p>
                 <div className="flex flex-col gap-2">
                   {form.entries.map((entry, idx) => (
                     <div key={idx} className="flex items-center gap-2">
                       <input
-                        name={`rr-emoji-${idx}`}
-                        aria-label="Emoji"
-                        value={entry.emoji}
+                        name={`br-label-${idx}`}
+                        aria-label="Etykieta przycisku"
+                        value={entry.label}
+                        onChange={(e) => updateEntry(idx, "label", e.target.value)}
+                        placeholder="Etykieta"
+                        maxLength={80}
+                        className="w-28 rounded-lg bg-background px-2 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <input
+                        name={`br-emoji-${idx}`}
+                        aria-label="Emoji przycisku"
+                        value={entry.emoji ?? ""}
                         onChange={(e) => updateEntry(idx, "emoji", e.target.value)}
                         placeholder="emoji"
-                        className="w-16 rounded-lg bg-background px-2 py-2 text-center text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+                        className="w-14 rounded-lg bg-background px-2 py-2 text-center text-sm text-white outline-none focus:ring-2 focus:ring-primary"
                       />
                       <RoleSelect
                         value={entry.roleId}
@@ -297,12 +301,14 @@ export default function ReactionRolesPage() {
                     </div>
                   ))}
                 </div>
-                <button
-                  onClick={addEntry}
-                  className="mt-2 text-xs text-primary hover:text-primary-hover"
-                >
-                  + Dodaj kolejną parę
-                </button>
+                {form.entries.length < MAX_BUTTONS && (
+                  <button
+                    onClick={addEntry}
+                    className="mt-2 text-xs text-primary hover:text-primary-hover"
+                  >
+                    + Dodaj kolejny przycisk
+                  </button>
+                )}
               </div>
 
               <Button
@@ -345,48 +351,52 @@ export default function ReactionRolesPage() {
                 Brak wiadomości. Opublikuj pierwszą po lewej.
               </div>
             ) : (
-              list.map((rr, i) => (
+              list.map((br, i) => (
                 <div
-                  key={rr.messageId}
+                  key={br.messageId}
                   style={{ "--i": i } as CSSProperties}
-                  className={`jh-stagger border-b border-border px-6 py-4 last:border-0 ${editingMessageId === rr.messageId ? "bg-primary/5" : ""}`}
+                  className={`jh-stagger border-b border-border px-6 py-4 last:border-0 ${editingMessageId === br.messageId ? "bg-primary/5" : ""}`}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        {rr.color && (
+                        {typeof br.embed?.color === "number" && (
                           <span
                             className="h-3 w-3 rounded-full"
-                            style={{ backgroundColor: rr.color }}
+                            style={{
+                              backgroundColor: `#${br.embed.color.toString(16).padStart(6, "0")}`,
+                            }}
                           />
                         )}
                         <p className="text-xs text-gray-400">
-                          # {channelName(rr.channelId)}
+                          # {channelName(br.channelId)}
                         </p>
                       </div>
-                      <p className="mt-1 text-sm font-semibold text-white">{rr.title}</p>
-                      <p className="truncate text-xs text-gray-300">{rr.content}</p>
+                      <p className="mt-1 text-sm font-semibold text-white">
+                        {br.embed?.title || "(bez tytułu)"}
+                      </p>
                       <div className="mt-2 flex flex-wrap gap-2">
-                        {rr.entries.map((e, i) => (
+                        {br.entries.map((e, i) => (
                           <span
                             key={i}
                             className="flex items-center gap-1.5 rounded-full bg-background px-2.5 py-1 text-xs text-gray-300"
                           >
-                            <span>{e.emoji}</span>
-                            <span>@{roleName(e.roleId)}</span>
+                            {e.emoji && <span>{e.emoji}</span>}
+                            <span>{e.label}</span>
+                            <span className="text-gray-500">→ @{roleName(e.roleId)}</span>
                           </span>
                         ))}
                       </div>
                     </div>
                     <div className="flex shrink-0 gap-2">
                       <button
-                        onClick={() => startEdit(rr)}
+                        onClick={() => startEdit(br)}
                         className="rounded-lg bg-background px-3 py-1.5 text-xs text-gray-300 hover:text-white"
                       >
                         Edytuj
                       </button>
                       <button
-                        onClick={() => setPendingDelete(rr.messageId)}
+                        onClick={() => setPendingDelete(br.messageId)}
                         className="rounded-lg bg-background px-3 py-1.5 text-xs text-red-400 hover:bg-red-400/10"
                       >
                         Usuń
@@ -402,7 +412,7 @@ export default function ReactionRolesPage() {
 
       {pendingDelete !== null && (
         <ConfirmModal
-          message="Czy na pewno chcesz usunąć tę wiadomość reaction role? Zostanie usunięta także z Discorda."
+          message="Czy na pewno chcesz usunąć tę wiadomość button role? Zostanie usunięta także z Discorda."
           onConfirm={() => handleDelete(pendingDelete)}
           onCancel={() => setPendingDelete(null)}
         />
