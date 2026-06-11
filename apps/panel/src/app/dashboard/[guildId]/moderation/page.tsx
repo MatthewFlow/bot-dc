@@ -2,7 +2,7 @@
 
 import { Search, ShieldAlert, Trash2 } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { type CSSProperties, useEffect, useState } from "react";
 
 import { MOD_ACTION, ModActionBadge } from "@/components/badges";
 import { ChannelSelect } from "@/components/ChannelSelect";
@@ -246,7 +246,8 @@ export default function ModerationPage() {
                       {warns.map((w, i) => (
                         <div
                           key={w.id}
-                          className="flex items-start gap-3 rounded-lg bg-background px-4 py-3"
+                          style={{ "--i": i } as CSSProperties}
+                          className="jh-stagger flex items-start gap-3 rounded-lg bg-background px-4 py-3"
                         >
                           <span
                             className={`mt-0.5 rounded px-1.5 py-0.5 text-xs font-bold ${MOD_ACTION.warn.cls}`}
@@ -300,11 +301,12 @@ export default function ModerationPage() {
             Brak akcji moderacyjnych.
           </div>
         ) : (
-          actions.map((a) => {
+          actions.map((a, i) => {
             return (
               <div
                 key={a.id}
-                className="flex flex-col gap-2 border-b border-border px-4 py-3 last:border-0 sm:flex-row sm:items-center sm:gap-3 sm:px-6"
+                style={{ "--i": i } as CSSProperties}
+                className="jh-stagger flex flex-col gap-2 border-b border-border px-4 py-3 last:border-0 sm:flex-row sm:items-center sm:gap-3 sm:px-6"
               >
                 <div className="flex min-w-0 flex-1 items-center gap-3">
                   <ModActionBadge

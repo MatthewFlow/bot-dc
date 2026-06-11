@@ -11,7 +11,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { type CSSProperties, useState } from "react";
 
 import { ChannelSelect } from "@/components/ChannelSelect";
 import { ConfirmModal } from "@/components/confirmModal";
@@ -334,14 +334,15 @@ export default function FeedbackPage() {
               </div>
             ) : (
               <div className="flex max-h-[640px] flex-col gap-3 overflow-y-auto p-4">
-                {list.map((f) => {
+                {list.map((f, i) => {
                   const meta = CAT_META[f.category];
                   const Icon = meta.icon;
                   const date = new Date(f.createdAt);
                   return (
                     <div
                       key={f.id}
-                      className={`group flex flex-col gap-2 rounded-lg border border-border border-l-2 ${meta.accent} bg-background/40 p-3 transition hover:bg-background`}
+                      style={{ "--i": i } as CSSProperties}
+                      className={`jh-stagger group flex flex-col gap-2 rounded-lg border border-border border-l-2 ${meta.accent} bg-background/40 p-3 transition hover:bg-background`}
                     >
                       <div className="flex flex-wrap items-center gap-2">
                         <Badge variant={meta.badge}>

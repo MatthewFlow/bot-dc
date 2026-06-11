@@ -1,3 +1,5 @@
+import { type CSSProperties } from "react";
+
 import { Avatar } from "@/components/Avatar";
 import { Skeleton } from "@/components/Skeleton";
 import type { LeaderboardEntry } from "@/lib/api";
@@ -45,10 +47,11 @@ export function LeaderboardRows({
 
   return (
     <div className="flex flex-col">
-      {entries.map((e) => (
+      {entries.map((e, i) => (
         <div
           key={e.userId}
-          className="flex items-center gap-3 border-b border-border px-5 py-3 last:border-0"
+          style={{ "--i": i } as CSSProperties}
+          className="jh-stagger flex items-center gap-3 border-b border-border px-5 py-3 last:border-0"
         >
           <span
             className={`w-5 shrink-0 text-center text-sm font-bold ${

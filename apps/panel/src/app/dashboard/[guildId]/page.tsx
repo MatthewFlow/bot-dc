@@ -10,7 +10,7 @@ import {
   Users,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { type CSSProperties, useEffect, useState } from "react";
 
 import { Avatar } from "@/components/Avatar";
 import { ModActionBadge, TicketStatusBadge } from "@/components/badges";
@@ -190,14 +190,15 @@ function RecentTickets({
         <EmptyRow>Brak ticketów.</EmptyRow>
       ) : (
         <div className="flex flex-col">
-          {tickets.map((t) => {
+          {tickets.map((t, i) => {
             const resolved = Boolean(t.username);
             const main = t.username ?? t.userId;
             return (
               <div
                 key={t.id}
                 title={t.subject || undefined}
-                className="flex items-center gap-3 border-b border-border px-5 py-3 last:border-0"
+                style={{ "--i": i } as CSSProperties}
+                className="jh-stagger flex items-center gap-3 border-b border-border px-5 py-3 last:border-0"
               >
                 <Avatar src={t.avatar} name={main} size="sm" />
                 <div className="min-w-0 flex-1">
@@ -248,7 +249,7 @@ function ActivityFeed({
         <EmptyRow>Brak akcji moderacyjnych.</EmptyRow>
       ) : (
         <div className="flex flex-col">
-          {actions.map((a) => {
+          {actions.map((a, i) => {
             const resolved = Boolean(a.displayName || a.username);
             // Główna linia: pseudonim (display name); pod nią mniejszą czcionką @nazwa.
             const main = a.displayName ?? a.username ?? a.userId;
@@ -257,7 +258,8 @@ function ActivityFeed({
               <div
                 key={a.id}
                 title={a.reason || undefined}
-                className="flex items-center gap-3 border-b border-border px-5 py-3 last:border-0"
+                style={{ "--i": i } as CSSProperties}
+                className="jh-stagger flex items-center gap-3 border-b border-border px-5 py-3 last:border-0"
               >
                 <Avatar src={a.avatar} name={main} size="sm" />
                 <div className="min-w-0 flex-1">

@@ -2,7 +2,7 @@
 
 import { Ticket as TicketIcon, Trash2 } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { type CSSProperties, useEffect, useState } from "react";
 
 import { Avatar } from "@/components/Avatar";
 import { TicketStatusBadge } from "@/components/badges";
@@ -517,10 +517,11 @@ export default function TicketsPage() {
                 {filter !== "all" ? ` (${FILTER_LABELS[filter].toLowerCase()})` : ""}.
               </div>
             ) : (
-              visibleTickets.map((ticket) => (
+              visibleTickets.map((ticket, i) => (
                 <div
                   key={ticket.id}
-                  className="flex flex-col gap-3 border-b border-border px-6 py-4 last:border-0 sm:flex-row sm:items-start sm:justify-between"
+                  style={{ "--i": i } as CSSProperties}
+                  className="jh-stagger flex flex-col gap-3 border-b border-border px-6 py-4 last:border-0 sm:flex-row sm:items-start sm:justify-between"
                 >
                   <div className="min-w-0 flex-1">
                     {/* Nagłówek: status + autor */}
