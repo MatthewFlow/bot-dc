@@ -64,7 +64,7 @@ export default function CommandsPage() {
   if (loading) return <CommandsSkeleton />;
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+    <div className="jh-in flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <PageHeader
           category="Konfiguracja serwera"

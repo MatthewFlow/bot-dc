@@ -198,7 +198,7 @@ export default function FeedbackPage() {
   if (loading) return <FeedbackSkeleton />;
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+    <div className="jh-in flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <PageHeader
         category="Twoja opinia"
         icon={MessageSquareHeart}

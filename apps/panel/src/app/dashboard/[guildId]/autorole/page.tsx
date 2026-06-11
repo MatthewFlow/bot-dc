@@ -18,7 +18,7 @@ import { getGuildConfig, getRoles, updateGuildConfig } from "@/lib/api";
 
 function AutoRoleSkeleton() {
   return (
-    <div className="flex flex-col p-4 sm:p-6 lg:p-8">
+    <div className="jh-in flex flex-col p-4 sm:p-6 lg:p-8">
       <div className="mb-8">
         <Skeleton className="mb-2 h-3 w-24" />
         <Skeleton className="mb-2 h-7 w-48" />
@@ -108,7 +108,7 @@ export default function AutoRolePage() {
   if (loading) return <AutoRoleSkeleton />;
 
   return (
-    <div className="flex flex-col p-4 sm:p-6 lg:p-8">
+    <div className="jh-in flex flex-col p-4 sm:p-6 lg:p-8">
       <PageHeader
         category="Assignment Grid"
         icon={UserPlus}

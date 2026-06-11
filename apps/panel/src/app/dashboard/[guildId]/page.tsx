@@ -343,7 +343,7 @@ export default function GuildOverviewPage() {
       : "wszystko działa stabilnie.";
 
   return (
-    <div className="flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
+    <div className="jh-in flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
       {/* Hero — powitanie + status serwera (bez wykresów / przycisków) */}
       <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-violet-600/25 via-indigo-700/15 to-amber-500/10 p-6 sm:p-8">
         <div
