@@ -258,11 +258,6 @@ export default function ReactionRolesPage() {
                 </button>
               </div>
 
-              <div>
-                <p className="mb-2 text-xs text-gray-400">Podgląd</p>
-                <EmbedPreview embed={form.embed} />
-              </div>
-
               <Button
                 onClick={handlePublish}
                 disabled={publishing || !isFormValid}
@@ -278,8 +273,18 @@ export default function ReactionRolesPage() {
           </div>
         </div>
 
-        {/* List */}
+        {/* Preview + List */}
         <div className="flex flex-1 flex-col gap-4">
+          {/* Podgląd — obok edytora, nad listą opublikowanych wiadomości */}
+          <div className="surface-raised rounded-xl bg-card">
+            <div className="border-b border-border px-6 py-4">
+              <p className="text-sm font-semibold text-white">Podgląd</p>
+            </div>
+            <div className="p-6">
+              <EmbedPreview embed={form.embed} />
+            </div>
+          </div>
+
           <div className="surface-raised rounded-xl bg-card">
             <div className="border-b border-border px-6 py-4">
               <p className="text-sm font-semibold text-white">
