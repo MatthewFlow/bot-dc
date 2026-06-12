@@ -4,57 +4,53 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Jurassic Haven** — a Discord bot platform with a web dashboard. Bun monorepo with three apps and one shared package.
+**Jurassic Haven** — a multi-tenant Discord bot platform with a web dashboard. A Bun monorepo
+with three apps (`bot`, `api`, `panel`) and one shared package (`db`). All Discord access flows
+through the bot/API; all persistence flows through `@jurassic-haven/db`.
+
+## Tech Stack (current versions)
+
+| Layer    | Stack                                                                                                  |
+| -------- | ------------------------------------------------------------------------------------------------------ |
+| Runtime  | Bun (workspaces), TypeScript 6                                                                         |
+| Bot      | discord.js 14, mongoose 9                                                                              |
+| API      | Hono 4, jose 6 (JWT), zod 4, mongoose 9                                                                |
+| Panel    | Next.js 16 (App Router), React 19, Tailwind 4, TanStack Query 5, Radix UI, sonner, zod 4, lucide-react |
+| Database | MongoDB + Mongoose 9                                                                                   |
+| Tooling  | ESLint 10 (flat config), Prettier 3, typescript-eslint 8                                               |
+
+Bun loads `.env` automatically — there is **no `dotenv` dependency**. Each app reads its config
+straight from `process.env`.
 
 ## Commands
 
-### Install
-
 ```bash
-bun install          # from repo root, installs all workspaces
-```
+bun install            # from repo root — installs all workspaces
 
-### Run apps (separate terminals)
+# Run apps (separate terminals)
+bun run bot            # apps/bot — production mode (bun run src/index.ts)
+bun run api            # apps/api — production mode
+bun run panel          # apps/panel — Next.js dev server
+bun run dev            # all dev servers at once (bun --filter './apps/*' dev)
 
-```bash
-bun run bot          # apps/bot — production mode
-bun run api          # apps/api — production mode
-bun run panel        # apps/panel — Next.js dev server
-
-# Or run all dev servers at once:
-bun run dev
-```
-
-### Dev mode (watch)
-
-```bash
+# Watch mode for a single app
 cd apps/bot && bun run dev    # bun --watch
 cd apps/api && bun run dev    # bun --watch
-```
 
-### Test & Typecheck
-
-```bash
-bun test               # run the unit test suite (bun:test)
-bun run typecheck      # tsc --noEmit for bot, api and panel
-```
-
-### Lint & Format
-
-```bash
-bun run lint           # ESLint across entire repo
-bun run lint:fix       # Auto-fix ESLint errors
+# Quality
+bun test               # unit suite (bun:test)
+bun run typecheck      # tsc per workspace (db, bot, api, panel)
+bun run lint           # ESLint across the whole repo
+bun run lint:fix       # ESLint --fix
 bun run format         # Prettier write
 bun run format:check   # Prettier check
 ```
 
 CI (`.github/workflows/ci.yml`) runs lint + typecheck + test on every push to `main` and on PRs.
-Unit tests cover pure logic (XP math, embed converter, config sanitization, permission checks);
-add `*.test.ts` next to the module under test.
+Unit tests cover pure logic (XP math, embed converter, config sanitization, guild access checks)
+and live next to the module under test as `*.test.ts`.
 
-> ESLint obejmuje wszystkie workspace'y łącznie z `apps/panel`. Konfiguracja w `eslint.config.ts` (root). `apps/bot` i `apps/api` mają włączone `verbatimModuleSyntax`, więc importy typów **muszą** używać `import type`.
-
-## Architecture
+## Repository layout
 
 ```
 apps/
@@ -63,97 +59,241 @@ apps/
   panel/  — Web dashboard (Next.js 16 + React 19 + Tailwind 4)
 packages/
   db/     — Shared database layer (MongoDB + Mongoose)
+deploy/   — Caddyfile + MongoDB backup script (VPS deployment)
+Dockerfile, docker-compose.yml, .env.production.example   — container deployment
+tsconfig.base.json — strict compiler baseline extended by every workspace tsconfig
+eslint.config.ts   — single flat config covering all workspaces
 ```
 
-### packages/db — shared database layer
+### TypeScript config
 
-All MongoDB access goes through this package. Structure:
+`tsconfig.base.json` is the strict baseline **every** workspace extends:
+`strict`, `verbatimModuleSyntax`, `erasableSyntaxOnly`, `noUncheckedIndexedAccess`,
+`noFallthroughCasesInSwitch`, `moduleDetection: force`, `module/target: ESNext`,
+`moduleResolution: bundler`, `noEmit`. Because `verbatimModuleSyntax` is in the base,
+**all** workspaces (including `panel` and `db`) must use `import type` for type-only imports —
+enforced by the `@typescript-eslint/consistent-type-imports` lint rule.
 
-- `repositories/` — TypeScript interfaces only (e.g. `IGuildConfigRepository`)
+- `apps/bot`, `apps/api` — add `types: ["node","bun"]`, `allowImportingTsExtensions`, and a
+  path alias `@jurassic-haven/db` → `packages/db/index.ts`.
+- `apps/panel` — overrides `target: ES2022`, DOM libs, `jsx: react-jsx`, the Next plugin, and a
+  `@/*` → `src/*` alias.
+- `packages/db` — adds `declaration` + `isolatedDeclarations`.
+
+## packages/db — shared database layer
+
+All MongoDB access goes through this package. Both `apps/bot` and `apps/api` depend on it as a
+workspace dependency.
+
+- `repositories/` — TypeScript interfaces + domain types only (e.g. `IGuildConfigRepository`)
 - `providers/mongoose/` — Mongoose implementations of those interfaces
 - `providers/mongoose/schemas/` — Mongoose schema definitions
-- `providers/mongoose/providers.ts` — singleton instances exported as `xpRepository`, `guildConfigRepository`, `reactionRoleRepository`, `buttonRoleRepository`, `warnRepository`, `ticketRepository`, `modActionRepository`, `sessionRepository`, `feedbackRepository`, `botStatusRepository`
-- `index.ts` — single public export surface for the whole package
-- `embed.ts` — shared `EmbedConfig` model + `toDiscordEmbed(cfg, sub?)` converter (one JSON shape used by both the API REST send and discord.js `embeds:[]`) + `isEmbedEmpty()`. `sub` substitutes template variables and is how `{user}`/`{server}`/`{avatar}` reach embeds
-- `xpHelpers.ts` — XP/level math: `XP_PER_MESSAGE=15`, `XP_COOLDOWN_MS=5000`, `XP_PER_LEVEL=100`, `XP_SAVE_DEBOUNCE_MS=2000`, `XP_SYNCALL_DELAY_MS=350` (bulk sync throttle), `levelFromXp(xp)`, `xpToNextLevel(xp)`
-- `client.ts` — `connectDb()` — call once at app startup before any DB use
+- `providers/mongoose/providers.ts` — singleton instances exported as `guildConfigRepository`,
+  `xpRepository`, `reactionRoleRepository`, `buttonRoleRepository`, `warnRepository`,
+  `ticketRepository`, `modActionRepository`, `sessionRepository`, `feedbackRepository`,
+  `botStatusRepository`
+- `index.ts` — the single public export surface for the whole package
+- `client.ts` — `connectDb()`, called once at app startup before any DB use
+- `embed.ts` — shared `EmbedConfig` model + `toDiscordEmbed(cfg, sub?)` converter (one JSON shape
+  used by both API REST sends and discord.js `embeds:[]`) + `isEmbedEmpty()`. `sub` substitutes
+  template variables and is how `{user}`/`{server}`/`{avatar}` reach embeds.
+- `xpHelpers.ts` — XP/level math and constants: `XP_PER_MESSAGE=15`, `XP_COOLDOWN_MS=5000`,
+  `XP_PER_LEVEL=100`, `XP_SAVE_DEBOUNCE_MS=2000`, `XP_SYNCALL_DELAY_MS=350`, `XP_SLIDER_MAX=8`,
+  `VOICE_XP_INTERVAL_MS=60000`; `levelFromXp(xp)`, `xpToNextLevel(xp)`, `clampSliderXp(v)`
+  (rounds/clamps to 0..8), `messageXpFor(lvl)` (priority: flat `messageXp` → legacy
+  `xpMultiplier × 15` → default 15).
 
-Guild config stores editable embeds as `EmbedConfig`: `welcomeEmbed`, `goodbyeEmbed`,
-`ticketPanelEmbed`, plus `ticketPanelButton` (`{ label?, emoji? }`). When an embed is set the bot
-uses it; otherwise it falls back to the legacy text message / built-in default.
+Guild config (`guildConfig.schema.ts`) holds all per-server settings: welcome/goodbye channels &
+messages, `joinRoleId`/`verifiedRoleId`, `roleRewards[]`, mod-log/ticket-log/feedback channels,
+`adminRoleId`, ticket support roles, `disabledCommands[]`, and nested config objects
+`autoMod`, `serverLog`, `leveling`. Editable embeds are stored as `EmbedConfig`: `welcomeEmbed`,
+`goodbyeEmbed`, `ticketPanelEmbed`, `feedbackPanelEmbed`, `levelUpEmbed`, plus `ticketPanelButton`
+(`{ label?, emoji? }`). When an embed is set the bot uses it; otherwise it falls back to the
+legacy text message / built-in default.
 
-Both `apps/bot` and `apps/api` import from `@jurassic-haven/db` (workspace dependency).
+## apps/bot — Discord bot
 
-### apps/bot — Discord bot
+Entry: `src/index.ts` → `connectDb()` → `createBot()` in `src/bot.ts` → `client.login(token)`.
 
-Entry point: `src/index.ts` → `createBot()` in `src/bot.ts`
+- **Env** (`src/config/env.ts`): `DISCORD_TOKEN` (required, throws if missing), `GUILD_ID`
+  (optional — only used to clear stale guild-scoped commands). Also reads `MONGODB_URI` (via db),
+  `PANEL_URL` (intro message), `CFG_ADMIN_ROLE_ID` (legacy admin fallback), `RESET_COMMANDS`.
+- **Commands** register **globally** via `src/commands/register.ts` (global pool avoids the
+  per-guild daily limit; idempotent PUT). Set `RESET_COMMANDS=true` and restart to clear global +
+  guild-scoped commands, then set it back.
+- **Command naming**: user (`/level`, `/leaderboard`, `/profile`, `/feedback`), admin config
+  (`/cfg_*`), moderation (`/mod_*`), tickets (`/ticket_*`), tests (`/test_*`).
+- **Dispatch** (`src/commands/handlers/handler.ts`): routes via a `Record<string, Handler>` map to
+  `user.ts`, `admin.ts`, `mod.ts`, `test.ts`, and `tickets/handler.ts`. Before dispatch it (1)
+  rejects commands listed in the per-guild `disabledCommands` array (read through the 15s config
+  cache; commands are registered globally so disabling is a runtime gate), then (2) guards
+  restricted commands (`cfg_*`, `mod_*`, `test_*`, `ticket_setup`, `ticket_delete`) via
+  `guard.ts` `requireAdminRole`. `ticket_close`/`ticket_add` are gated by private-thread
+  membership instead. A member passes the guard with the native Discord **Administrator**
+  permission, the per-guild `adminRoleId`, or the legacy global `CFG_ADMIN_ROLE_ID` — failure
+  replies ephemerally.
+- **Gateway intents**: `Guilds`, `GuildMembers`, `GuildMessages`, `MessageContent`,
+  `GuildMessageReactions`, `GuildVoiceStates`. Partials: `Message`, `Reaction`, `User` — always
+  fetch partials before processing in reaction handlers.
+- **Events** (wired in `bot.ts`): `guildCreate`/`guildDelete` (onboarding — intro embed on join
+  via `PANEL_URL`, config retained on leave), `guildMemberAdd`/`Remove` (welcome/goodbye +
+  auto-role), `messageCreate` (XP + automod), `messageReactionAdd`/`Remove` (reaction roles),
+  `threadUpdate`/`threadDelete` (ticket state sync). Server-log listeners
+  (`messageDelete`/`messageUpdate`/`guildMemberAdd`/`Remove`/`guildMemberUpdate`) are registered
+  separately so logging stays decoupled.
+- **Levels subsystem**: `src/levels/award.ts` (`applyLevelProgress`) is the shared post-XP path —
+  assigns progression roles (`autorole.ts`) and fires level-up notifications
+  (`levelUpNotify.ts`). XP comes from two sources, both honouring `leveling.noXpChannelIds`/
+  `noXpRoleIds`: messages (`messageCreate`, amount via `messageXpFor`, 5s cooldown) and voice
+  presence (`src/levels/voiceXp.ts` — a 60s sweep grants `leveling.voiceXp` per minute to eligible
+  members in voice longer than one minute; skips bots, the AFK channel, and self-muted/deafened).
+  `leveling` config (dashboard `levels` page): flat `messageXp`/`voiceXp` sliders (0–8, legacy
+  `xpMultiplier` still honoured when `messageXp` unset), no-XP channels/roles, and level-up
+  toggles (`levelUpEnabled` channel post, `levelUpDm`). The level-up message is a customizable
+  `levelUpEmbed` with variables `{user} {username} {server} {level} {role} {avatar}`; falls back
+  to a built-in embed.
+- **Moderation**: `/mod_*` handlers in `src/commands/handlers/mod.ts`; every action persists to
+  `modActionRepository` and is posted via `src/modlog.ts` to `modLogChannelId`.
+- **Auto-moderation** (`src/automod/automod.ts`): runs on `messageCreate` (config read through the
+  15s in-memory cache `src/utils/configCache.ts`). Filters: invites, links, banned words,
+  anti-spam (N messages / T seconds). Exempts staff (Administrator/Manage Server/Manage Messages)
+  plus configured roles/channels. Action `delete`/`warn`/`mute` reuses `sendModLog` with the bot
+  as moderator. Off unless `autoMod.enabled`.
+- **Server logging** (`src/serverlog/serverlog.ts`): posts events (message delete/edit, member
+  join/leave, role/nickname changes) to `serverLog.channelId` when `serverLog.enabled` and the
+  per-category toggle is on. Uses the same 15s cache; honours `exemptRoleIds`/`exemptChannelIds`.
+  For deletions it best-effort consults the audit log (needs View Audit Log) to show who deleted.
+- **Tickets** (`src/tickets/handler.ts`): `/ticket_setup` posts the panel embed+button (from
+  `ticketPanelEmbed`/`ticketPanelButton`, `custom_id: ticket_open`); the button opens a modal →
+  private thread (`pending`) → support-role ping → "claim" button. `src/tickets/log.ts` logs
+  open/close/delete to `ticketLogChannelId`.
+- **Button roles** (`src/buttonroles/handler.ts`): published from the dashboard as an embed with
+  up to 25 buttons, each `custom_id` = `br:<roleId>`, so a click toggles that role with **no DB or
+  cache lookup**. Dispatched in `bot.ts`'s button branch alongside `ticket_open`/`ticket_claim`/
+  `feedback_open`. Coexists with reaction roles (`messageReactionAdd`/`Remove`), whose lookups are
+  cache-gated through `src/utils/reactionRoleCache.ts` (60s per-guild set of panel message IDs).
+- **Verification flow**: `joinRoleId` (unverified) is given to every new member; `verifiedRoleId`
+  is the complement. When a member gains `verifiedRoleId` via reaction roles the bot removes
+  `joinRoleId`. `cfg_syncverify` assigns `joinRoleId` to members who have neither role.
+- **Feedback** (`src/feedback/feedback.ts`): one shared submit path backs both the `/feedback`
+  command and the feedback panel button (`custom_id: feedback_open` → modal). Submissions persist
+  via `feedbackRepository` (with `guildId`) and, when `feedbackChannelId` is set, post there as an
+  embed.
+- **Bot status heartbeat**: on ready and every 30s, `bot.ts` writes a heartbeat to
+  `botStatusRepository` (tag, avatar, guild count). The API marks the bot offline if the last beat
+  is older than 90s.
+- **Welcome/goodbye variables**: `{user}` → mention, `{username}` → name, `{server}` → guild name,
+  `{member_count}` → count, `{avatar}` → avatar URL. Substitution lives in `src/utils/embedVars.ts`.
+- Adding a slash command: define in `src/commands/register.ts` → add a handler → register it in
+  the dispatch map in `handler.ts`.
 
-- **Commands** are registered guild-scoped (requires `GUILD_ID` env). Set `RESET_COMMANDS=true` in `.env` and restart to clear and re-register.
-- **Command naming convention**: user commands (`/level`, `/leaderboard`, `/profile`), admin config commands (`/cfg_*`), moderation commands (`/mod_*`), ticket commands (`/ticket_*`), test commands (`/test_*`).
-- **Command dispatch**: `src/commands/handlers/handler.ts` routes interactions via a `Record<string, Handler>` map to `user.ts`, `admin.ts`, `mod.ts`, or `test.ts`. Admin/mod commands are guarded by `guard.ts` (`requireAdminRole`): a member passes with the native Discord **Administrator** permission, or with the per-guild `adminRoleId` (set from the dashboard), or the legacy global `CFG_ADMIN_ROLE_ID` env — replies ephemerally on failure. Before dispatch, commands listed in the per-guild `disabledCommands` array (toggled on the dashboard `commands` page, read through the same 15s config cache) are rejected ephemerally — commands register globally, so disabling is enforced at runtime, not by unregistering.
-- **Gateway intents**: `Guilds`, `GuildMembers`, `GuildMessages`, `MessageContent`, `GuildMessageReactions`. Partials: `Message`, `Reaction`, `User` — always fetch partials before processing in reaction event handlers.
-- **Events**: `guildCreate`/`guildDelete` (onboarding — intro message on join, config retained on leave), `memberAdd`, `memberRemove`, `messageCreate` (XP), `messageReactionAdd`/`Remove` (reaction roles), `threadUpdate`/`threadDelete` (ticket state sync).
-- **Levels subsystem**: `src/levels/autorole.ts` assigns progression roles; `src/levels/levelUpNotify.ts` posts/DMs level-up messages. `leveling` config (set on the dashboard `levels` page) adds an XP multiplier, no-XP channels/roles (skip XP), and level-up notification toggles (`levelUpEnabled` channel post, `levelUpDm` DM) — applied in `messageCreate`. The level-up message itself is a customizable embed (`levelUpEmbed`, edited on the `levels` page) with variables `{user} {username} {server} {level} {role} {avatar}`; falls back to a built-in embed when unset.
-- **Moderation**: `/mod_*` handlers in `src/commands/handlers/mod.ts`; every action persists to `modActionRepository` and is posted via `src/modlog.ts` to `modLogChannelId`.
-- **Auto-moderation**: `src/automod/automod.ts` runs on `messageCreate` (config read through a 15s in-memory cache, `src/utils/configCache.ts`). Filters: invites, links, banned words, anti-spam. Exempts staff (Administrator/Manage Server/Manage Messages) + configured roles/channels. Action `delete`/`warn`/`mute` reuses `sendModLog` with the bot as moderator. Off unless `autoMod.enabled`.
-- **Server logging**: `src/serverlog/serverlog.ts` posts events (message delete/edit, member join/leave, role/nickname changes) to `serverLog.channelId` when `serverLog.enabled` and the per-category toggle is on. Registered as separate listeners in `bot.ts` (decoupled from welcome/XP). Uses the same 15s config cache. Honors `exemptRoleIds`/`exemptChannelIds`; for deletions it also looks up the audit log (best-effort, needs View Audit Log) to show who deleted the message.
-- **Tickets**: `src/tickets/handler.ts` — `/ticket_setup` posts the panel embed+button (read from `ticketPanelEmbed`/`ticketPanelButton`); the button opens a modal → private thread (`pending`) → support-role ping → "claim" button. `src/tickets/log.ts` logs open/close to `ticketLogChannelId`.
-- **Button roles**: `src/buttonroles/handler.ts` — published from the dashboard as an embed with up to 25 buttons. Each button's `customId` is `br:<roleId>`, so a click toggles that role with **no DB or cache lookup** (Discord guarantees the component came from our message). Dispatched in `bot.ts`'s `interactionCreate` button branch alongside `ticket_open`/`ticket_claim`/`feedback_open`. Coexists with reaction roles (`messageReactionAdd`/`Remove`), whose lookups are cache-gated through `src/utils/reactionRoleCache.ts` (60s per-guild set of panel message IDs) so ordinary reactions never touch the DB.
-- **Verification flow**: `joinRoleId` (unverified) is given to every new member; `verifiedRoleId` (verified) is the complement. When a member gains `verifiedRoleId` via reaction roles, the bot removes `joinRoleId`. `cfg_syncverify` assigns `joinRoleId` to members who have neither role.
-- **Welcome/goodbye templates & embeds**: variables `{user}` → mention, `{username}` → plain name, `{server}` → guild name, `{member_count}` → current count, `{avatar}` → avatar URL. Substitution lives in `src/utils/embedVars.ts`. If a `welcomeEmbed`/`goodbyeEmbed` is configured the bot sends that embed (via `toDiscordEmbed`); otherwise the legacy text message.
-- Adding a new slash command requires: define in `src/commands/register.ts` → add handler in appropriate handler file → register/dispatch in `handler.ts`.
+## apps/api — REST API
 
-### apps/api — REST API
+Entry: `src/index.ts`. Port: `API_PORT` (default 3002). Framework: Hono with typed context
+variables (`AppVariables` in `types.ts`).
 
-Entry point: `src/index.ts`  
-Port: `API_PORT` env (default 3002)
+- **Auth**: Discord OAuth2 → JWT (jose), delivered as an **HttpOnly + Secure cookie** (`jh_token`);
+  the panel calls with `credentials: include`. The JWT payload carries `userId`, `username`,
+  `avatar` only. The Discord OAuth access token is stored **server-side** in MongoDB
+  (`sessionRepository`, TTL-indexed) via `src/lib/sessions.ts` — survives restarts, shared across
+  instances, never in the JWT. `COOKIE_SECURE` forces the Secure flag (auto-on in production).
+- `authMiddleware.ts` verifies the JWT (from `Authorization: Bearer` or cookie), looks up the
+  session store for the access token, and populates Hono context variables.
+- **CORS** origins come from `CORS_ORIGINS` (comma-separated → falls back to `PANEL_URL` → localhost);
+  credentials enabled, so a specific origin is echoed, never `*`.
+- **Rate limiting** (`src/middleware/rateLimit.ts`): global per-IP (`120 / 10s`), stricter on
+  `/auth/*` (`20 / 60s`) and `/feedback` POST (`10 / 60s`). `TRUST_PROXY=true` makes it read
+  `X-Forwarded-For` behind a reverse proxy.
+- **Production fail-fast**: when `NODE_ENV=production`, the API exits at startup if any of
+  `JWT_SECRET`, `MONGODB_URI`, `DISCORD_CLIENT_ID/SECRET`, `DISCORD_REDIRECT_URI`, `DISCORD_TOKEN`,
+  `PANEL_URL` is missing, or if `JWT_SECRET` is shorter than 32 chars.
+- **Routes**:
+  - `src/routes/authRoutes.ts` — `/auth/discord` starts OAuth2; `/auth/callback` exchanges the
+    code, sets `jh_token`, redirects to `PANEL_URL/auth/success`; `/auth/me` returns the JWT user;
+    `/auth/logout`.
+  - `src/routes/guilds.ts` (auth + per-guild admin guard on `/:guildId/*`):
+    `GET /guilds` (user's admin guilds via Discord OAuth, cached per-token 5 min with request
+    dedup in `guildGuard.ts`); `GET/PUT /:guildId/config` (PUT uses the `CONFIG_ALLOWED_FIELDS`
+    allowlist then `sanitizeConfigPatch` to validate/clamp — unknown fields dropped);
+    `GET/POST /:guildId/channels` and `/roles` (list/create via bot token);
+    `GET /:guildId/leaderboard` (XP enriched via `memberResolver`); `GET /:guildId/stats`
+    (member/online/ban/warn/ticket counts, each best-effort); `POST /:guildId/ticket-panel` and
+    `POST /:guildId/feedback-panel` (send the configured embed+button to a channel);
+    `GET/POST/DELETE /:guildId/feedback[...]` (server feedback list with unread count, mark-seen,
+    delete).
+  - `src/routes/reactionRoles.ts`, `src/routes/buttonRoles.ts` — reaction/button role CRUD; POST
+    builds the embed (full `EmbedConfig` or legacy title/content/color) + components, sends to
+    Discord, then persists; button-role POST returns the created record for optimistic UI.
+  - `src/routes/moderation.ts` (guild-admin guarded): `GET/DELETE /:guildId/warnings/:userId`,
+    `GET /:guildId/mod-actions`, `GET /:guildId/tickets` (enriched), `POST
+/:guildId/tickets/:threadId/close|reopen`.
+  - `src/routes/feedback.ts` (auth-only, not guild-gated): `POST /feedback` (author from JWT,
+    category/rating/message validated), `GET /feedback/mine`.
+  - `src/routes/status.ts` (auth-only): `GET /bot/status` — online if the last heartbeat is
+    fresher than 90s, plus tag/avatar/guild count/last seen.
+  - `GET /health`.
+- **Channel guard**: endpoints that post to a `channelId` from the request body or config
+  (ticket-panel, feedback-panel, reaction/button roles) first verify the channel belongs to the
+  path guild via `channelInGuild` (`src/lib/channelGuard.ts`, fail-closed) — stops an admin of one
+  guild from making the bot post into another.
+- Both the user OAuth token (guild list) and the bot token (channels, roles, leaderboard, stats,
+  panels, ...) are used, so the API also needs `DISCORD_TOKEN`.
 
-- Framework: Hono with typed context variables (`AppVariables` in `types.ts`)
-- Auth: Discord OAuth2 → JWT (jose library), delivered as an **HttpOnly + Secure cookie** (`jh_token`); the panel calls the API with `credentials: include`. JWT payload carries `userId`, `username`, `avatar` only. The Discord OAuth access token is stored **server-side** in MongoDB (`sessionRepository`, TTL-indexed) via `src/lib/sessions.ts` — survives restarts and is shared across scaled instances. Never in the JWT.
-- `authMiddleware.ts` verifies JWT (from `Authorization: Bearer` or cookie), looks up the session store to retrieve the access token, and populates Hono context variables for downstream routes.
-- CORS origins come from `CORS_ORIGINS` (comma-separated, falls back to `PANEL_URL`, then localhost); credentials are enabled so a specific origin is echoed, never `*`. Rate limiting (`src/middleware/rateLimit.ts`) is applied globally per IP, with a stricter limit on `/auth/*`.
-- Routes:
-  - `/auth/discord` — starts OAuth2 flow; `/auth/callback` — exchanges code, sets `jh_token` cookie, redirects to `PANEL_URL/auth/success`; `/auth/me` — returns user from JWT
-  - `GET /guilds` — user's admin guilds via Discord API (OAuth token); cached per-token for 5 min with concurrent-request deduplication (`src/lib/guildGuard.ts`)
-  - `GET/PUT /guilds/:guildId/config` — guild config read/write; PUT uses an explicit allowlist (`CONFIG_ALLOWED_FIELDS` in `src/routes/guilds.ts`, includes the embed fields) — unknown fields are silently dropped
-  - `GET /guilds/:guildId/stats` — dashboard stats (member/online counts via `with_counts`, ban count, warning count, ticket counts); each source is best-effort
-  - `GET/POST /guilds/:guildId/channels` — list / create a text channel via bot token
-  - `GET/POST /guilds/:guildId/roles` — list / create a role via bot token
-  - `GET /guilds/:guildId/leaderboard` — XP leaderboard enriched with Discord member data
-  - `POST /guilds/:guildId/ticket-panel` — sends the ticket panel embed+button (read from config, `{server}`/`{member_count}` substituted) to a channel
-  - `GET/POST/DELETE /guilds/:guildId/reaction-roles[/:messageId]` — reaction role CRUD; POST builds the embed (full `EmbedConfig` from the editor, or legacy title/content/color), sends to Discord, seeds reactions, then persists to DB
-  - `GET/POST/DELETE /guilds/:guildId/button-roles[/:messageId]` — button role CRUD; POST builds the embed + button rows (each `custom_id` is `br:<roleId>`, max 25, one per role), sends to the channel, then persists; returns the created record (used for optimistic UI)
-  - `src/routes/moderation.ts` (guild-admin guarded): `GET/DELETE /guilds/:guildId/warnings/:userId`, `GET /guilds/:guildId/mod-actions`, `GET /guilds/:guildId/tickets` (enriched with usernames/avatars), `POST /guilds/:guildId/tickets/:threadId/close|reopen`
-  - `src/routes/feedback.ts` (auth-only, not guild-gated; stricter rate limit on POST): `POST /feedback` (submit — author taken from JWT, category/rating/message validated), `GET /feedback/mine` (own submissions)
-- Endpoints that post to a `channelId` taken from the request body or config (ticket-panel, feedback-panel, reaction-roles, button-roles) first verify the channel belongs to the path guild via `channelInGuild` (`src/lib/channelGuard.ts`, fail-closed) — stops an admin of one guild from making the bot post into another guild it shares.
-- Both user OAuth token (guild list) and bot token (channels, roles, leaderboard, tickets, reaction roles, stats) are used — the API therefore also needs `DISCORD_TOKEN`.
+## apps/panel — Web dashboard
 
-### apps/panel — Web dashboard
+Next.js 16 App Router; all dashboard pages are client components (`"use client"`).
 
-Framework: Next.js 16 App Router, all dashboard pages are client components (`"use client"`).
+- **Auth**: token stored in `localStorage` as `jh_token`; on 401 the client clears it and redirects
+  to `/`.
+- **Data layer**: `src/lib/api.ts` is the typed `fetch` client (retry on 429,
+  `TokenExpiredError` on 401, shared `queryKeys`). Reads run through **TanStack Query** hooks in
+  `src/hooks/queries.ts` (`useGuildConfig`, `useChannels`, `useRoles`, `useLeaderboard`,
+  `useTickets`, `useModActions`, `useReactionRoles`, `useButtonRoles`, `useGuildFeedback`); the
+  `QueryProvider` (`src/components/QueryProvider.tsx`) wraps the app and includes devtools.
+  Validation schemas live in `src/lib/schemas.ts` (zod). Toasts via `sonner`
+  (`src/components/toast.tsx`).
+- **Routes**: `/` (landing), `/auth/success` (OAuth2 callback, saves JWT), `/dashboard` (guild
+  list), `/dashboard/[guildId]/*` (per-server pages).
+- **Dashboard sections** (`src/lib/nav.ts`): overview (stat cards + live bot status badge), pinned
+  top items **Dashboard** + **Feedback**, then grouped nav — Onboarding (`welcome`, `autorole`,
+  `roles` = unified Self-Roles for buttons **and** reactions), Community (`levels`, `tickets`),
+  Security (`moderation`, `automod`, `serverlog`), System (`commands`, `settings`).
+- **Layout**: each server page renders under `TopBar.tsx` (sticky breadcrumb + user menu +
+  `NotificationBell`) and `Sidebar.tsx`; both read the shared nav map. Icons via `lucide-react`.
+- **Embed editor**: `src/components/EmbedEditor.tsx` + `EmbedPreview.tsx` (live Discord-style
+  preview), shared across welcome/goodbye, ticket panel, feedback panel and self-roles. Helpers in
+  `src/lib/embed.ts` (color hex↔int, variable lists, `previewReplacer`). Avatars/guild icons render
+  via `next/image` (`cdn.discordapp.com` whitelisted in `next.config.ts`).
+- **Create helpers**: `CreateChannelButton.tsx` / `CreateRoleButton.tsx` (both built on
+  `CreateEntityButton.tsx`) call the POST channels/roles endpoints inline next to selects
+  (`ChannelSelect`/`RoleSelect`, built on `EntitySelect.tsx`).
+- **Auto-save**: config pages use `hooks/useAutoSave.ts` — a debounced hook that persists changes
+  automatically (baselines the loaded value so it never re-saves on load); `SaveButton` remains as
+  an explicit manual save. Self-roles publishing posts to Discord and stays manual, updating its
+  published list optimistically with rollback on failure.
 
-- Auth token stored in `localStorage` as `jh_token`; on 401, clears token and redirects to `/`.
-- All API calls go through `src/lib/api.ts` — a typed client wrapping `fetch` with retry on 429 and `TokenExpiredError` on 401. Reads for config/roles/channels use a **stale-while-revalidate** cache (`cachedFetch`): cached data returns instantly even when stale and is refreshed in the background (concurrent requests deduped), so page switching never blocks; writes call `invalidateGuildCache` to force a fresh read.
-- Routes: `/` (landing), `/auth/success` (OAuth2 callback, saves JWT), `/dashboard` (guild list), `/dashboard/[guildId]/*` (per-server config pages).
-- Dashboard sections: overview (stat cards + quick nav), `welcome` (text **or** full embed), `autorole` (join/verified roles), `levels` (XP role reward tiers), `reaction-roles` (embed editor), `button-roles` (embed + clickable role buttons), `moderation` (warnings + action log), `automod` (auto-moderation filters), `serverlog` (event logging), `tickets` (list + panel embed editor + config), `commands` (per-server command enable/disable toggles), `settings` (admin role + mod-log channel), `feedback` (submit product feedback — category/rating/message — + list of own submissions).
-- Each server page renders under `TopBar.tsx` (sticky breadcrumb + user menu) and `Sidebar.tsx`; both read the shared nav map in `src/lib/nav.ts` (icons via `lucide-react`).
-- **Embed editor**: `src/components/EmbedEditor.tsx` (full editor) + `EmbedPreview.tsx` (live Discord-style preview), shared across welcome/goodbye, ticket panel, reaction-roles and button-roles. Helpers in `src/lib/embed.ts` (color hex↔int, variable lists, `previewReplacer`). `EmbedConfig` mirrors the type in `@jurassic-haven/db`. Avatars/guild icons render via `next/image` (`cdn.discordapp.com` whitelisted in `next.config.ts`).
-- **Create helpers**: `CreateChannelButton.tsx` / `CreateRoleButton.tsx` call the `POST channels`/`roles` endpoints inline next to selects.
-- **Auto-save**: config pages use `hooks/useAutoSave.ts` — a debounced hook that persists changes automatically (baselines the loaded value so it never re-saves on load). The `SaveButton` remains as an explicit manual save. Reaction-roles and button-roles are excluded — their "publish" posts to Discord and stays manual; both update their published-list optimistically (placeholder on publish, instant removal on delete) with rollback on failure.
+## Environment Variables
 
-## Key Environment Variables
+| App   | Variable                   | Purpose                                                                             |
+| ----- | -------------------------- | ----------------------------------------------------------------------------------- |
+| bot   | `DISCORD_TOKEN`            | Bot token (required)                                                                |
+| bot   | `GUILD_ID`                 | Guild used only to clear stale guild-scoped commands on reset                       |
+| bot   | `PANEL_URL`                | Panel URL shown in the onboarding intro message                                     |
+| bot   | `CFG_ADMIN_ROLE_ID`        | Legacy fallback admin role (prefer native Administrator or per-guild `adminRoleId`) |
+| bot   | `RESET_COMMANDS`           | Set `true` once to clear & re-register slash commands                               |
+| api   | `API_PORT`                 | API port (default 3002)                                                             |
+| api   | `DISCORD_TOKEN`            | Bot token — proxies channel/role/leaderboard/stats/panel requests                   |
+| api   | `DISCORD_CLIENT_ID/SECRET` | OAuth2 credentials                                                                  |
+| api   | `DISCORD_REDIRECT_URI`     | OAuth2 callback URL                                                                 |
+| api   | `JWT_SECRET`               | HS256 signing key (≥ 32 chars in production)                                        |
+| api   | `PANEL_URL`                | OAuth2 redirect target + CORS fallback origin (default `http://localhost:3000`)     |
+| api   | `CORS_ORIGINS`             | Comma-separated allowed browser origins (falls back to `PANEL_URL`)                 |
+| api   | `COOKIE_SECURE`            | Force the Secure flag on the auth cookie (auto-on in production)                    |
+| api   | `TRUST_PROXY`              | Trust `X-Forwarded-For` for rate limiting behind a reverse proxy                    |
+| both  | `MONGODB_URI`              | MongoDB connection string                                                           |
+| both  | `NODE_ENV`                 | `production` enables fail-fast checks (api) and prod behaviour                      |
+| panel | `NEXT_PUBLIC_API_URL`      | API base URL, baked into the bundle at build (default `http://localhost:3002`)      |
 
-| App   | Variable                   | Purpose                                                                                                        |
-| ----- | -------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| bot   | `DISCORD_TOKEN`            | Bot token                                                                                                      |
-| bot   | `GUILD_ID`                 | Guild to register commands on                                                                                  |
-| bot   | `CFG_ADMIN_ROLE_ID`        | Legacy fallback admin role for `/cfg_*`/`/mod_*` (prefer native Administrator perm or per-guild `adminRoleId`) |
-| bot   | `RESET_COMMANDS`           | Set `true` once to reset slash commands                                                                        |
-| api   | `DISCORD_TOKEN`            | Bot token (used to proxy channel/role/leaderboard requests)                                                    |
-| api   | `CORS_ORIGINS`             | Comma-separated allowed browser origins (falls back to `PANEL_URL`)                                            |
-| api   | `DISCORD_CLIENT_ID/SECRET` | OAuth2 credentials                                                                                             |
-| api   | `DISCORD_REDIRECT_URI`     | OAuth2 callback URL                                                                                            |
-| api   | `JWT_SECRET`               | HS256 signing key                                                                                              |
-| api   | `PANEL_URL`                | Where to redirect after OAuth2 (default: `http://localhost:3000`)                                              |
-| both  | `MONGODB_URI`              | MongoDB connection string                                                                                      |
-| panel | `NEXT_PUBLIC_API_URL`      | API base URL (default: `http://localhost:3002`)                                                                |
+No secrets are committed — `.env*` files are git-ignored; `*.env.example` and
+`.env.production.example` contain only placeholders (example IPs use the reserved TEST-NET range).
+Per-app `.env.example` files document the variables each app actually reads.

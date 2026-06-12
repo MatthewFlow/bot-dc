@@ -1,5 +1,10 @@
 "use client";
 
+// Podgląd renderuje dowolne URL-e obrazków podane przez użytkownika w edytorze
+// embeda — next/image wymagałby whitelisty domen (remotePatterns), więc tu
+// świadomie używamy zwykłego <img>.
+/* eslint-disable @next/next/no-img-element */
+
 import type { EmbedConfig } from "@/lib/api";
 import { numberToHex } from "@/lib/embed";
 

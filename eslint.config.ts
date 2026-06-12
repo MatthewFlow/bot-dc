@@ -1,4 +1,5 @@
 import js from "@eslint/js";
+import nextPlugin from "@next/eslint-plugin-next";
 import prettierConfig from "eslint-config-prettier";
 import prettierPlugin from "eslint-plugin-prettier";
 import reactPlugin from "eslint-plugin-react";
@@ -55,6 +56,7 @@ export default tseslint.config(
     plugins: {
       react: reactPlugin,
       "react-hooks": reactHooksPlugin,
+      "@next/next": nextPlugin,
     },
     settings: {
       react: { version: "19.0" },
@@ -76,6 +78,11 @@ export default tseslint.config(
       // Hooki — tylko klasyczne dwie reguły (v7 dodał reguły React Compiler — nie używamy)
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
+      // Next.js — reguły specyficzne dla App Routera (next lint wycofany w Next 16)
+      ...nextPlugin.configs.recommended.rules,
+      ...nextPlugin.configs["core-web-vitals"].rules,
+      // Czysty App Router — brak katalogu `pages`, więc ta reguła tylko hałasuje.
+      "@next/next/no-html-link-for-pages": "off",
     },
   },
 
