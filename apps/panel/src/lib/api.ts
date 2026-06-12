@@ -287,7 +287,12 @@ function swr<T>(key: readonly unknown[], fetcher: () => Promise<T>): Promise<T> 
   return queryClient.fetchQuery({ queryKey: key, queryFn: fetcher, staleTime: STALE_MS });
 }
 
-/** Czyści cache odczytów serwera (jeden rodzaj albo config+channels+roles). Po mutacjach. */
+/**
+ * Oznacza odczyty serwera jako nieświeże po mutacji (jeden rodzaj albo
+ * config+channels+roles). Używa `invalidateQueries`, nie `removeQueries`:
+ * aktywni obserwatorzy zachowują bieżące dane i odświeżają je w tle (bez
+ * powrotu do `isLoading` → bez migania skeletonem strony po zapisie).
+ */
 export function invalidateGuildCache(
   guildId: string,
   kind?: "config" | "channels" | "roles",
@@ -295,7 +300,7 @@ export function invalidateGuildCache(
   const keys: readonly (readonly unknown[])[] = kind
     ? [[kind, guildId]]
     : [queryKeys.config(guildId), queryKeys.channels(guildId), queryKeys.roles(guildId)];
-  for (const key of keys) queryClient.removeQueries({ queryKey: key });
+  for (const key of keys) void queryClient.invalidateQueries({ queryKey: key });
 }
 
 export async function getMe(): Promise<User> {
