@@ -2,6 +2,7 @@ import { connectDb } from "@jurassic-haven/db";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
+import { startGuildGuardSweep } from "./lib/guildGuard";
 import { rateLimit } from "./middleware/rateLimit";
 import { authRoutes } from "./routes/authRoutes";
 import { buttonRoleRoutes } from "./routes/buttonRoles";
@@ -79,6 +80,9 @@ if (process.env.NODE_ENV === "production") {
 }
 
 await connectDb();
+
+// Okresowe czyszczenie wygasłych wpisów w cache dostępu do serwerów.
+startGuildGuardSweep();
 
 Bun.serve({ port, fetch: app.fetch });
 

@@ -112,6 +112,22 @@ export async function canAccessGuild(
   return hasBotAdminRole(userId, guildId);
 }
 
+/**
+ * Okresowo usuwa wygasłe wpisy z cache listy serwerów (per token) i cache roli
+ * admina (per user+guild) — bez tego rotacja tokenów/userów rozdyma mapy. Wołane
+ * raz przy starcie API; `unref`, by nie blokować zamknięcia procesu.
+ */
+export function startGuildGuardSweep(): () => void {
+  const timer = setInterval(() => {
+    const now = Date.now();
+    for (const [k, v] of cache) if (v.expiresAt <= now) cache.delete(k);
+    for (const [k, v] of roleAccessCache)
+      if (v.expiresAt <= now) roleAccessCache.delete(k);
+  }, CACHE_TTL_MS);
+  timer.unref?.();
+  return () => clearInterval(timer);
+}
+
 /** Serwery widoczne w panelu: zarządzane (Manage Server) + te z rolą admina bota. */
 export async function fetchAccessibleGuilds(
   accessToken: string,

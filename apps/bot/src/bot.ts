@@ -1,6 +1,7 @@
 import { botStatusRepository } from "@jurassic-haven/db";
-import { Client, GatewayIntentBits, Partials } from "discord.js";
+import { Client, GatewayIntentBits, Options, Partials } from "discord.js";
 
+import { startAutoModSweep } from "./automod/automod";
 import { handleButtonRoleClick } from "./buttonroles/handler";
 import { handleCommand } from "./commands/handlers/handler";
 import { clearGuildCommands, registerCommands } from "./commands/register";
@@ -42,6 +43,30 @@ export function createBot() {
       GatewayIntentBits.GuildVoiceStates,
     ],
     partials: [Partials.Message, Partials.Reaction, Partials.User],
+    // Ograniczenie cache w RAM. Świadomie NIE ruszamy GuildMemberManager —
+    // automod/autorole/role weryfikacji oraz XP głosowe czytają role z cache
+    // członków, więc zostaje domyślny. Tniemy za to rzeczy nieużywane lub
+    // odtwarzalne z eventów/partiali.
+    makeCache: Options.cacheWithLimits({
+      ...Options.DefaultMakeCacheSettings,
+      MessageManager: 100, // mniej niż domyślne 200 — serverlog patrzy tylko na świeże
+      ReactionManager: 0, // reakcje obsługujemy z eventu/partiala, nie z cache
+      GuildInviteManager: 0, // nieużywane
+      GuildScheduledEventManager: 0, // nieużywane
+      AutoModerationRuleManager: 0, // mamy własny automod
+    }),
+    sweepers: {
+      ...Options.DefaultSweeperSettings,
+      // Zamiataj wiadomości starsze niż 1 h co 30 min — heavy obiekty, a serverlog
+      // i tak dotyczy świeżych edycji/usunięć.
+      messages: { interval: 1_800, lifetime: 3_600 },
+      // Zamiataj userów-boty (poza naszym) — userów-ludzi zostawiamy, bo trzyma je
+      // też cache członków (sweep mógłby je zdesynchronizować).
+      users: {
+        interval: 3_600,
+        filter: () => (u) => u.bot && u.id !== u.client.user?.id,
+      },
+    },
   });
 
   client.once("clientReady", async () => {
@@ -72,6 +97,9 @@ export function createBot() {
 
     // Naliczanie XP za obecność na kanałach głosowych (co minutę powyżej 1. min).
     startVoiceXp(client);
+
+    // Okresowe czyszczenie mapy anty-spamu auto-moderacji.
+    startAutoModSweep();
   });
 
   client.on("guildCreate", onGuildCreate);

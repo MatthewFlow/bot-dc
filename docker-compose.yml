@@ -18,6 +18,10 @@ services:
     image: mongo:7
     restart: unless-stopped
     logging: *default-logging
+    # WiredTiger domyślnie bierze ~(50% RAM − 1GB) na cache — na małym VPS-ie zżera
+    # pamięć potrzebną botowi/API. Ograniczamy do 0.5 GB.
+    command: ["--wiredTigerCacheSizeGB", "0.5"]
+    mem_limit: 1g
     volumes:
       - mongo-data:/data/db
     # Brak `ports:` — Mongo jest dostępne tylko w sieci compose, nie z internetu.
@@ -34,6 +38,7 @@ services:
       target: api
     restart: unless-stopped
     logging: *default-logging
+    mem_limit: 512m
     environment:
       NODE_ENV: production
       API_PORT: "3002"
@@ -57,6 +62,7 @@ services:
       target: bot
     restart: unless-stopped
     logging: *default-logging
+    mem_limit: 512m
     environment:
       NODE_ENV: production
       MONGODB_URI: ${MONGODB_URI}
@@ -78,6 +84,7 @@ services:
         NEXT_PUBLIC_API_URL: /api
     restart: unless-stopped
     logging: *default-logging
+    mem_limit: 512m
     depends_on:
       - api
 
@@ -85,6 +92,7 @@ services:
     image: caddy:2-alpine
     restart: unless-stopped
     logging: *default-logging
+    mem_limit: 128m
     ports:
       - "80:80"
       - "443:443"

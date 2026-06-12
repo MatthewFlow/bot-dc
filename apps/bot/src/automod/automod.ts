@@ -9,6 +9,26 @@ const LINK_RE = /https?:\/\/\S+/i;
 // In-memory spam tracker: key `${guildId}:${userId}` -> recent message timestamps.
 const spamHits = new Map<string, number[]>();
 
+// Najdłuższe sensowne okno anty-spamu (spamWindowSeconds jest clampowane do 60 s).
+const SPAM_MAX_WINDOW_MS = 60_000;
+
+/**
+ * Okresowo usuwa wpisy anty-spamu nieaktywne dłużej niż okno — bez tego mapa
+ * rosłaby z każdym nowym `guild:user`. Wołane raz przy starcie bota; `unref`,
+ * by nie blokować zamknięcia procesu.
+ */
+export function startAutoModSweep(): () => void {
+  const timer = setInterval(() => {
+    const cutoff = Date.now() - SPAM_MAX_WINDOW_MS;
+    for (const [k, hits] of spamHits) {
+      const last = hits.at(-1);
+      if (last === undefined || last < cutoff) spamHits.delete(k);
+    }
+  }, SPAM_MAX_WINDOW_MS);
+  timer.unref?.();
+  return () => clearInterval(timer);
+}
+
 function isExempt(message: Message, cfg: AutoModConfig): boolean {
   const member = message.member;
   if (!member) return true;
