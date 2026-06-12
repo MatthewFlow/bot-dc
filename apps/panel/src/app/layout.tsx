@@ -13,7 +13,13 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="bg-background text-white min-h-screen antialiased">
+      {/* suppressHydrationWarning: rozszerzenia przeglądarki (np. Grammarly) wstrzykują
+          atrybuty na <body> przed hydracją — tłumimy tylko ten jeden poziom, realne
+          mismatchy w drzewie nadal są raportowane. */}
+      <body
+        suppressHydrationWarning
+        className="bg-background text-white min-h-screen antialiased"
+      >
         <QueryProvider>
           <ToastProvider>{children}</ToastProvider>
         </QueryProvider>
