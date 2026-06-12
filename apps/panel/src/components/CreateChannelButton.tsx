@@ -1,97 +1,31 @@
 "use client";
 
-import { X } from "lucide-react";
-import { useState } from "react";
-
-import { useToast } from "@/components/toast";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { CreateEntityButton } from "@/components/CreateEntityButton";
 import type { Channel } from "@/lib/api";
 import { createChannel } from "@/lib/api";
 
-interface CreateChannelButtonProps {
-  guildId: string;
-  defaultName?: string;
-  onCreated: (channel: Channel) => void;
-}
-
-/**
- * Tworzy nowy kanał tekstowy przez bota i zwraca go przez onCreated.
- * Pokazuje inline input z nazwą zamiast natychmiastowego tworzenia.
- */
+/** Tworzy nowy kanał tekstowy przez bota i zwraca go przez onCreated. */
 export function CreateChannelButton({
   guildId,
   defaultName = "",
   onCreated,
-}: CreateChannelButtonProps) {
-  const toast = useToast();
-  const [open, setOpen] = useState(false);
-  const [name, setName] = useState(defaultName);
-  const [busy, setBusy] = useState(false);
-
-  async function submit() {
-    const trimmed = name.trim();
-    if (!trimmed) return;
-    setBusy(true);
-    try {
-      const channel = await createChannel(guildId, trimmed);
-      onCreated(channel);
-      toast(`Utworzono kanał #${channel.name}`, "success");
-      setOpen(false);
-    } catch {
-      toast("Nie udało się utworzyć kanału. Sprawdź uprawnienia bota.", "error");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  if (!open) {
-    return (
-      <Button
-        variant="secondary"
-        onClick={() => {
-          setName(defaultName);
-          setOpen(true);
-        }}
-        className="h-auto shrink-0 px-3 py-2.5 font-normal text-gray-300"
-        title="Utwórz nowy kanał przez bota"
-      >
-        + Stwórz kanał
-      </Button>
-    );
-  }
-
+}: {
+  guildId: string;
+  defaultName?: string;
+  onCreated: (channel: Channel) => void;
+}) {
   return (
-    <div className="flex w-full flex-wrap items-center gap-2">
-      <Input
-        autoFocus
-        name="newChannelName"
-        aria-label="Nazwa nowego kanału"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") submit();
-          if (e.key === "Escape") setOpen(false);
-        }}
-        placeholder="nazwa-kanału"
-        className="min-w-0 flex-1 py-2.5"
-      />
-      <Button
-        onClick={submit}
-        disabled={busy || !name.trim()}
-        className="h-auto shrink-0 px-3 py-2.5"
-      >
-        {busy ? "…" : "Utwórz"}
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => setOpen(false)}
-        className="shrink-0"
-        title="Anuluj"
-      >
-        <X className="size-4" />
-      </Button>
-    </div>
+    <CreateEntityButton<Channel>
+      defaultName={defaultName}
+      create={(name) => createChannel(guildId, name)}
+      onCreated={onCreated}
+      openLabel="+ Stwórz kanał"
+      inputName="newChannelName"
+      inputAriaLabel="Nazwa nowego kanału"
+      inputPlaceholder="nazwa-kanału"
+      successMessage={(ch) => `Utworzono kanał #${ch.name}`}
+      errorMessage="Nie udało się utworzyć kanału. Sprawdź uprawnienia bota."
+      title="Utwórz nowy kanał przez bota"
+    />
   );
 }
