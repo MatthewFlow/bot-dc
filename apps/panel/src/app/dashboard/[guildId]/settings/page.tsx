@@ -4,8 +4,7 @@ import { Settings } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 
-import { ChannelSelect } from "@/components/ChannelSelect";
-import { CreateChannelButton } from "@/components/CreateChannelButton";
+import { ChannelField } from "@/components/ChannelField";
 import { CreateRoleButton } from "@/components/CreateRoleButton";
 import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
@@ -141,35 +140,20 @@ export default function SettingsPage() {
               </p>
             </div>
 
-            <div>
-              <label className="mb-1 block text-xs text-gray-400">
-                Kanał logów moderacji
-              </label>
-              <div className="flex max-w-sm flex-wrap items-center gap-2">
-                <ChannelSelect
-                  value={config.modLogChannelId ?? ""}
-                  onChange={(v) =>
-                    setConfig((c) => ({ ...c, modLogChannelId: v || undefined }))
-                  }
-                  channels={channels}
-                  placeholder="— Nie ustawiono —"
-                  className="min-w-0 flex-1 px-3 py-2.5"
-                />
-                <CreateChannelButton
-                  guildId={guildId}
-                  defaultName="mod-logi"
-                  onCreated={(ch) => {
-                    setChannels((prev) =>
-                      [...prev, ch].sort((a, b) => a.name.localeCompare(b.name)),
-                    );
-                    setConfig((c) => ({ ...c, modLogChannelId: ch.id }));
-                  }}
-                />
-              </div>
-              <p className="mt-1 text-xs text-gray-400">
-                Tu trafiają logi akcji moderacyjnych (ostrzeżenia, muty, kicki, bany).
-              </p>
-            </div>
+            <ChannelField
+              className="max-w-sm"
+              label="Kanał logów moderacji"
+              value={config.modLogChannelId ?? ""}
+              onChange={(v) =>
+                setConfig((c) => ({ ...c, modLogChannelId: v || undefined }))
+              }
+              channels={channels}
+              onChannelsChange={setChannels}
+              guildId={guildId}
+              defaultName="mod-logi"
+              placeholder="— Nie ustawiono —"
+              hint="Tu trafiają logi akcji moderacyjnych (ostrzeżenia, muty, kicki, bany)."
+            />
           </div>
         </div>
       </div>

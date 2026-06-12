@@ -13,9 +13,8 @@ import {
 import { useParams } from "next/navigation";
 import { type CSSProperties, useState } from "react";
 
-import { ChannelSelect } from "@/components/ChannelSelect";
+import { ChannelField } from "@/components/ChannelField";
 import { ConfirmModal } from "@/components/confirmModal";
-import { CreateChannelButton } from "@/components/CreateChannelButton";
 import { EmbedEditor } from "@/components/EmbedEditor";
 import { EmbedPreviewCard } from "@/components/EmbedPreviewCard";
 import { HowItWorks } from "@/components/HowItWorks";
@@ -387,34 +386,24 @@ export default function FeedbackPage() {
           title="Panel feedbacku"
           description="Embed z przyciskiem „Podziel się opinią” wysyłany na kanał, by każdy mógł zgłaszać opinie z Discorda."
         >
-          <div>
-            <label className="mb-1 block text-xs text-gray-400">Kanał feedbacku</label>
-            <div className="flex flex-wrap items-center gap-2">
-              <ChannelSelect
-                value={config.feedbackChannelId ?? ""}
-                onChange={(v) =>
-                  setConfig((c) => ({ ...c, feedbackChannelId: v || undefined }))
-                }
-                channels={channels}
-                placeholder="— Nie ustawiono —"
-                className="min-w-0 flex-1 px-3 py-2.5"
-              />
-              <CreateChannelButton
-                guildId={guildId}
-                defaultName="feedback"
-                onCreated={(ch) => {
-                  setChannels((prev) =>
-                    [...prev, ch].sort((a, b) => a.name.localeCompare(b.name)),
-                  );
-                  setConfig((c) => ({ ...c, feedbackChannelId: ch.id }));
-                }}
-              />
-            </div>
-            <p className="mt-1 text-xs text-gray-400">
-              Tu trafiają zgłoszenia z komendy <code>/feedback</code> oraz panel z
-              przyciskiem.
-            </p>
-          </div>
+          <ChannelField
+            label="Kanał feedbacku"
+            value={config.feedbackChannelId ?? ""}
+            onChange={(v) =>
+              setConfig((c) => ({ ...c, feedbackChannelId: v || undefined }))
+            }
+            channels={channels}
+            onChannelsChange={setChannels}
+            guildId={guildId}
+            defaultName="feedback"
+            placeholder="— Nie ustawiono —"
+            hint={
+              <>
+                Tu trafiają zgłoszenia z komendy <code>/feedback</code> oraz panel z
+                przyciskiem.
+              </>
+            }
+          />
 
           <EmbedEditor
             value={config.feedbackPanelEmbed ?? DEFAULT_FEEDBACK_PANEL_EMBED}

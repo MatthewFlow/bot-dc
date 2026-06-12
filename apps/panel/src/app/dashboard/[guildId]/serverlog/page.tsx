@@ -4,8 +4,8 @@ import { ScrollText } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 
+import { ChannelField } from "@/components/ChannelField";
 import { ChannelSelect } from "@/components/ChannelSelect";
-import { CreateChannelButton } from "@/components/CreateChannelButton";
 import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
 import { RoleSelect } from "@/components/RoleSelect";
@@ -200,28 +200,15 @@ export default function ServerLogPage() {
             <div className={CARD}>
               <p className={SECTION_HEAD}>Kanał logów</p>
               <div className="p-6">
-                <div className="flex flex-wrap items-center gap-2">
-                  <ChannelSelect
-                    value={sl.channelId ?? ""}
-                    onChange={(v) => setSl({ channelId: v || undefined })}
-                    channels={channels}
-                    placeholder="— Wybierz kanał —"
-                    className="min-w-0 flex-1 px-3 py-2.5"
-                  />
-                  <CreateChannelButton
-                    guildId={guildId}
-                    defaultName="logi-serwera"
-                    onCreated={(ch) => {
-                      setChannels((prev) =>
-                        [...prev, ch].sort((a, b) => a.name.localeCompare(b.name)),
-                      );
-                      setSl({ channelId: ch.id });
-                    }}
-                  />
-                </div>
-                <p className="mt-2 text-xs text-gray-400">
-                  Tu trafiają wszystkie włączone zdarzenia.
-                </p>
+                <ChannelField
+                  value={sl.channelId ?? ""}
+                  onChange={(v) => setSl({ channelId: v || undefined })}
+                  channels={channels}
+                  onChannelsChange={setChannels}
+                  guildId={guildId}
+                  defaultName="logi-serwera"
+                  hint="Tu trafiają wszystkie włączone zdarzenia."
+                />
               </div>
             </div>
 

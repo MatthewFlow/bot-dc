@@ -5,9 +5,8 @@ import { useParams } from "next/navigation";
 import { type CSSProperties, useEffect, useState } from "react";
 
 import { MOD_ACTION, ModActionBadge } from "@/components/badges";
-import { ChannelSelect } from "@/components/ChannelSelect";
+import { ChannelField } from "@/components/ChannelField";
 import { ConfirmModal } from "@/components/confirmModal";
-import { CreateChannelButton } from "@/components/CreateChannelButton";
 import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
 import { RefreshButton } from "@/components/RefreshButton";
@@ -154,34 +153,16 @@ export default function ModerationPage() {
               />
             </div>
             <div className="flex flex-col gap-4 p-6">
-              <div>
-                <label className="mb-1 block text-xs text-gray-400">
-                  Kanał logów moderacji
-                </label>
-                <div className="flex flex-wrap items-center gap-2">
-                  <ChannelSelect
-                    value={config.modLogChannelId ?? ""}
-                    onChange={(v) => setConfig((c) => ({ ...c, modLogChannelId: v }))}
-                    channels={channels}
-                    placeholder="— Wybierz kanał —"
-                    className="min-w-0 flex-1 px-3 py-2.5"
-                  />
-                  <CreateChannelButton
-                    guildId={guildId}
-                    defaultName="mod-logi"
-                    onCreated={(ch) => {
-                      setChannels((prev) =>
-                        [...prev, ch].sort((a, b) => a.name.localeCompare(b.name)),
-                      );
-                      setConfig((c) => ({ ...c, modLogChannelId: ch.id }));
-                    }}
-                  />
-                </div>
-                <p className="mt-1 text-xs text-gray-400">
-                  Tutaj trafiają logi: warn, mute, kick, ban. Audyt zapisuje się też do
-                  bazy.
-                </p>
-              </div>
+              <ChannelField
+                label="Kanał logów moderacji"
+                value={config.modLogChannelId ?? ""}
+                onChange={(v) => setConfig((c) => ({ ...c, modLogChannelId: v }))}
+                channels={channels}
+                onChannelsChange={setChannels}
+                guildId={guildId}
+                defaultName="mod-logi"
+                hint="Tutaj trafiają logi: warn, mute, kick, ban. Audyt zapisuje się też do bazy."
+              />
             </div>
           </div>
         </div>

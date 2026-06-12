@@ -6,9 +6,8 @@ import { type CSSProperties, useEffect, useState } from "react";
 
 import { Avatar } from "@/components/Avatar";
 import { TicketStatusBadge } from "@/components/badges";
-import { ChannelSelect } from "@/components/ChannelSelect";
+import { ChannelField } from "@/components/ChannelField";
 import { ConfirmModal } from "@/components/confirmModal";
-import { CreateChannelButton } from "@/components/CreateChannelButton";
 import { CreateRoleButton } from "@/components/CreateRoleButton";
 import { EmbedEditor } from "@/components/EmbedEditor";
 import { EmbedPreviewCard } from "@/components/EmbedPreviewCard";
@@ -20,6 +19,7 @@ import { SaveButton } from "@/components/SaveButton";
 import { PageSkeleton, Skeleton, SkeletonRow } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
+import { VariablesList } from "@/components/VariablesList";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { useGuildLoad } from "@/hooks/useGuildLoad";
 import type { Channel, GuildConfig, Role, Ticket, TicketStatus } from "@/lib/api";
@@ -255,6 +255,15 @@ export default function TicketsPage() {
           title="Panel ticketów"
           description="Zbuduj embed i przycisk, a potem opublikuj na kanał."
         >
+          <ChannelField
+            label="Kanał publikacji"
+            value={panelChannelId}
+            onChange={setPanelChannelId}
+            channels={channels}
+            onChannelsChange={setChannels}
+            guildId={guildId}
+            defaultName="tickety"
+          />
           <EmbedEditor
             value={config.ticketPanelEmbed ?? DEFAULT_TICKET_PANEL_EMBED}
             onChange={(embed) => setConfig((c) => ({ ...c, ticketPanelEmbed: embed }))}
@@ -313,28 +322,8 @@ export default function TicketsPage() {
             </div>
           </div>
 
-          {/* Publikacja panelu na kanał */}
+          {/* Publikacja na wybrany wyżej kanał */}
           <div className="border-t border-border pt-4">
-            <label className="mb-1 block text-xs text-gray-400">Kanał publikacji</label>
-            <div className="flex flex-wrap items-center gap-2">
-              <ChannelSelect
-                value={panelChannelId}
-                onChange={setPanelChannelId}
-                channels={channels}
-                placeholder="— Wybierz kanał —"
-                className="min-w-0 flex-1 px-3 py-2.5"
-              />
-              <CreateChannelButton
-                guildId={guildId}
-                defaultName="tickety"
-                onCreated={(ch) => {
-                  setChannels((prev) =>
-                    [...prev, ch].sort((a, b) => a.name.localeCompare(b.name)),
-                  );
-                  setPanelChannelId(ch.id);
-                }}
-              />
-            </div>
             <Button
               onClick={handleSendPanel}
               disabled={!panelChannelId || sendingPanel}
@@ -354,17 +343,10 @@ export default function TicketsPage() {
           className="lg:sticky lg:top-20"
         >
           {/* Dostępne zmienne — panel jest statyczny, więc tylko kontekst serwera */}
-          <div className="mt-4">
-            <p className="mb-2 text-xs text-gray-400">Dostępne zmienne</p>
-            <div className="flex flex-col gap-2">
-              {TICKET_VARS.map((v) => (
-                <div key={v} className="flex items-center gap-3">
-                  <span className="w-32 font-mono text-xs text-primary">{v}</span>
-                  <span className="text-xs text-gray-300">{VARIABLE_INFO[v]}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <VariablesList
+            className="mt-4"
+            items={TICKET_VARS.map((v) => ({ label: v, desc: VARIABLE_INFO[v] ?? "" }))}
+          />
         </EmbedPreviewCard>
       </div>
 
@@ -422,33 +404,16 @@ export default function TicketsPage() {
                 </p>
               </div>
 
-              <div>
-                <label className="mb-1 block text-xs text-gray-400">
-                  Kanał logów ticketów
-                </label>
-                <div className="flex flex-wrap items-center gap-2">
-                  <ChannelSelect
-                    value={config.ticketLogChannelId ?? ""}
-                    onChange={(v) => setConfig((c) => ({ ...c, ticketLogChannelId: v }))}
-                    channels={channels}
-                    placeholder="— Wybierz kanał —"
-                    className="min-w-0 flex-1 px-3 py-2.5"
-                  />
-                  <CreateChannelButton
-                    guildId={guildId}
-                    defaultName="ticket-logi"
-                    onCreated={(ch) => {
-                      setChannels((prev) =>
-                        [...prev, ch].sort((a, b) => a.name.localeCompare(b.name)),
-                      );
-                      setConfig((c) => ({ ...c, ticketLogChannelId: ch.id }));
-                    }}
-                  />
-                </div>
-                <p className="mt-1 text-xs text-gray-400">
-                  Tu trafiają logi otwarcia i zamknięcia ticketów.
-                </p>
-              </div>
+              <ChannelField
+                label="Kanał logów ticketów"
+                value={config.ticketLogChannelId ?? ""}
+                onChange={(v) => setConfig((c) => ({ ...c, ticketLogChannelId: v }))}
+                channels={channels}
+                onChannelsChange={setChannels}
+                guildId={guildId}
+                defaultName="ticket-logi"
+                hint="Tu trafiają logi otwarcia i zamknięcia ticketów."
+              />
             </div>
           </div>
 

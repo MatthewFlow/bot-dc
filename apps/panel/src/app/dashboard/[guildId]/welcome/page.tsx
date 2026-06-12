@@ -4,8 +4,7 @@ import { DoorClosed, DoorOpen, type LucideIcon } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useRef, useState } from "react";
 
-import { ChannelSelect } from "@/components/ChannelSelect";
-import { CreateChannelButton } from "@/components/CreateChannelButton";
+import { ChannelField } from "@/components/ChannelField";
 import { EmbedEditor } from "@/components/EmbedEditor";
 import { EmbedPreview } from "@/components/EmbedPreview";
 import { HowItWorks } from "@/components/HowItWorks";
@@ -14,6 +13,7 @@ import { PanelCard } from "@/components/PanelCard";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
+import { VariablesList } from "@/components/VariablesList";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { useGuildLoad } from "@/hooks/useGuildLoad";
 import type { Channel, EmbedConfig, GuildConfig } from "@/lib/api";
@@ -217,38 +217,22 @@ export default function WelcomePage() {
             </div>
 
             {/* Kanał */}
-            <div>
-              <label className="mb-1 block text-xs text-gray-400">Kanał</label>
-              <div className="flex flex-wrap items-center gap-2">
-                <ChannelSelect
-                  value={channelId ?? ""}
-                  onChange={(val) =>
-                    setConfig((c) =>
-                      tab === "welcome"
-                        ? { ...c, welcomeChannelId: val || undefined }
-                        : { ...c, goodbyeChannelId: val || undefined },
-                    )
-                  }
-                  channels={channels}
-                  placeholder="— Nie ustawiono —"
-                  className="min-w-0 flex-1 px-3 py-2.5"
-                />
-                <CreateChannelButton
-                  guildId={guildId}
-                  defaultName={tab === "welcome" ? "powitania" : "pozegnania"}
-                  onCreated={(ch) => {
-                    setChannels((prev) =>
-                      [...prev, ch].sort((a, b) => a.name.localeCompare(b.name)),
-                    );
-                    setConfig((c) =>
-                      tab === "welcome"
-                        ? { ...c, welcomeChannelId: ch.id }
-                        : { ...c, goodbyeChannelId: ch.id },
-                    );
-                  }}
-                />
-              </div>
-            </div>
+            <ChannelField
+              label="Kanał"
+              value={channelId ?? ""}
+              onChange={(val) =>
+                setConfig((c) =>
+                  tab === "welcome"
+                    ? { ...c, welcomeChannelId: val || undefined }
+                    : { ...c, goodbyeChannelId: val || undefined },
+                )
+              }
+              channels={channels}
+              onChannelsChange={setChannels}
+              guildId={guildId}
+              defaultName={tab === "welcome" ? "powitania" : "pozegnania"}
+              placeholder="— Nie ustawiono —"
+            />
 
             {/* Tryb: prosty tekst vs embed */}
             <div className="flex gap-1 rounded-lg bg-background p-1">
@@ -346,19 +330,7 @@ export default function WelcomePage() {
               </div>
             </div>
           )}
-          <div className="mt-6">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
-              Dostępne zmienne
-            </p>
-            <div className="flex flex-col gap-2">
-              {VARIABLES.map((v) => (
-                <div key={v.label} className="flex items-center gap-3">
-                  <span className="w-32 font-mono text-xs text-primary">{v.label}</span>
-                  <span className="text-xs text-gray-300">{v.desc}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+          <VariablesList items={VARIABLES} className="mt-6" />
         </PanelCard>
       </div>
     </div>
