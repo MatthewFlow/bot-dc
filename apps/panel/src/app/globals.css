@@ -33,11 +33,13 @@
   --shadow-button: 0 1px 2px rgba(0, 0, 0, 0.35);
   --shadow-popover: 0 8px 24px rgba(0, 0, 0, 0.45);
 
-  /* ── Motion tokens — jeden easing + 3 czasy, by ruch był spójny w całym panelu. */
-  --ease-out: cubic-bezier(0.2, 0.6, 0.2, 1);
-  --dur-fast: 150ms;
-  --dur: 250ms;
-  --dur-slow: 400ms;
+  /* ── Motion tokens — jeden easing + 3 czasy, by ruch był spójny w całym panelu.
+     `--ease-out` to miękki „long-tail" ease-out (styl Linear/Vercel): szybki start,
+     delikatne dojście — naturalny i nowoczesny zarówno dla hoverów, jak i wejść. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 140ms;
+  --dur: 220ms;
+  --dur-slow: 380ms;
 }
 
 @theme inline {
@@ -65,6 +67,11 @@
   --shadow-elevated: var(--shadow-elevated);
   --shadow-button: var(--shadow-button);
   --shadow-popover: var(--shadow-popover);
+
+  /* Każdy gołe `transition`/`transition-colors`/`transition-transform` dziedziczy
+     teraz easing i czas marki — koniec z rozjazdem między hoverami a wejściami. */
+  --default-transition-duration: var(--dur-fast);
+  --default-transition-timing-function: var(--ease-out);
 }
 
 /* Powierzchnia „wypukła": cień karty + delikatne światło u góry. */
@@ -133,7 +140,7 @@ body {
 @keyframes jh-fade-up {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(6px);
   }
   to {
     opacity: 1;
@@ -147,8 +154,8 @@ body {
 
 .jh-stagger {
   animation: jh-fade-up var(--dur) var(--ease-out) both;
-  /* Limit, by długie listy nie czekały sekundami; po ~12. elemencie pełna prędkość. */
-  animation-delay: calc(min(var(--i, 0), 12) * 35ms);
+  /* Limit, by długie listy nie czekały sekundami; po ~10. elemencie pełna prędkość. */
+  animation-delay: calc(min(var(--i, 0), 10) * 30ms);
 }
 
 .jh-card {
@@ -184,17 +191,17 @@ body {
 .jh-blob-a {
   top: -10rem;
   left: 6%;
-  animation: jh-float-a 22s ease-in-out infinite;
+  animation: jh-float-a 34s ease-in-out infinite;
 }
 .jh-blob-b {
   bottom: -10rem;
   right: 4%;
-  animation: jh-float-b 28s ease-in-out infinite;
+  animation: jh-float-b 40s ease-in-out infinite;
 }
 .jh-blob-c {
   top: 28%;
   left: 52%;
-  animation: jh-float-c 25s ease-in-out infinite;
+  animation: jh-float-c 37s ease-in-out infinite;
 }
 
 @keyframes jh-float-a {
@@ -203,22 +210,22 @@ body {
     transform: translate(0, 0) scale(1);
   }
   33% {
-    transform: translate(7vw, 5vh) scale(1.12);
+    transform: translate(3.5vw, 2.5vh) scale(1.06);
   }
   66% {
-    transform: translate(-4vw, 9vh) scale(0.94);
+    transform: translate(-2vw, 4.5vh) scale(0.97);
   }
 }
 @keyframes jh-float-b {
   0%,
   100% {
-    transform: translate(0, 0) scale(1.05);
+    transform: translate(0, 0) scale(1.03);
   }
   33% {
-    transform: translate(-6vw, -4vh) scale(0.92);
+    transform: translate(-3vw, -2vh) scale(0.96);
   }
   66% {
-    transform: translate(5vw, -8vh) scale(1.15);
+    transform: translate(2.5vw, -4vh) scale(1.08);
   }
 }
 @keyframes jh-float-c {
@@ -227,7 +234,7 @@ body {
     transform: translate(-50%, -50%) scale(1);
   }
   50% {
-    transform: translate(-58%, -42%) scale(1.18);
+    transform: translate(-54%, -46%) scale(1.09);
   }
 }
 
