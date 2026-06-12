@@ -20,15 +20,12 @@ import {
 } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
-import { useGuildLoad } from "@/hooks/useGuildLoad";
+import { useButtonRoles, useChannels, useReactionRoles, useRoles } from "@/hooks/queries";
+import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import type { ButtonRole, Channel, EmbedConfig, ReactionRole, Role } from "@/lib/api";
 import {
   deleteButtonRole,
   deleteReactionRole,
-  getButtonRoles,
-  getChannels,
-  getReactionRoles,
-  getRoles,
   publishButtonRole,
   publishReactionRole,
 } from "@/lib/api";
@@ -84,23 +81,28 @@ export default function RolesPage() {
   );
   const [pendingDelete, setPendingDelete] = useState<SelfRole | null>(null);
 
-  const { loading } = useGuildLoad(
-    guildId,
-    (id) =>
-      Promise.all([
-        getButtonRoles(id),
-        getReactionRoles(id),
-        getChannels(id),
-        getRoles(id),
-      ]),
-    ([br, rr, ch, r]) => {
-      setList([
-        ...br.map((b) => ({ kind: "button" as const, ...b })),
-        ...rr.map((x) => ({ kind: "reaction" as const, ...x })),
-      ]);
-      setChannels(ch);
-      setRoles(r);
-    },
+  const buttonRolesQ = useButtonRoles(guildId);
+  const reactionRolesQ = useReactionRoles(guildId);
+  const channelsQ = useChannels(guildId);
+  const rolesQ = useRoles(guildId);
+  const loading =
+    buttonRolesQ.isLoading ||
+    reactionRolesQ.isLoading ||
+    channelsQ.isLoading ||
+    rolesQ.isLoading;
+  useRedirectOnError(buttonRolesQ.isError, buttonRolesQ.error);
+  useSeedOnce(channelsQ.data, setChannels);
+  useSeedOnce(rolesQ.data, setRoles);
+  // Lista łączy oba źródła — seed dopiero, gdy oba są dostępne.
+  const bothRoles =
+    buttonRolesQ.data && reactionRolesQ.data
+      ? { br: buttonRolesQ.data, rr: reactionRolesQ.data }
+      : undefined;
+  useSeedOnce(bothRoles, ({ br, rr }) =>
+    setList([
+      ...br.map((b) => ({ kind: "button" as const, ...b })),
+      ...rr.map((x) => ({ kind: "reaction" as const, ...x })),
+    ]),
   );
 
   const maxEntries = form.type === "button" ? 25 : 20;

@@ -11,10 +11,11 @@ import { RoleSelect } from "@/components/RoleSelect";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
 import { Switch } from "@/components/ui/switch";
+import { useGuildConfig, useRoles } from "@/hooks/queries";
+import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import { useGuildLoad } from "@/hooks/useGuildLoad";
 import type { GuildConfig, Role } from "@/lib/api";
-import { getGuildConfig, getRoles, updateGuildConfig } from "@/lib/api";
+import { updateGuildConfig } from "@/lib/api";
 
 function AutoRoleSkeleton() {
   return (
@@ -61,16 +62,16 @@ export default function AutoRolePage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { loading } = useGuildLoad(
-    guildId,
-    (id) => Promise.all([getGuildConfig(id), getRoles(id)]),
-    ([cfg, r]) => {
-      setConfig(cfg);
-      setSavedRoleId(cfg.joinRoleId);
-      setSavedVerifiedRoleId(cfg.verifiedRoleId);
-      setRoles(r);
-    },
-  );
+  const configQ = useGuildConfig(guildId);
+  const rolesQ = useRoles(guildId);
+  const loading = configQ.isLoading || rolesQ.isLoading;
+  useRedirectOnError(configQ.isError, configQ.error);
+  useSeedOnce(configQ.data, (cfg) => {
+    setConfig(cfg);
+    setSavedRoleId(cfg.joinRoleId);
+    setSavedVerifiedRoleId(cfg.verifiedRoleId);
+  });
+  useSeedOnce(rolesQ.data, setRoles);
 
   async function handleSave() {
     setSaving(true);

@@ -25,8 +25,9 @@ import { PageSkeleton, Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useChannels, useGuildConfig, useGuildFeedback } from "@/hooks/queries";
+import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import { useGuildLoad } from "@/hooks/useGuildLoad";
 import type {
   Channel,
   EmbedConfig,
@@ -36,9 +37,6 @@ import type {
 } from "@/lib/api";
 import {
   deleteGuildFeedback,
-  getChannels,
-  getGuildConfig,
-  getGuildFeedback,
   sendFeedbackPanel,
   submitFeedback,
   updateGuildConfig,
@@ -115,15 +113,14 @@ export default function FeedbackPage() {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [sendingPanel, setSendingPanel] = useState(false);
 
-  const { loading } = useGuildLoad(
-    guildId,
-    (id) => Promise.all([getGuildFeedback(id), getGuildConfig(id), getChannels(id)]),
-    ([fb, cfg, ch]) => {
-      setList(fb.items);
-      setConfig(cfg);
-      setChannels(ch);
-    },
-  );
+  const feedbackQ = useGuildFeedback(guildId);
+  const configQ = useGuildConfig(guildId);
+  const channelsQ = useChannels(guildId);
+  const loading = feedbackQ.isLoading || configQ.isLoading || channelsQ.isLoading;
+  useRedirectOnError(configQ.isError, configQ.error);
+  useSeedOnce(feedbackQ.data, (fb) => setList(fb.items));
+  useSeedOnce(configQ.data, setConfig);
+  useSeedOnce(channelsQ.data, setChannels);
 
   async function handleSubmit() {
     const parsed = feedbackInputSchema.safeParse({

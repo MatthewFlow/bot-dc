@@ -13,10 +13,11 @@ import { SaveButton } from "@/components/SaveButton";
 import { PageSkeleton, Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { Switch } from "@/components/ui/switch";
+import { useChannels, useGuildConfig, useRoles } from "@/hooks/queries";
+import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import { useGuildLoad } from "@/hooks/useGuildLoad";
 import type { Channel, GuildConfig, Role, ServerLogConfig } from "@/lib/api";
-import { getChannels, getGuildConfig, getRoles, updateGuildConfig } from "@/lib/api";
+import { updateGuildConfig } from "@/lib/api";
 
 const DEFAULT_SERVERLOG: ServerLogConfig = {
   enabled: false,
@@ -95,15 +96,14 @@ export default function ServerLogPage() {
   const [roles, setRoles] = useState<Role[]>([]);
   const [saving, setSaving] = useState(false);
 
-  const { loading } = useGuildLoad(
-    guildId,
-    (id) => Promise.all([getGuildConfig(id), getChannels(id), getRoles(id)]),
-    ([cfg, ch, r]) => {
-      setConfig(cfg);
-      setChannels(ch);
-      setRoles(r);
-    },
-  );
+  const configQ = useGuildConfig(guildId);
+  const channelsQ = useChannels(guildId);
+  const rolesQ = useRoles(guildId);
+  const loading = configQ.isLoading || channelsQ.isLoading || rolesQ.isLoading;
+  useRedirectOnError(configQ.isError, configQ.error);
+  useSeedOnce(configQ.data, setConfig);
+  useSeedOnce(channelsQ.data, setChannels);
+  useSeedOnce(rolesQ.data, setRoles);
 
   // Scalenie z defaultami wypełnia pola brakujące w starszych zapisach (np. exemptRoleIds).
   const sl = { ...DEFAULT_SERVERLOG, ...config.serverLog };

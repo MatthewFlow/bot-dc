@@ -12,10 +12,11 @@ import { RoleSelect } from "@/components/RoleSelect";
 import { SaveButton } from "@/components/SaveButton";
 import { PageSkeleton, Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
+import { useChannels, useGuildConfig, useRoles } from "@/hooks/queries";
+import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import { useGuildLoad } from "@/hooks/useGuildLoad";
 import type { Channel, GuildConfig, Role } from "@/lib/api";
-import { getChannels, getGuildConfig, getRoles, updateGuildConfig } from "@/lib/api";
+import { updateGuildConfig } from "@/lib/api";
 
 function SettingsSkeleton() {
   return (
@@ -35,15 +36,14 @@ export default function SettingsPage() {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [saving, setSaving] = useState(false);
 
-  const { loading } = useGuildLoad(
-    guildId,
-    (id) => Promise.all([getGuildConfig(id), getRoles(id), getChannels(id)]),
-    ([cfg, r, ch]) => {
-      setConfig(cfg);
-      setRoles(r);
-      setChannels(ch);
-    },
-  );
+  const configQ = useGuildConfig(guildId);
+  const rolesQ = useRoles(guildId);
+  const channelsQ = useChannels(guildId);
+  const loading = configQ.isLoading || rolesQ.isLoading || channelsQ.isLoading;
+  useRedirectOnError(configQ.isError, configQ.error);
+  useSeedOnce(configQ.data, setConfig);
+  useSeedOnce(rolesQ.data, setRoles);
+  useSeedOnce(channelsQ.data, setChannels);
 
   async function handleSave() {
     setSaving(true);

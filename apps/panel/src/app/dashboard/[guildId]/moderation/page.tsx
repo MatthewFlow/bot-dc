@@ -13,16 +13,10 @@ import { RefreshButton } from "@/components/RefreshButton";
 import { SaveButton } from "@/components/SaveButton";
 import { PageSkeleton, Skeleton, SkeletonRow } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
-import { useGuildLoad } from "@/hooks/useGuildLoad";
+import { useChannels, useGuildConfig } from "@/hooks/queries";
+import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import type { Channel, GuildConfig, ModAction, Warn } from "@/lib/api";
-import {
-  clearWarnings,
-  getChannels,
-  getGuildConfig,
-  getModActions,
-  getWarnings,
-  updateGuildConfig,
-} from "@/lib/api";
+import { clearWarnings, getModActions, getWarnings, updateGuildConfig } from "@/lib/api";
 
 function ModSkeleton() {
   return (
@@ -51,14 +45,12 @@ export default function ModerationPage() {
   const [actions, setActions] = useState<ModAction[]>([]);
   const [actionsLoading, setActionsLoading] = useState(false);
 
-  const { loading } = useGuildLoad(
-    guildId,
-    (id) => Promise.all([getGuildConfig(id), getChannels(id)]),
-    ([cfg, ch]) => {
-      setConfig(cfg);
-      setChannels(ch);
-    },
-  );
+  const configQ = useGuildConfig(guildId);
+  const channelsQ = useChannels(guildId);
+  const loading = configQ.isLoading || channelsQ.isLoading;
+  useRedirectOnError(configQ.isError, configQ.error);
+  useSeedOnce(configQ.data, setConfig);
+  useSeedOnce(channelsQ.data, setChannels);
 
   useEffect(() => {
     fetchActions();

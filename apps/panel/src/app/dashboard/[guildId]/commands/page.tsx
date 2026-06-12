@@ -10,10 +10,11 @@ import { PageHeader } from "@/components/PageHeader";
 import { SaveButton } from "@/components/SaveButton";
 import { PageSkeleton, Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
+import { useGuildConfig } from "@/hooks/queries";
+import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import { useGuildLoad } from "@/hooks/useGuildLoad";
 import type { GuildConfig } from "@/lib/api";
-import { getGuildConfig, updateGuildConfig } from "@/lib/api";
+import { updateGuildConfig } from "@/lib/api";
 
 function CommandsSkeleton() {
   return (
@@ -31,11 +32,10 @@ export default function CommandsPage() {
   const [config, setConfig] = useState<GuildConfig>({});
   const [saving, setSaving] = useState(false);
 
-  const { loading } = useGuildLoad(
-    guildId,
-    (id) => getGuildConfig(id),
-    (cfg) => setConfig(cfg),
-  );
+  const configQ = useGuildConfig(guildId);
+  const loading = configQ.isLoading;
+  useRedirectOnError(configQ.isError, configQ.error);
+  useSeedOnce(configQ.data, setConfig);
 
   const disabled = new Set(config.disabledCommands ?? []);
   const setDisabled = (next: Set<string>) =>

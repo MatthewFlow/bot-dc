@@ -14,10 +14,11 @@ import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { VariablesList } from "@/components/VariablesList";
+import { useChannels, useGuildConfig } from "@/hooks/queries";
+import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import { useGuildLoad } from "@/hooks/useGuildLoad";
 import type { Channel, EmbedConfig, GuildConfig } from "@/lib/api";
-import { getChannels, getGuildConfig, updateGuildConfig } from "@/lib/api";
+import { updateGuildConfig } from "@/lib/api";
 import { previewReplacer, WELCOME_VARS } from "@/lib/embed";
 
 type Tab = "welcome" | "goodbye";
@@ -99,14 +100,12 @@ export default function WelcomePage() {
   const [saving, setSaving] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const { loading } = useGuildLoad(
-    guildId,
-    (id) => Promise.all([getGuildConfig(id), getChannels(id)]),
-    ([cfg, ch]) => {
-      setConfig(cfg);
-      setChannels(ch);
-    },
-  );
+  const configQ = useGuildConfig(guildId);
+  const channelsQ = useChannels(guildId);
+  const loading = configQ.isLoading || channelsQ.isLoading;
+  useRedirectOnError(configQ.isError, configQ.error);
+  useSeedOnce(configQ.data, setConfig);
+  useSeedOnce(channelsQ.data, setChannels);
 
   async function handleSave() {
     setSaving(true);

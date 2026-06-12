@@ -20,15 +20,13 @@ import { PageSkeleton, Skeleton, SkeletonRow } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
 import { VariablesList } from "@/components/VariablesList";
+import { useChannels, useGuildConfig, useRoles } from "@/hooks/queries";
+import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import { useGuildLoad } from "@/hooks/useGuildLoad";
 import type { Channel, GuildConfig, Role, Ticket, TicketStatus } from "@/lib/api";
 import {
   closeTicket,
   deleteTicket,
-  getChannels,
-  getGuildConfig,
-  getRoles,
   getTickets,
   reopenTicket,
   sendTicketPanel,
@@ -94,15 +92,14 @@ export default function TicketsPage() {
   const [actionBusy, setActionBusy] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
-  const { loading } = useGuildLoad(
-    guildId,
-    (id) => Promise.all([getGuildConfig(id), getRoles(id), getChannels(id)]),
-    ([cfg, r, ch]) => {
-      setConfig(cfg);
-      setRoles(r);
-      setChannels(ch);
-    },
-  );
+  const configQ = useGuildConfig(guildId);
+  const rolesQ = useRoles(guildId);
+  const channelsQ = useChannels(guildId);
+  const loading = configQ.isLoading || rolesQ.isLoading || channelsQ.isLoading;
+  useRedirectOnError(configQ.isError, configQ.error);
+  useSeedOnce(configQ.data, setConfig);
+  useSeedOnce(rolesQ.data, setRoles);
+  useSeedOnce(channelsQ.data, setChannels);
 
   useEffect(() => {
     fetchTickets();

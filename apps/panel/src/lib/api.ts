@@ -366,13 +366,16 @@ export async function getGuilds(): Promise<Guild[]> {
   return res.json();
 }
 
+/** Surowy fetcher (bez cache) — queryFn dla useQuery; imperatywnie używaj getGuildConfig. */
+export async function fetchGuildConfig(guildId: string): Promise<GuildConfig> {
+  const res = await fetch(`${API_URL}/guilds/${guildId}/config`, BASE);
+  handleUnauthorized(res);
+  if (!res.ok) throw new Error("Failed to fetch config");
+  return (await res.json()) as GuildConfig;
+}
+
 export function getGuildConfig(guildId: string): Promise<GuildConfig> {
-  return swr(queryKeys.config(guildId), async () => {
-    const res = await fetch(`${API_URL}/guilds/${guildId}/config`, BASE);
-    handleUnauthorized(res);
-    if (!res.ok) throw new Error("Failed to fetch config");
-    return (await res.json()) as GuildConfig;
-  });
+  return swr(queryKeys.config(guildId), () => fetchGuildConfig(guildId));
 }
 
 /** Patch konfiguracji — embedy mogą być `null`, by je wyczyścić (powrót do trybu tekstowego). */
@@ -410,20 +413,26 @@ export async function updateGuildConfig(
   invalidateGuildCache(guildId, "config");
 }
 
+/** Surowy fetcher (bez cache) — queryFn dla useQuery; imperatywnie używaj getChannels. */
+export async function fetchChannels(guildId: string): Promise<Channel[]> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/channels`);
+  if (!res.ok) throw new Error("Failed to fetch channels");
+  return (await res.json()) as Channel[];
+}
+
 export function getChannels(guildId: string): Promise<Channel[]> {
-  return swr(queryKeys.channels(guildId), async () => {
-    const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/channels`);
-    if (!res.ok) throw new Error("Failed to fetch channels");
-    return (await res.json()) as Channel[];
-  });
+  return swr(queryKeys.channels(guildId), () => fetchChannels(guildId));
+}
+
+/** Surowy fetcher (bez cache) — queryFn dla useQuery; imperatywnie używaj getRoles. */
+export async function fetchRoles(guildId: string): Promise<Role[]> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/roles`);
+  if (!res.ok) throw new Error("Failed to fetch roles");
+  return (await res.json()) as Role[];
 }
 
 export function getRoles(guildId: string): Promise<Role[]> {
-  return swr(queryKeys.roles(guildId), async () => {
-    const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/roles`);
-    if (!res.ok) throw new Error("Failed to fetch roles");
-    return (await res.json()) as Role[];
-  });
+  return swr(queryKeys.roles(guildId), () => fetchRoles(guildId));
 }
 
 /**

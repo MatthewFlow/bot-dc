@@ -19,8 +19,9 @@ import { PageSkeleton, Skeleton, SkeletonRow } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { useChannels, useGuildConfig, useRoles } from "@/hooks/queries";
+import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import { useGuildLoad } from "@/hooks/useGuildLoad";
 import type {
   Channel,
   EmbedConfig,
@@ -29,13 +30,7 @@ import type {
   LevelingConfig,
   Role,
 } from "@/lib/api";
-import {
-  getChannels,
-  getGuildConfig,
-  getLeaderboard,
-  getRoles,
-  updateGuildConfig,
-} from "@/lib/api";
+import { getLeaderboard, updateGuildConfig } from "@/lib/api";
 import { LEVEL_VARS, previewReplacer } from "@/lib/embed";
 
 const DEFAULT_LEVELING: LevelingConfig = {
@@ -184,15 +179,14 @@ export default function LevelsPage() {
   const [newRoleId, setNewRoleId] = useState("");
   const [pendingDelete, setPendingDelete] = useState<number | null>(null);
 
-  const { loading } = useGuildLoad(
-    guildId,
-    (id) => Promise.all([getGuildConfig(id), getRoles(id), getChannels(id)]),
-    ([cfg, r, ch]) => {
-      setConfig(cfg);
-      setRoles(r);
-      setChannels(ch);
-    },
-  );
+  const configQ = useGuildConfig(guildId);
+  const rolesQ = useRoles(guildId);
+  const channelsQ = useChannels(guildId);
+  const loading = configQ.isLoading || rolesQ.isLoading || channelsQ.isLoading;
+  useRedirectOnError(configQ.isError, configQ.error);
+  useSeedOnce(configQ.data, setConfig);
+  useSeedOnce(rolesQ.data, setRoles);
+  useSeedOnce(channelsQ.data, setChannels);
 
   // Scalenie z defaultami wypełnia pola brakujące w starszych zapisach.
   const lv = { ...DEFAULT_LEVELING, ...config.leveling };
