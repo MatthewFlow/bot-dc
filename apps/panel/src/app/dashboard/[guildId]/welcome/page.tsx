@@ -315,55 +315,51 @@ export default function WelcomePage() {
           </PanelCard>
         </div>
 
-        <div className="flex flex-col gap-4">
-          <PanelCard title="Podgląd" bodyClassName="p-6">
-            {useEmbed && activeEmbed ? (
-              <EmbedPreview embed={activeEmbed} replace={previewReplacer} />
-            ) : (
-              <div className="rounded-lg bg-sidebar p-4">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-black">
-                    JH
+        <PanelCard title="Podgląd" bodyClassName="p-6" className="lg:sticky lg:top-20">
+          {useEmbed && activeEmbed ? (
+            <EmbedPreview embed={activeEmbed} replace={previewReplacer} />
+          ) : (
+            <div className="rounded-lg bg-sidebar p-4">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-black">
+                  JH
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-white">
+                      Jurassic Haven
+                    </span>
+                    <span className="rounded bg-discord px-1 py-0.5 text-xs text-white">
+                      APP
+                    </span>
+                    <span className="text-xs text-gray-400">— dziś</span>
                   </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-white">
-                        Jurassic Haven
-                      </span>
-                      <span className="rounded bg-discord px-1 py-0.5 text-xs text-white">
-                        APP
-                      </span>
-                      <span className="text-xs text-gray-400">— dziś</span>
-                    </div>
-                    <div className="mt-2 rounded-lg border-l-4 border-primary bg-card p-3">
-                      <p className="text-sm font-semibold text-white">
-                        {tab === "welcome"
-                          ? "🎉 Witamy na serwerze!"
-                          : "👋 Do zobaczenia!"}
-                      </p>
-                      <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-300">
-                        {resolvePreview(message)}
-                      </p>
-                    </div>
+                  <div className="mt-2 rounded-lg border-l-4 border-primary bg-card p-3">
+                    <p className="text-sm font-semibold text-white">
+                      {tab === "welcome" ? "🎉 Witamy na serwerze!" : "👋 Do zobaczenia!"}
+                    </p>
+                    <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-300">
+                      {resolvePreview(message)}
+                    </p>
                   </div>
                 </div>
               </div>
-            )}
-            <div className="mt-6">
-              <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                Dostępne zmienne
-              </p>
-              <div className="flex flex-col gap-2">
-                {VARIABLES.map((v) => (
-                  <div key={v.label} className="flex items-center gap-3">
-                    <span className="w-32 font-mono text-xs text-primary">{v.label}</span>
-                    <span className="text-xs text-gray-300">{v.desc}</span>
-                  </div>
-                ))}
-              </div>
             </div>
-          </PanelCard>
-        </div>
+          )}
+          <div className="mt-6">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-gray-400">
+              Dostępne zmienne
+            </p>
+            <div className="flex flex-col gap-2">
+              {VARIABLES.map((v) => (
+                <div key={v.label} className="flex items-center gap-3">
+                  <span className="w-32 font-mono text-xs text-primary">{v.label}</span>
+                  <span className="text-xs text-gray-300">{v.desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </PanelCard>
       </div>
     </div>
   );

@@ -7,9 +7,10 @@ import { type CSSProperties, useState } from "react";
 import { ChannelSelect } from "@/components/ChannelSelect";
 import { ConfirmModal } from "@/components/confirmModal";
 import { EmbedEditor } from "@/components/EmbedEditor";
-import { EmbedPreview } from "@/components/EmbedPreview";
+import { EmbedPreviewCard } from "@/components/EmbedPreviewCard";
 import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
+import { PanelCard } from "@/components/PanelCard";
 import { RoleSelect } from "@/components/RoleSelect";
 import {
   PageSkeleton,
@@ -286,260 +287,250 @@ export default function RolesPage() {
         ]}
       />
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:items-start">
-        {/* Form */}
-        <div className="w-full">
-          <div className="surface-raised rounded-xl bg-card">
-            <div className="flex items-center justify-between border-b border-border px-6 py-4">
-              <p className="text-sm font-semibold text-white">
-                {editing ? "Edytuj wiadomość" : "Nowa wiadomość"}
-              </p>
-              {editing && (
+      <div className="flex flex-col gap-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:items-start">
+          {/* Form */}
+          <PanelCard
+            title={editing ? "Edytuj wiadomość" : "Nowa wiadomość"}
+            action={
+              editing ? (
                 <button
                   onClick={cancelEdit}
                   className="text-xs text-gray-400 hover:text-gray-300"
                 >
                   Anuluj
                 </button>
+              ) : undefined
+            }
+          >
+            {/* Typ */}
+            <div className="flex gap-1 rounded-lg bg-background p-1">
+              <button
+                onClick={() => setType("button")}
+                className={typeTab(form.type === "button")}
+              >
+                <MousePointerClick size={15} />
+                Przyciski
+              </button>
+              <button
+                onClick={() => setType("reaction")}
+                className={typeTab(form.type === "reaction")}
+              >
+                <SmilePlus size={15} />
+                Reakcje
+              </button>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-xs text-gray-400">Kanał</label>
+              <ChannelSelect
+                value={form.channelId}
+                onChange={(v) => setForm((f) => ({ ...f, channelId: v }))}
+                channels={channels}
+                placeholder="— Wybierz kanał —"
+                className="w-full px-3 py-2.5"
+              />
+            </div>
+
+            <EmbedEditor
+              value={form.embed}
+              onChange={(embed) => setForm((f) => ({ ...f, embed }))}
+            />
+
+            <div>
+              <label className="mb-1 block text-xs text-gray-400">
+                {form.type === "button"
+                  ? "Przyciski (etykieta · emoji · rola)"
+                  : "Pary emoji → rola"}
+              </label>
+              <p className="mb-2 text-xs text-gray-400">
+                {form.type === "button"
+                  ? "Etykieta wymagana, emoji opcjonalne. Każda rola może mieć tylko jeden przycisk."
+                  : "Emoji wymagane (np. ✅). Custom emoji z serwera podaj jako <:nazwa:id>."}
+              </p>
+              <div className="flex flex-col gap-2">
+                {form.entries.map((entry, idx) => (
+                  <div key={idx} className="flex items-center gap-2">
+                    {form.type === "button" && (
+                      <input
+                        name={`sr-label-${idx}`}
+                        aria-label="Etykieta przycisku"
+                        value={entry.label}
+                        onChange={(e) => updateEntry(idx, "label", e.target.value)}
+                        placeholder="Etykieta"
+                        maxLength={80}
+                        className="w-28 rounded-lg bg-background px-2 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    )}
+                    <input
+                      name={`sr-emoji-${idx}`}
+                      aria-label="Emoji"
+                      value={entry.emoji}
+                      onChange={(e) => updateEntry(idx, "emoji", e.target.value)}
+                      placeholder="emoji"
+                      className="w-16 rounded-lg bg-background px-2 py-2 text-center text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <RoleSelect
+                      value={entry.roleId}
+                      onChange={(v) => updateEntry(idx, "roleId", v)}
+                      roles={roles}
+                      placeholder="— Rola —"
+                      className="flex-1 px-3 py-2"
+                    />
+                    {form.entries.length > 1 && (
+                      <button
+                        onClick={() => removeEntry(idx)}
+                        className="text-gray-400 hover:text-red-400"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {form.entries.length < maxEntries && (
+                <button
+                  onClick={addEntry}
+                  className="mt-2 text-xs text-primary hover:text-primary-hover"
+                >
+                  + Dodaj kolejną pozycję
+                </button>
               )}
             </div>
 
-            <div className="flex flex-col gap-4 p-6">
-              {/* Typ */}
-              <div className="flex gap-1 rounded-lg bg-background p-1">
-                <button
-                  onClick={() => setType("button")}
-                  className={typeTab(form.type === "button")}
-                >
-                  <MousePointerClick size={15} />
-                  Przyciski
-                </button>
-                <button
-                  onClick={() => setType("reaction")}
-                  className={typeTab(form.type === "reaction")}
-                >
-                  <SmilePlus size={15} />
-                  Reakcje
-                </button>
-              </div>
+            <Button
+              onClick={handlePublish}
+              disabled={publishing || !isFormValid}
+              className="w-full"
+            >
+              {publishing ? "Publikowanie..." : editing ? "Zapisz zmiany" : "Opublikuj"}
+            </Button>
+          </PanelCard>
 
-              <div>
-                <label className="mb-1 block text-xs text-gray-400">Kanał</label>
-                <ChannelSelect
-                  value={form.channelId}
-                  onChange={(v) => setForm((f) => ({ ...f, channelId: v }))}
-                  channels={channels}
-                  placeholder="— Wybierz kanał —"
-                  className="w-full px-3 py-2.5"
-                />
-              </div>
-
-              <EmbedEditor
-                value={form.embed}
-                onChange={(embed) => setForm((f) => ({ ...f, embed }))}
-              />
-
-              <div>
-                <label className="mb-1 block text-xs text-gray-400">
-                  {form.type === "button"
-                    ? "Przyciski (etykieta · emoji · rola)"
-                    : "Pary emoji → rola"}
-                </label>
-                <p className="mb-2 text-xs text-gray-400">
-                  {form.type === "button"
-                    ? "Etykieta wymagana, emoji opcjonalne. Każda rola może mieć tylko jeden przycisk."
-                    : "Emoji wymagane (np. ✅). Custom emoji z serwera podaj jako <:nazwa:id>."}
-                </p>
-                <div className="flex flex-col gap-2">
-                  {form.entries.map((entry, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
-                      {form.type === "button" && (
-                        <input
-                          name={`sr-label-${idx}`}
-                          aria-label="Etykieta przycisku"
-                          value={entry.label}
-                          onChange={(e) => updateEntry(idx, "label", e.target.value)}
-                          placeholder="Etykieta"
-                          maxLength={80}
-                          className="w-28 rounded-lg bg-background px-2 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
-                        />
-                      )}
-                      <input
-                        name={`sr-emoji-${idx}`}
-                        aria-label="Emoji"
-                        value={entry.emoji}
-                        onChange={(e) => updateEntry(idx, "emoji", e.target.value)}
-                        placeholder="emoji"
-                        className="w-16 rounded-lg bg-background px-2 py-2 text-center text-sm text-white outline-none focus:ring-2 focus:ring-primary"
-                      />
-                      <RoleSelect
-                        value={entry.roleId}
-                        onChange={(v) => updateEntry(idx, "roleId", v)}
-                        roles={roles}
-                        placeholder="— Rola —"
-                        className="flex-1 px-3 py-2"
-                      />
-                      {form.entries.length > 1 && (
-                        <button
-                          onClick={() => removeEntry(idx)}
-                          className="text-gray-400 hover:text-red-400"
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </div>
+          {/* Podgląd */}
+          <EmbedPreviewCard embed={form.embed} className="lg:sticky lg:top-20">
+            {filled.length > 0 &&
+              (form.type === "button" ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {filled.map((e, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center gap-1.5 rounded-md bg-[#4e5058] px-3 py-1.5 text-sm font-medium text-white"
+                    >
+                      {e.emoji && <span>{e.emoji}</span>}
+                      <span>{e.label || "Przycisk"}</span>
+                    </span>
                   ))}
                 </div>
-                {form.entries.length < maxEntries && (
-                  <button
-                    onClick={addEntry}
-                    className="mt-2 text-xs text-primary hover:text-primary-hover"
-                  >
-                    + Dodaj kolejną pozycję
-                  </button>
-                )}
-              </div>
-
-              <Button
-                onClick={handlePublish}
-                disabled={publishing || !isFormValid}
-                className="mt-2"
-              >
-                {publishing ? "Publikowanie..." : editing ? "Zapisz zmiany" : "Opublikuj"}
-              </Button>
-            </div>
-          </div>
+              ) : (
+                <div className="mt-3 flex flex-wrap gap-1.5">
+                  {filled.map((e, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center rounded-full bg-white/5 px-2 py-0.5 text-sm"
+                    >
+                      {e.emoji || "❔"}
+                    </span>
+                  ))}
+                </div>
+              ))}
+          </EmbedPreviewCard>
         </div>
 
-        {/* Preview + List */}
-        <div className="flex flex-col gap-4">
-          <div className="surface-raised rounded-xl bg-card">
-            <div className="border-b border-border px-6 py-4">
-              <p className="text-sm font-semibold text-white">Podgląd</p>
+        {/* Opublikowane wiadomości — pełna szerokość, osobny wiersz pod spodem */}
+        <PanelCard
+          title={
+            <>
+              Opublikowane wiadomości
+              <span className="ml-2 text-xs text-gray-400">{list.length}</span>
+            </>
+          }
+          bodyClassName=""
+        >
+          {list.length === 0 ? (
+            <div className="px-6 py-8 text-center text-sm text-gray-400">
+              Brak wiadomości. Opublikuj pierwszą po lewej.
             </div>
-            <div className="p-6">
-              <EmbedPreview embed={form.embed} />
-              {filled.length > 0 &&
-                (form.type === "button" ? (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {filled.map((e, i) => (
-                      <span
-                        key={i}
-                        className="inline-flex items-center gap-1.5 rounded-md bg-[#4e5058] px-3 py-1.5 text-sm font-medium text-white"
-                      >
-                        {e.emoji && <span>{e.emoji}</span>}
-                        <span>{e.label || "Przycisk"}</span>
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {filled.map((e, i) => (
-                      <span
-                        key={i}
-                        className="inline-flex items-center rounded-full bg-white/5 px-2 py-0.5 text-sm"
-                      >
-                        {e.emoji || "❔"}
-                      </span>
-                    ))}
-                  </div>
-                ))}
-            </div>
-          </div>
-
-          <div className="surface-raised rounded-xl bg-card">
-            <div className="border-b border-border px-6 py-4">
-              <p className="text-sm font-semibold text-white">
-                Opublikowane wiadomości
-                <span className="ml-2 text-xs text-gray-400">{list.length}</span>
-              </p>
-            </div>
-
-            {list.length === 0 ? (
-              <div className="px-6 py-8 text-center text-sm text-gray-400">
-                Brak wiadomości. Opublikuj pierwszą po lewej.
-              </div>
-            ) : (
-              list.map((item, i) => {
-                const isEditing =
-                  editing?.kind === item.kind && editing?.messageId === item.messageId;
-                return (
-                  <div
-                    key={`${item.kind}-${item.messageId}`}
-                    style={{ "--i": i } as CSSProperties}
-                    className={`jh-stagger border-b border-border px-6 py-4 last:border-0 ${isEditing ? "bg-primary/5" : ""}`}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          {colorHex(item) && (
-                            <span
-                              className="h-3 w-3 rounded-full"
-                              style={{ backgroundColor: colorHex(item) }}
-                            />
-                          )}
+          ) : (
+            list.map((item, i) => {
+              const isEditing =
+                editing?.kind === item.kind && editing?.messageId === item.messageId;
+              return (
+                <div
+                  key={`${item.kind}-${item.messageId}`}
+                  style={{ "--i": i } as CSSProperties}
+                  className={`jh-stagger border-b border-border px-6 py-4 last:border-0 ${isEditing ? "bg-primary/5" : ""}`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        {colorHex(item) && (
                           <span
-                            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
-                              item.kind === "button"
-                                ? "bg-primary/15 text-primary"
-                                : "bg-discord/20 text-discord"
-                            }`}
-                          >
-                            {item.kind === "button" ? "Przyciski" : "Reakcje"}
-                          </span>
-                          <p className="text-xs text-gray-400">
-                            # {channelName(item.channelId)}
-                          </p>
-                        </div>
-                        <p className="mt-1 text-sm font-semibold text-white">
-                          {itemTitle(item)}
+                            className="h-3 w-3 rounded-full"
+                            style={{ backgroundColor: colorHex(item) }}
+                          />
+                        )}
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                            item.kind === "button"
+                              ? "bg-primary/15 text-primary"
+                              : "bg-discord/20 text-discord"
+                          }`}
+                        >
+                          {item.kind === "button" ? "Przyciski" : "Reakcje"}
+                        </span>
+                        <p className="text-xs text-gray-400">
+                          # {channelName(item.channelId)}
                         </p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {item.kind === "button"
-                            ? item.entries.map((e, j) => (
-                                <span
-                                  key={j}
-                                  className="flex items-center gap-1.5 rounded-full bg-background px-2.5 py-1 text-xs text-gray-300"
-                                >
-                                  {e.emoji && <span>{e.emoji}</span>}
-                                  <span>{e.label}</span>
-                                  <span className="text-gray-500">
-                                    → @{roleName(e.roleId)}
-                                  </span>
-                                </span>
-                              ))
-                            : item.entries.map((e, j) => (
-                                <span
-                                  key={j}
-                                  className="flex items-center gap-1.5 rounded-full bg-background px-2.5 py-1 text-xs text-gray-300"
-                                >
-                                  <span>{e.emoji}</span>
-                                  <span>@{roleName(e.roleId)}</span>
-                                </span>
-                              ))}
-                        </div>
                       </div>
-                      <div className="flex shrink-0 gap-2">
-                        <button
-                          onClick={() => startEdit(item)}
-                          className="rounded-lg bg-background px-3 py-1.5 text-xs text-gray-300 hover:text-white"
-                        >
-                          Edytuj
-                        </button>
-                        <button
-                          onClick={() => setPendingDelete(item)}
-                          className="rounded-lg bg-background px-3 py-1.5 text-xs text-red-400 hover:bg-red-400/10"
-                        >
-                          Usuń
-                        </button>
+                      <p className="mt-1 text-sm font-semibold text-white">
+                        {itemTitle(item)}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {item.kind === "button"
+                          ? item.entries.map((e, j) => (
+                              <span
+                                key={j}
+                                className="flex items-center gap-1.5 rounded-full bg-background px-2.5 py-1 text-xs text-gray-300"
+                              >
+                                {e.emoji && <span>{e.emoji}</span>}
+                                <span>{e.label}</span>
+                                <span className="text-gray-500">
+                                  → @{roleName(e.roleId)}
+                                </span>
+                              </span>
+                            ))
+                          : item.entries.map((e, j) => (
+                              <span
+                                key={j}
+                                className="flex items-center gap-1.5 rounded-full bg-background px-2.5 py-1 text-xs text-gray-300"
+                              >
+                                <span>{e.emoji}</span>
+                                <span>@{roleName(e.roleId)}</span>
+                              </span>
+                            ))}
                       </div>
                     </div>
+                    <div className="flex shrink-0 gap-2">
+                      <button
+                        onClick={() => startEdit(item)}
+                        className="rounded-lg bg-background px-3 py-1.5 text-xs text-gray-300 hover:text-white"
+                      >
+                        Edytuj
+                      </button>
+                      <button
+                        onClick={() => setPendingDelete(item)}
+                        className="rounded-lg bg-background px-3 py-1.5 text-xs text-red-400 hover:bg-red-400/10"
+                      >
+                        Usuń
+                      </button>
+                    </div>
                   </div>
-                );
-              })
-            )}
-          </div>
-        </div>
+                </div>
+              );
+            })
+          )}
+        </PanelCard>
       </div>
 
       {pendingDelete !== null && (

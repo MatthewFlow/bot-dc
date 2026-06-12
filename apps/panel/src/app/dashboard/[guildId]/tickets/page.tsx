@@ -338,7 +338,7 @@ export default function TicketsPage() {
             <Button
               onClick={handleSendPanel}
               disabled={!panelChannelId || sendingPanel}
-              className="mt-3 w-full"
+              className="w-full"
             >
               {sendingPanel ? "Publikowanie…" : "Opublikuj"}
             </Button>

@@ -17,9 +17,10 @@ import { ChannelSelect } from "@/components/ChannelSelect";
 import { ConfirmModal } from "@/components/confirmModal";
 import { CreateChannelButton } from "@/components/CreateChannelButton";
 import { EmbedEditor } from "@/components/EmbedEditor";
-import { EmbedPreview } from "@/components/EmbedPreview";
+import { EmbedPreviewCard } from "@/components/EmbedPreviewCard";
 import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
+import { PanelCard } from "@/components/PanelCard";
 import { SaveButton } from "@/components/SaveButton";
 import { PageSkeleton, Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
@@ -112,7 +113,6 @@ export default function FeedbackPage() {
   // Panel feedbacku (sekcja admina) — config + kanały
   const [config, setConfig] = useState<GuildConfig>({});
   const [channels, setChannels] = useState<Channel[]>([]);
-  const [savingPanel, setSavingPanel] = useState(false);
   const [sendingPanel, setSendingPanel] = useState(false);
 
   const { loading } = useGuildLoad(
@@ -160,7 +160,6 @@ export default function FeedbackPage() {
   }
 
   async function handleSavePanel() {
-    setSavingPanel(true);
     try {
       await updateGuildConfig(guildId, {
         feedbackChannelId: config.feedbackChannelId,
@@ -169,8 +168,6 @@ export default function FeedbackPage() {
       toast("Zapisano zmiany.", "success");
     } catch {
       toast("Nie udało się zapisać.", "error");
-    } finally {
-      setSavingPanel(false);
     }
   }
 
@@ -186,7 +183,7 @@ export default function FeedbackPage() {
     }
   }
 
-  const { status: panelSaveStatus } = useAutoSave(
+  useAutoSave(
     JSON.stringify({
       feedbackChannelId: config.feedbackChannelId,
       feedbackPanelEmbed: config.feedbackPanelEmbed ?? null,
@@ -384,28 +381,15 @@ export default function FeedbackPage() {
         </div>
       </div>
 
-      {/* Panel feedbacku — konfiguracja publicznego embeda (sekcja admina) */}
-      <div className={CARD}>
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
-          <div>
-            <p className="text-sm font-semibold text-white">Panel feedbacku</p>
-            <p className="text-xs text-gray-400">
-              Embed z przyciskiem „Podziel się opinią” wysyłany na kanał, by każdy mógł
-              zgłaszać opinie z Discorda.
-            </p>
-          </div>
-          <SaveButton
-            onClick={handleSavePanel}
-            saving={savingPanel}
-            autoSaveStatus={panelSaveStatus}
-            className="px-4 py-1.5 text-xs"
-          />
-        </div>
-
-        <div className="flex flex-col gap-6 p-6">
+      {/* Panel feedbacku — osobno edytor, osobno podgląd (50/50) */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
+        <PanelCard
+          title="Panel feedbacku"
+          description="Embed z przyciskiem „Podziel się opinią” wysyłany na kanał, by każdy mógł zgłaszać opinie z Discorda."
+        >
           <div>
             <label className="mb-1 block text-xs text-gray-400">Kanał feedbacku</label>
-            <div className="flex max-w-sm flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <ChannelSelect
                 value={config.feedbackChannelId ?? ""}
                 onChange={(v) =>
@@ -432,36 +416,32 @@ export default function FeedbackPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <EmbedEditor
-              value={config.feedbackPanelEmbed ?? DEFAULT_FEEDBACK_PANEL_EMBED}
-              onChange={(embed) =>
-                setConfig((c) => ({ ...c, feedbackPanelEmbed: embed }))
-              }
-              variables={TICKET_VARS}
-            />
-            <div className="flex flex-col gap-4">
-              <div>
-                <p className="mb-2 text-xs text-gray-400">Podgląd</p>
-                <EmbedPreview
-                  embed={config.feedbackPanelEmbed ?? DEFAULT_FEEDBACK_PANEL_EMBED}
-                />
-              </div>
-              <Button
-                onClick={handleSendPanel}
-                disabled={sendingPanel || !config.feedbackChannelId}
-                className="h-auto w-fit px-4 py-2.5"
-              >
-                {sendingPanel ? "Wysyłanie…" : "Wyślij panel na kanał feedbacku"}
-              </Button>
-              {!config.feedbackChannelId && (
-                <p className="text-xs text-gray-400">
-                  Najpierw ustaw kanał feedbacku powyżej i zapisz.
-                </p>
-              )}
-            </div>
+          <EmbedEditor
+            value={config.feedbackPanelEmbed ?? DEFAULT_FEEDBACK_PANEL_EMBED}
+            onChange={(embed) => setConfig((c) => ({ ...c, feedbackPanelEmbed: embed }))}
+            variables={TICKET_VARS}
+          />
+
+          <div className="border-t border-border pt-4">
+            <Button
+              onClick={handleSendPanel}
+              disabled={sendingPanel || !config.feedbackChannelId}
+              className="w-full"
+            >
+              {sendingPanel ? "Publikowanie…" : "Opublikuj"}
+            </Button>
+            {!config.feedbackChannelId && (
+              <p className="mt-2 text-xs text-gray-400">
+                Najpierw ustaw kanał feedbacku powyżej i zapisz.
+              </p>
+            )}
           </div>
-        </div>
+        </PanelCard>
+
+        <EmbedPreviewCard
+          embed={config.feedbackPanelEmbed ?? DEFAULT_FEEDBACK_PANEL_EMBED}
+          className="lg:sticky lg:top-20"
+        />
       </div>
 
       {confirmId && (

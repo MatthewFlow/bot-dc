@@ -544,9 +544,7 @@ export default function LevelsPage() {
                 variables={LEVEL_VARS}
               />
               <div className="lg:sticky lg:top-20 lg:self-start">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Podgląd
-                </p>
+                <p className="mb-2 text-xs text-gray-400">Podgląd</p>
                 <EmbedPreview embed={config.levelUpEmbed} replace={previewReplacer} />
               </div>
             </div>
