@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
-import { getBotStatus } from "@/lib/api";
+import { getBotStatus, queryKeys } from "@/lib/api";
 
 /** Czas po polsku „przed chwilą / N min temu / data" dla ostatniego heartbeatu. */
 function lastSeenLabel(iso: string | null): string {
@@ -15,28 +15,14 @@ function lastSeenLabel(iso: string | null): string {
 
 /** Wskaźnik online/offline bota w TopBarze — odpytuje API co 30 s. */
 export function BotStatusBadge() {
-  const [online, setOnline] = useState<boolean | null>(null);
-  const [lastSeen, setLastSeen] = useState<string | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    const load = () =>
-      getBotStatus()
-        .then((s) => {
-          if (!active) return;
-          setOnline(s.online);
-          setLastSeen(s.lastSeen);
-        })
-        .catch(() => {
-          if (active) setOnline(null);
-        });
-    load();
-    const timer = setInterval(load, 30_000);
-    return () => {
-      active = false;
-      clearInterval(timer);
-    };
-  }, []);
+  const { data, isError } = useQuery({
+    queryKey: queryKeys.botStatus(),
+    queryFn: getBotStatus,
+    refetchInterval: 30_000,
+    staleTime: 30_000,
+  });
+  const online = isError ? null : (data?.online ?? null);
+  const lastSeen = data?.lastSeen ?? null;
 
   const cfg =
     online === null

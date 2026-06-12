@@ -1,3 +1,6 @@
+import { queryClient } from "./queryClient";
+import { botStatusSchema, feedbackInputSchema, userSchema } from "./schemas";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3002";
 
 export type Guild = {
@@ -291,79 +294,63 @@ async function fetchWithRetry(
   return res;
 }
 
-// ── Client-side read cache (per session) ────────────────────────────────────
-// Config/roles/channels rarely change and roles/channels proxy to Discord (slow),
-// so caching them makes switching dashboard pages instant. Invalidated on writes.
-// Config/role/channel rzadko się zmieniają, a role/channels proxują do Discorda
-// (wolno). 5 min TTL sprawia, że przełączanie między stronami serwera jest
-// natychmiastowe; mutacje (tworzenie kanału/roli, zapis configu) i tak czyszczą cache.
-const READ_CACHE_TTL = 300_000;
-const readCache = new Map<string, { data: unknown; at: number }>();
-// Dedup równoległych żądań tego samego klucza (np. hover-prefetch + mount strony).
-const inflight = new Map<string, Promise<unknown>>();
+// ── Warstwa cache odczytów — magazynem jest TanStack Query ───────────────────
+// Config/role/kanały rzadko się zmieniają, a role/channels proxują do Discorda
+// (wolno). `swr` zachowuje dotychczasowy UX: jeśli coś jest w cache, zwraca to
+// NATYCHMIAST (także nieświeże) i odświeża w tle; pierwszy odczyt (pusty cache)
+// czeka na sieć. Dedup współbieżnych odczytów daje `queryClient.fetchQuery`.
+const STALE_MS = 300_000;
 
-function getCached<T>(key: string): T | undefined {
-  const hit = readCache.get(key);
-  if (hit && Date.now() - hit.at < READ_CACHE_TTL) return hit.data as T;
-  return undefined;
-}
-function setCached(key: string, data: unknown): void {
-  readCache.set(key, { data, at: Date.now() });
-}
+/** Fabryka kluczy zapytań — wspólna dla fetcherów (poniżej) i hooków useQuery. */
+export const queryKeys = {
+  me: () => ["me"] as const,
+  guilds: () => ["guilds"] as const,
+  config: (g: string) => ["config", g] as const,
+  channels: (g: string) => ["channels", g] as const,
+  roles: (g: string) => ["roles", g] as const,
+  leaderboard: (g: string, limit: number) => ["leaderboard", g, limit] as const,
+  stats: (g: string) => ["stats", g] as const,
+  reactionRoles: (g: string) => ["reaction-roles", g] as const,
+  buttonRoles: (g: string) => ["button-roles", g] as const,
+  tickets: (g: string, status?: TicketStatus) => ["tickets", g, status ?? "all"] as const,
+  modActions: (g: string, limit: number) => ["mod-actions", g, limit] as const,
+  warnings: (g: string, userId: string) => ["warnings", g, userId] as const,
+  botStatus: () => ["bot-status"] as const,
+  guildFeedback: (g: string) => ["guild-feedback", g] as const,
+  myFeedback: () => ["my-feedback"] as const,
+};
 
-/** Odpala (i deduplikuje) pobranie, zapisując świeży wynik do cache. */
-function revalidate<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
-  const existing = inflight.get(key) as Promise<T> | undefined;
-  if (existing) return existing;
-
-  const p = (async () => {
-    try {
-      const data = await fetcher();
-      setCached(key, data);
-      return data;
-    } finally {
-      inflight.delete(key);
+function swr<T>(key: readonly unknown[], fetcher: () => Promise<T>): Promise<T> {
+  const cached = queryClient.getQueryData<T>(key);
+  if (cached !== undefined) {
+    const state = queryClient.getQueryState(key);
+    const stale = !state || Date.now() - state.dataUpdatedAt >= STALE_MS;
+    if (stale) {
+      void queryClient
+        .fetchQuery({ queryKey: key, queryFn: fetcher, staleTime: STALE_MS })
+        .catch(() => {});
     }
-  })();
-  inflight.set(key, p);
-  return p;
-}
-
-/**
- * Stale-while-revalidate: jeśli cokolwiek jest w cache, zwracamy to NATYCHMIAST
- * (także dane przeterminowane) i — gdy są nieświeże — odświeżamy je w tle, więc
- * kolejne wejście jest już aktualne. Dopiero pierwsze wejście (pusty cache) czeka
- * na sieć. Dzięki temu przełączanie stron jest instant i dane nie „mrugają".
- * Współbieżne żądania tego samego klucza są deduplikowane.
- */
-function cachedFetch<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
-  const hit = readCache.get(key);
-  if (hit) {
-    const stale = Date.now() - hit.at >= READ_CACHE_TTL;
-    if (stale) void revalidate(key, fetcher).catch(() => {});
-    return Promise.resolve(hit.data as T);
+    return Promise.resolve(cached);
   }
-  return revalidate(key, fetcher);
+  return queryClient.fetchQuery({ queryKey: key, queryFn: fetcher, staleTime: STALE_MS });
 }
 
-/** Drops cached reads for a guild (one kind, or all). Call after mutations. */
+/** Czyści cache odczytów serwera (jeden rodzaj albo config+channels+roles). Po mutacjach. */
 export function invalidateGuildCache(
   guildId: string,
   kind?: "config" | "channels" | "roles",
 ): void {
-  if (kind) readCache.delete(`${kind}:${guildId}`);
-  else {
-    readCache.delete(`config:${guildId}`);
-    readCache.delete(`channels:${guildId}`);
-    readCache.delete(`roles:${guildId}`);
-  }
+  const keys: readonly (readonly unknown[])[] = kind
+    ? [[kind, guildId]]
+    : [queryKeys.config(guildId), queryKeys.channels(guildId), queryKeys.roles(guildId)];
+  for (const key of keys) queryClient.removeQueries({ queryKey: key });
 }
 
 export async function getMe(): Promise<User> {
   const res = await fetch(`${API_URL}/auth/me`, BASE);
   handleUnauthorized(res);
   if (!res.ok) throw new Error("Failed to fetch user");
-  return res.json();
+  return userSchema.parse(await res.json());
 }
 
 export async function logout(): Promise<void> {
@@ -380,7 +367,7 @@ export async function getGuilds(): Promise<Guild[]> {
 }
 
 export function getGuildConfig(guildId: string): Promise<GuildConfig> {
-  return cachedFetch(`config:${guildId}`, async () => {
+  return swr(queryKeys.config(guildId), async () => {
     const res = await fetch(`${API_URL}/guilds/${guildId}/config`, BASE);
     handleUnauthorized(res);
     if (!res.ok) throw new Error("Failed to fetch config");
@@ -424,7 +411,7 @@ export async function updateGuildConfig(
 }
 
 export function getChannels(guildId: string): Promise<Channel[]> {
-  return cachedFetch(`channels:${guildId}`, async () => {
+  return swr(queryKeys.channels(guildId), async () => {
     const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/channels`);
     if (!res.ok) throw new Error("Failed to fetch channels");
     return (await res.json()) as Channel[];
@@ -432,7 +419,7 @@ export function getChannels(guildId: string): Promise<Channel[]> {
 }
 
 export function getRoles(guildId: string): Promise<Role[]> {
-  return cachedFetch(`roles:${guildId}`, async () => {
+  return swr(queryKeys.roles(guildId), async () => {
     const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/roles`);
     if (!res.ok) throw new Error("Failed to fetch roles");
     return (await res.json()) as Role[];
@@ -472,23 +459,27 @@ export async function createRole(guildId: string, name: string): Promise<Role> {
   return res.json();
 }
 
-export async function getLeaderboard(
+/** Surowy fetcher (bez cache) — używany jako queryFn w useQuery, by uniknąć
+ *  rekurencji swr→fetchQuery na tym samym kluczu. Imperatywnie używaj getLeaderboard. */
+export async function fetchLeaderboard(
   guildId: string,
-  limit = 10,
-  force = false,
+  limit: number,
 ): Promise<LeaderboardEntry[]> {
-  const key = `leaderboard:${guildId}:${limit}`;
-  if (!force) {
-    const cached = getCached<LeaderboardEntry[]>(key);
-    if (cached) return cached;
-  }
   const res = await fetchWithRetry(
     `${API_URL}/guilds/${guildId}/leaderboard?limit=${limit}`,
   );
   if (!res.ok) throw new Error("Failed to fetch leaderboard");
-  const data = (await res.json()) as LeaderboardEntry[];
-  setCached(key, data);
-  return data;
+  return (await res.json()) as LeaderboardEntry[];
+}
+
+export function getLeaderboard(
+  guildId: string,
+  limit = 10,
+  force = false,
+): Promise<LeaderboardEntry[]> {
+  const key = queryKeys.leaderboard(guildId, limit);
+  if (force) queryClient.removeQueries({ queryKey: key });
+  return swr(key, () => fetchLeaderboard(guildId, limit));
 }
 
 export async function getReactionRoles(guildId: string): Promise<ReactionRole[]> {
@@ -642,25 +633,27 @@ export type BotStatus = {
 export async function getBotStatus(): Promise<BotStatus> {
   const res = await fetchWithRetry(`${API_URL}/bot/status`);
   if (!res.ok) throw new Error("Failed to fetch bot status");
-  return res.json();
+  return botStatusSchema.parse(await res.json());
 }
 
-export async function getGuildStats(guildId: string): Promise<GuildStats> {
-  const key = `stats:${guildId}`;
-  const cached = getCached<GuildStats>(key);
-  if (cached) return cached;
+/** Surowy fetcher (bez cache) — queryFn dla useQuery (patrz fetchLeaderboard). */
+export async function fetchGuildStats(guildId: string): Promise<GuildStats> {
   const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/stats`);
   if (!res.ok) throw new Error("Failed to fetch guild stats");
-  const data = (await res.json()) as GuildStats;
-  setCached(key, data);
-  return data;
+  return (await res.json()) as GuildStats;
+}
+
+export function getGuildStats(guildId: string): Promise<GuildStats> {
+  return swr(queryKeys.stats(guildId), () => fetchGuildStats(guildId));
 }
 
 export async function submitFeedback(input: FeedbackInput): Promise<Feedback> {
+  // Walidacja kontraktu przed wysyłką (ten sam kształt, który egzekwuje API).
+  const body = feedbackInputSchema.parse(input);
   const res = await fetchWithRetry(`${API_URL}/feedback`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
+    body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error("Failed to submit feedback");
   return res.json();

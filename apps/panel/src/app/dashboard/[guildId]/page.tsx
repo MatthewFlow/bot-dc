@@ -1,5 +1,6 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
   AlertTriangle,
@@ -10,26 +11,21 @@ import {
   Users,
 } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
-import { type CSSProperties, useEffect, useState } from "react";
+import { type CSSProperties, useEffect } from "react";
 
 import { Avatar } from "@/components/Avatar";
 import { ModActionBadge, TicketStatusBadge } from "@/components/badges";
 import { LeaderboardRows } from "@/components/Leaderboard";
 import { Skeleton } from "@/components/Skeleton";
-import { useGuildLoad } from "@/hooks/useGuildLoad";
-import type {
-  GuildStats,
-  LeaderboardEntry,
-  ModAction,
-  Ticket as TicketType,
-  User,
-} from "@/lib/api";
+import type { LeaderboardEntry, ModAction, Ticket as TicketType } from "@/lib/api";
 import {
-  getGuildStats,
-  getLeaderboard,
+  fetchGuildStats,
+  fetchLeaderboard,
   getMe,
   getModActions,
   getTickets,
+  queryKeys,
+  TokenExpiredError,
 } from "@/lib/api";
 import { formatCount as fmt } from "@/lib/format";
 import { relativeTime as timeAgo } from "@/lib/time";
@@ -292,50 +288,46 @@ export default function GuildOverviewPage() {
   const params = useParams();
   const guildId = params.guildId as string;
 
-  const [stats, setStats] = useState<GuildStats | null>(null);
-  const [me, setMe] = useState<User | null>(null);
+  const statsQ = useQuery({
+    queryKey: queryKeys.stats(guildId),
+    queryFn: () => fetchGuildStats(guildId),
+  });
+  // Imię do powitania — getMe nie jest związane z serwerem (osobny klucz, jak w TopBar).
+  const meQ = useQuery({ queryKey: queryKeys.me(), queryFn: getMe });
 
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [actions, setActions] = useState<ModAction[]>([]);
-  const [tickets, setTickets] = useState<TicketType[]>([]);
-  const [extraLoading, setExtraLoading] = useState(true);
+  // Sekcje poniżej są opcjonalne — błąd któregokolwiek źródła nie blokuje strony.
+  const leaderboardQ = useQuery({
+    queryKey: queryKeys.leaderboard(guildId, 5),
+    queryFn: () => fetchLeaderboard(guildId, 5),
+  });
+  const actionsQ = useQuery({
+    queryKey: queryKeys.modActions(guildId, 6),
+    queryFn: () => getModActions(guildId, 6),
+  });
+  const ticketsQ = useQuery({
+    queryKey: queryKeys.tickets(guildId),
+    queryFn: () => getTickets(guildId),
+    select: (data: TicketType[]) =>
+      [...data]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 5),
+  });
 
-  const { loading } = useGuildLoad(guildId, (id) => getGuildStats(id), setStats);
-
-  // Imię do powitania — getMe nie jest związane z serwerem, więc osobno (jak w TopBar).
+  // Błąd statystyk (np. brak dostępu do serwera) → powrót do listy serwerów,
+  // jak wcześniej robił useGuildLoad. 401 obsługuje już warstwa api (redirect na "/").
   useEffect(() => {
-    getMe()
-      .then(setMe)
-      .catch(() => {});
-  }, []);
+    if (statsQ.isError && !(statsQ.error instanceof TokenExpiredError)) {
+      router.replace("/dashboard");
+    }
+  }, [statsQ.isError, statsQ.error, router]);
 
-  // Sekcje poniżej są opcjonalne — błąd któregokolwiek źródła nie blokuje strony
-  // (i nie przekierowuje, w przeciwieństwie do useGuildLoad).
-  useEffect(() => {
-    let active = true;
-    setExtraLoading(true);
-    Promise.allSettled([
-      getLeaderboard(guildId, 5),
-      getModActions(guildId, 6),
-      getTickets(guildId),
-    ]).then(([lb, ma, tk]) => {
-      if (!active) return;
-      if (lb.status === "fulfilled") setLeaderboard(lb.value);
-      if (ma.status === "fulfilled") setActions(ma.value);
-      if (tk.status === "fulfilled") {
-        const recent = [...tk.value]
-          .sort(
-            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-          )
-          .slice(0, 5);
-        setTickets(recent);
-      }
-      setExtraLoading(false);
-    });
-    return () => {
-      active = false;
-    };
-  }, [guildId]);
+  const stats = statsQ.data ?? null;
+  const me = meQ.data ?? null;
+  const loading = statsQ.isLoading;
+  const leaderboard: LeaderboardEntry[] = leaderboardQ.data ?? [];
+  const actions: ModAction[] = actionsQ.data ?? [];
+  const tickets: TicketType[] = ticketsQ.data ?? [];
+  const extraLoading = leaderboardQ.isLoading || actionsQ.isLoading || ticketsQ.isLoading;
 
   const go = (href: string) => router.push(`/dashboard/${guildId}${href}`);
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Bell,
   Bug,
@@ -8,16 +9,17 @@ import {
   MessageCircle,
   Trash2,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 
 import { ConfirmModal } from "@/components/confirmModal";
 import { useToast } from "@/components/toast";
 import {
   deleteGuildFeedback,
-  type Feedback,
   type FeedbackCategory,
   getGuildFeedback,
+  type GuildFeedback,
   markFeedbackSeen,
+  queryKeys,
 } from "@/lib/api";
 import { dayAgo } from "@/lib/time";
 
@@ -29,45 +31,50 @@ const CAT: Record<FeedbackCategory, { icon: LucideIcon; cls: string }> = {
 
 export function NotificationBell({ guildId }: { guildId: string }) {
   const toast = useToast();
-  const [items, setItems] = useState<Feedback[]>([]);
-  const [unread, setUnread] = useState(0);
+  const qc = useQueryClient();
+  const key = queryKeys.guildFeedback(guildId);
   const [open, setOpen] = useState(false);
   const [confirmId, setConfirmId] = useState<string | null>(null);
 
-  const load = useCallback(() => {
-    getGuildFeedback(guildId)
-      .then((d) => {
-        setItems(d.items);
-        setUnread(d.unread);
-      })
-      .catch(() => {});
-  }, [guildId]);
+  const { data } = useQuery({
+    queryKey: key,
+    queryFn: () => getGuildFeedback(guildId),
+    refetchInterval: 60_000,
+  });
+  const items = data?.items ?? [];
+  // Po otwarciu badge zeruje się natychmiast (lokalnie), serwer dostaje znacznik niżej.
+  const unread = open ? 0 : (data?.unread ?? 0);
 
-  useEffect(() => {
-    load();
-    const timer = setInterval(load, 60_000);
-    return () => clearInterval(timer);
-  }, [load]);
+  const del = useMutation({
+    mutationFn: (id: string) => deleteGuildFeedback(guildId, id),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: key });
+      const prev = qc.getQueryData<GuildFeedback>(key);
+      qc.setQueryData<GuildFeedback>(key, (old) =>
+        old ? { ...old, items: old.items.filter((x) => x.id !== id) } : old,
+      );
+      return { prev };
+    },
+    onError: (_e, _id, ctx) => {
+      if (ctx?.prev) qc.setQueryData(key, ctx.prev);
+      toast("Nie udało się usunąć.", "error");
+    },
+    onSuccess: () => toast("Feedback usunięty.", "success"),
+  });
 
   function toggle() {
     const next = !open;
     setOpen(next);
-    // Otwarcie = przeczytane: zeruj badge i utrwal znacznik w bazie.
-    if (next && unread > 0) {
-      setUnread(0);
+    // Otwarcie = przeczytane: wyzeruj badge w cache i utrwal znacznik w bazie.
+    if (next && (data?.unread ?? 0) > 0) {
+      qc.setQueryData<GuildFeedback>(key, (old) => (old ? { ...old, unread: 0 } : old));
       markFeedbackSeen(guildId).catch(() => {});
     }
   }
 
   function handleDelete(id: string) {
     setConfirmId(null);
-    setItems((prev) => prev.filter((x) => x.id !== id));
-    deleteGuildFeedback(guildId, id)
-      .then(() => toast("Feedback usunięty.", "success"))
-      .catch(() => {
-        toast("Nie udało się usunąć.", "error");
-        load();
-      });
+    del.mutate(id);
   }
 
   return (

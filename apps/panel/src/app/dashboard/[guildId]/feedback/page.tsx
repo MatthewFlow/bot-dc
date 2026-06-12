@@ -44,6 +44,7 @@ import {
   updateGuildConfig,
 } from "@/lib/api";
 import { TICKET_VARS } from "@/lib/embed";
+import { feedbackInputSchema } from "@/lib/schemas";
 import { dayAgo } from "@/lib/time";
 
 const CARD = "surface-raised rounded-xl border border-border bg-card";
@@ -125,19 +126,19 @@ export default function FeedbackPage() {
   );
 
   async function handleSubmit() {
-    const trimmed = message.trim();
-    if (!trimmed) {
-      toast("Najpierw wpisz treść.", "error");
+    const parsed = feedbackInputSchema.safeParse({
+      category,
+      message,
+      rating: rating || undefined,
+      guildId,
+    });
+    if (!parsed.success) {
+      toast(parsed.error.issues[0]?.message ?? "Sprawdź formularz.", "error");
       return;
     }
     setSaving(true);
     try {
-      const created = await submitFeedback({
-        category,
-        message: trimmed,
-        rating: rating || undefined,
-        guildId,
-      });
+      const created = await submitFeedback(parsed.data);
       setList((prev) => [created, ...prev]);
       setMessage("");
       setRating(0);
