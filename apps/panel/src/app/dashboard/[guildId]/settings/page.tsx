@@ -41,7 +41,7 @@ export default function SettingsPage() {
   const channelsQ = useChannels(guildId);
   const loading = configQ.isLoading || rolesQ.isLoading || channelsQ.isLoading;
   useRedirectOnError(configQ.isError, configQ.error);
-  useSeedOnce(configQ.data, setConfig);
+  const configReady = useSeedOnce(configQ.data, setConfig);
   useSeedOnce(rolesQ.data, setRoles);
   useSeedOnce(channelsQ.data, setChannels);
 
@@ -66,7 +66,7 @@ export default function SettingsPage() {
       modLogChannelId: config.modLogChannelId,
     }),
     handleSave,
-    !loading,
+    configReady,
   );
 
   if (loading) return <SettingsSkeleton />;

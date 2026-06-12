@@ -1,82 +1,34 @@
+import type {
+  AutoModConfig,
+  EmbedConfig,
+  EmbedFieldConfig,
+  LevelingConfig,
+  ServerLogConfig,
+  TicketPanelButton,
+} from "@jurassic-haven/db";
+
 import { queryClient } from "./queryClient";
 import { botStatusSchema, feedbackInputSchema, userSchema } from "./schemas";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3002";
+
+// Współdzielone typy konfiguracji żyją w @jurassic-haven/db — re-eksportujemy je
+// tutaj, żeby reszta panelu importowała je dalej z "@/lib/api" (jedno źródło prawdy).
+export type {
+  AutoModConfig,
+  EmbedConfig,
+  EmbedFieldConfig,
+  LevelingConfig,
+  ServerLogConfig,
+  TicketPanelButton,
+};
+export type AutoModAction = AutoModConfig["action"];
 
 export type Guild = {
   id: string;
   name: string;
   icon: string | null;
   permissions: string;
-};
-
-export type EmbedFieldConfig = {
-  name: string;
-  value: string;
-  inline?: boolean;
-};
-
-export type EmbedConfig = {
-  title?: string;
-  description?: string;
-  /** Kolor jako liczba dziesiętna (0xRRGGBB). */
-  color?: number;
-  url?: string;
-  authorName?: string;
-  authorIconUrl?: string;
-  thumbnailUrl?: string;
-  imageUrl?: string;
-  footerText?: string;
-  footerIconUrl?: string;
-  timestamp?: boolean;
-  fields?: EmbedFieldConfig[];
-};
-
-export type TicketPanelButton = {
-  label?: string;
-  emoji?: string;
-};
-
-export type AutoModAction = "delete" | "warn" | "mute";
-
-export type AutoModConfig = {
-  enabled: boolean;
-  blockInvites: boolean;
-  blockLinks: boolean;
-  bannedWords: string[];
-  spamEnabled: boolean;
-  spamMaxMessages: number;
-  spamWindowSeconds: number;
-  exemptRoleIds: string[];
-  exemptChannelIds: string[];
-  action: AutoModAction;
-  muteDurationSeconds: number;
-};
-
-export type ServerLogConfig = {
-  enabled: boolean;
-  channelId?: string;
-  messageDelete: boolean;
-  messageEdit: boolean;
-  memberJoin: boolean;
-  memberLeave: boolean;
-  roleChanges: boolean;
-  nicknameChanges: boolean;
-  exemptRoleIds: string[];
-  exemptChannelIds: string[];
-};
-
-export type LevelingConfig = {
-  /** Płaskie XP za wiadomość (0–8). */
-  messageXp?: number;
-  /** Płaskie XP za każdą minutę na kanale głosowym powyżej 1. minuty (0–8). */
-  voiceXp?: number;
-  /** Legacy mnożnik bazowego XP — zastąpiony przez `messageXp`. */
-  xpMultiplier?: number;
-  noXpChannelIds: string[];
-  noXpRoleIds: string[];
-  levelUpEnabled: boolean;
-  levelUpDm: boolean;
 };
 
 export type GuildConfig = {

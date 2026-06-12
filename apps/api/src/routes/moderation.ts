@@ -6,12 +6,11 @@ import {
 } from "@jurassic-haven/db";
 import { Hono } from "hono";
 
+import { botHeaders, DISCORD_API, requireBotToken } from "../lib/discord";
 import { canAccessGuild } from "../lib/guildGuard";
 import { createMemberResolver, type ResolvedMember } from "../lib/memberResolver";
 import { authMiddleware } from "../middleware/authMiddleware";
 import type { AppVariables } from "../types";
-
-const DISCORD_API = "https://discord.com/api/v10";
 
 /** Loguje zdarzenie ticketu na kanał logów (jeśli ustawiony). Best-effort. */
 async function postTicketLog(
@@ -34,7 +33,7 @@ async function postTicketLog(
 
   await fetch(`${DISCORD_API}/channels/${cfg.ticketLogChannelId}/messages`, {
     method: "POST",
-    headers: { Authorization: `Bot ${botToken}`, "Content-Type": "application/json" },
+    headers: botHeaders(botToken, { "Content-Type": "application/json" }),
     body: JSON.stringify({
       embeds: [
         {
@@ -145,8 +144,8 @@ moderationRoutes.get("/:guildId/tickets", async (c) => {
 moderationRoutes.post("/:guildId/tickets/:threadId/close", async (c) => {
   const guildId = c.req.param("guildId");
   const threadId = c.req.param("threadId");
-  const botToken = process.env.DISCORD_TOKEN;
-  if (!botToken) return c.json({ error: "Missing bot token" }, 500);
+  const botToken = requireBotToken(c);
+  if (botToken instanceof Response) return botToken;
 
   const ticket = await ticketRepository.getByThread(threadId);
   if (!ticket || ticket.guildId !== guildId) return c.json({ error: "Not found" }, 404);
@@ -155,7 +154,7 @@ moderationRoutes.post("/:guildId/tickets/:threadId/close", async (c) => {
   // Lock + archiwizacja wątku (best-effort — wątek mógł zostać usunięty ręcznie)
   await fetch(`${DISCORD_API}/channels/${threadId}`, {
     method: "PATCH",
-    headers: { Authorization: `Bot ${botToken}`, "Content-Type": "application/json" },
+    headers: botHeaders(botToken, { "Content-Type": "application/json" }),
     body: JSON.stringify({ archived: true, locked: true }),
   }).catch(() => {});
 
@@ -175,8 +174,8 @@ moderationRoutes.post("/:guildId/tickets/:threadId/close", async (c) => {
 moderationRoutes.delete("/:guildId/tickets/:threadId", async (c) => {
   const guildId = c.req.param("guildId");
   const threadId = c.req.param("threadId");
-  const botToken = process.env.DISCORD_TOKEN;
-  if (!botToken) return c.json({ error: "Missing bot token" }, 500);
+  const botToken = requireBotToken(c);
+  if (botToken instanceof Response) return botToken;
 
   const ticket = await ticketRepository.getByThread(threadId);
   if (!ticket || ticket.guildId !== guildId) return c.json({ error: "Not found" }, 404);
@@ -194,7 +193,7 @@ moderationRoutes.delete("/:guildId/tickets/:threadId", async (c) => {
   // Usuń wątek na Discordzie (best-effort — mógł już zostać usunięty ręcznie).
   await fetch(`${DISCORD_API}/channels/${threadId}`, {
     method: "DELETE",
-    headers: { Authorization: `Bot ${botToken}` },
+    headers: botHeaders(botToken),
   }).catch(() => {});
 
   await ticketRepository.delete(threadId);
@@ -204,8 +203,8 @@ moderationRoutes.delete("/:guildId/tickets/:threadId", async (c) => {
 moderationRoutes.post("/:guildId/tickets/:threadId/reopen", async (c) => {
   const guildId = c.req.param("guildId");
   const threadId = c.req.param("threadId");
-  const botToken = process.env.DISCORD_TOKEN;
-  if (!botToken) return c.json({ error: "Missing bot token" }, 500);
+  const botToken = requireBotToken(c);
+  if (botToken instanceof Response) return botToken;
 
   const ticket = await ticketRepository.getByThread(threadId);
   if (!ticket || ticket.guildId !== guildId) return c.json({ error: "Not found" }, 404);
@@ -213,7 +212,7 @@ moderationRoutes.post("/:guildId/tickets/:threadId/reopen", async (c) => {
 
   const res = await fetch(`${DISCORD_API}/channels/${threadId}`, {
     method: "PATCH",
-    headers: { Authorization: `Bot ${botToken}`, "Content-Type": "application/json" },
+    headers: botHeaders(botToken, { "Content-Type": "application/json" }),
     body: JSON.stringify({ archived: false, locked: false }),
   }).catch(() => null);
 

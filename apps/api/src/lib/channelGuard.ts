@@ -1,4 +1,8 @@
-const DISCORD_API = "https://discord.com/api/v10";
+import { z } from "zod";
+
+import { botHeaders, discordJson } from "./discord";
+
+const channelSchema = z.object({ guild_id: z.string().optional() });
 
 /**
  * True if `channelId` belongs to `guildId`. Guards the message-send endpoints
@@ -12,14 +16,8 @@ export async function channelInGuild(
   guildId: string,
   botToken: string,
 ): Promise<boolean> {
-  try {
-    const res = await fetch(`${DISCORD_API}/channels/${channelId}`, {
-      headers: { Authorization: `Bot ${botToken}` },
-    });
-    if (!res.ok) return false;
-    const ch = (await res.json()) as { guild_id?: string };
-    return ch.guild_id === guildId;
-  } catch {
-    return false;
-  }
+  const ch = await discordJson(`/channels/${channelId}`, channelSchema, {
+    headers: botHeaders(botToken),
+  });
+  return ch?.guild_id === guildId;
 }

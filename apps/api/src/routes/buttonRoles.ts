@@ -7,12 +7,17 @@ import {
 import { Hono } from "hono";
 
 import { channelInGuild } from "../lib/channelGuard";
+import {
+  botHeaders,
+  DISCORD_API,
+  messageIdSchema,
+  requireBotToken,
+} from "../lib/discord";
 import { canAccessGuild } from "../lib/guildGuard";
 import { buttonRolesSchema, parseBody } from "../lib/validation";
 import { authMiddleware } from "../middleware/authMiddleware";
 import type { AppVariables } from "../types";
 
-const DISCORD_API = "https://discord.com/api/v10";
 const BUTTON_STYLE_SECONDARY = 2;
 
 type ButtonRoleInputEntry = { label: string; emoji?: string; roleId: string };
@@ -70,8 +75,8 @@ buttonRoleRoutes.post("/:guildId/button-roles", async (c) => {
   if (!parsed.ok) return parsed.res;
   const { channelId, embed: rawEmbed, entries } = parsed.data;
 
-  const botToken = process.env.DISCORD_TOKEN;
-  if (!botToken) return c.json({ error: "Missing bot token" }, 500);
+  const botToken = requireBotToken(c);
+  if (botToken instanceof Response) return botToken;
 
   // Target channel must belong to this guild (same guard as the other send paths).
   if (!(await channelInGuild(channelId, guildId, botToken))) {
@@ -85,7 +90,7 @@ buttonRoleRoutes.post("/:guildId/button-roles", async (c) => {
 
   const msgRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
     method: "POST",
-    headers: { Authorization: `Bot ${botToken}`, "Content-Type": "application/json" },
+    headers: botHeaders(botToken, { "Content-Type": "application/json" }),
     body: JSON.stringify(payload),
   });
 
@@ -95,12 +100,13 @@ buttonRoleRoutes.post("/:guildId/button-roles", async (c) => {
     return c.json({ error: "Failed to send message" }, 502);
   }
 
-  const msg = (await msgRes.json()) as { id: string };
+  const msg = messageIdSchema.safeParse(await msgRes.json());
+  if (!msg.success) return c.json({ error: "Failed to send message" }, 502);
 
   const created = await buttonRoleRepository.create({
     guildId,
     channelId,
-    messageId: msg.id,
+    messageId: msg.data.id,
     embed: rawEmbed as EmbedConfig,
     entries,
   });
@@ -119,7 +125,7 @@ buttonRoleRoutes.delete("/:guildId/button-roles/:messageId", async (c) => {
   if (botToken) {
     await fetch(`${DISCORD_API}/channels/${config.channelId}/messages/${messageId}`, {
       method: "DELETE",
-      headers: { Authorization: `Bot ${botToken}` },
+      headers: botHeaders(botToken),
     }).catch(() => {});
   }
 

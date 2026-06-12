@@ -35,7 +35,7 @@ export default function CommandsPage() {
   const configQ = useGuildConfig(guildId);
   const loading = configQ.isLoading;
   useRedirectOnError(configQ.isError, configQ.error);
-  useSeedOnce(configQ.data, setConfig);
+  const configReady = useSeedOnce(configQ.data, setConfig);
 
   const disabled = new Set(config.disabledCommands ?? []);
   const setDisabled = (next: Set<string>) =>
@@ -58,7 +58,7 @@ export default function CommandsPage() {
   const { status: autoSaveStatus } = useAutoSave(
     JSON.stringify([...(config.disabledCommands ?? [])].sort()),
     handleSave,
-    !loading,
+    configReady,
   );
 
   if (loading) return <CommandsSkeleton />;

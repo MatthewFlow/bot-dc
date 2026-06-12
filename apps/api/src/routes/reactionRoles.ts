@@ -5,13 +5,20 @@ import {
   toDiscordEmbed,
 } from "@jurassic-haven/db";
 import { Hono } from "hono";
+import { z } from "zod";
 
 import { channelInGuild } from "../lib/channelGuard";
+import {
+  botHeaders,
+  DISCORD_API,
+  discordJson,
+  messageIdSchema,
+  requireBotToken,
+} from "../lib/discord";
 import { canAccessGuild } from "../lib/guildGuard";
 import { authMiddleware } from "../middleware/authMiddleware";
 import type { AppVariables } from "../types";
 
-const DISCORD_API = "https://discord.com/api/v10";
 const COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
 
 function hexToDecimal(hex: string): number {
@@ -29,12 +36,12 @@ async function fetchGuildEmojiName(
   emojiId: string,
   botToken: string,
 ): Promise<string | null> {
-  const res = await fetch(`${DISCORD_API}/guilds/${guildId}/emojis/${emojiId}`, {
-    headers: { Authorization: `Bot ${botToken}` },
-  });
-  if (!res.ok) return null;
-  const e = (await res.json()) as { name?: string };
-  return e.name ?? null;
+  const e = await discordJson(
+    `/guilds/${guildId}/emojis/${emojiId}`,
+    z.object({ name: z.string().nullish() }),
+    { headers: botHeaders(botToken) },
+  );
+  return e?.name ?? null;
 }
 
 /**
@@ -107,8 +114,8 @@ reactionRoleRoutes.post("/:guildId/reaction-roles", async (c) => {
   if (body.entries.length > 20)
     return c.json({ error: "Too many entries (max 20)" }, 400);
 
-  const botToken = process.env.DISCORD_TOKEN;
-  if (!botToken) return c.json({ error: "Missing bot token" }, 500);
+  const botToken = requireBotToken(c);
+  if (botToken instanceof Response) return botToken;
 
   // Kanał z body musi należeć do gildii ze ścieżki — inaczej admin jednej gildii
   // mógłby wysłać wiadomość bota do kanału innego serwera.
@@ -176,10 +183,7 @@ reactionRoleRoutes.post("/:guildId/reaction-roles", async (c) => {
 
   const msgRes = await fetch(`${DISCORD_API}/channels/${body.channelId}/messages`, {
     method: "POST",
-    headers: {
-      Authorization: `Bot ${botToken}`,
-      "Content-Type": "application/json",
-    },
+    headers: botHeaders(botToken, { "Content-Type": "application/json" }),
     body: JSON.stringify({ embeds: [embed] }),
   });
 
@@ -189,15 +193,16 @@ reactionRoleRoutes.post("/:guildId/reaction-roles", async (c) => {
     return c.json({ error: "Failed to send message" }, 502);
   }
 
-  const msg = (await msgRes.json()) as { id: string };
+  const msg = messageIdSchema.safeParse(await msgRes.json());
+  if (!msg.success) return c.json({ error: "Failed to send message" }, 502);
 
   for (const entry of resolvedEntries) {
     const emoji = encodeURIComponent(entry.reaction);
     const res = await fetch(
-      `${DISCORD_API}/channels/${body.channelId}/messages/${msg.id}/reactions/${emoji}/@me`,
+      `${DISCORD_API}/channels/${body.channelId}/messages/${msg.data.id}/reactions/${emoji}/@me`,
       {
         method: "PUT",
-        headers: { Authorization: `Bot ${botToken}` },
+        headers: botHeaders(botToken),
       },
     );
 
@@ -212,7 +217,7 @@ reactionRoleRoutes.post("/:guildId/reaction-roles", async (c) => {
   const created = await reactionRoleRepository.create({
     guildId,
     channelId: body.channelId,
-    messageId: msg.id,
+    messageId: msg.data.id,
     title,
     content,
     color: colorHex,
@@ -238,7 +243,7 @@ reactionRoleRoutes.delete("/:guildId/reaction-roles/:messageId", async (c) => {
   if (botToken) {
     await fetch(`${DISCORD_API}/channels/${config.channelId}/messages/${messageId}`, {
       method: "DELETE",
-      headers: { Authorization: `Bot ${botToken}` },
+      headers: botHeaders(botToken),
     }).catch(() => {});
   }
 

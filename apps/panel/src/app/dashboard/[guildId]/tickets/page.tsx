@@ -2,7 +2,7 @@
 
 import { Ticket as TicketIcon, Trash2 } from "lucide-react";
 import { useParams } from "next/navigation";
-import { type CSSProperties, useEffect, useState } from "react";
+import { type CSSProperties, useState } from "react";
 
 import { Avatar } from "@/components/Avatar";
 import { TicketStatusBadge } from "@/components/badges";
@@ -20,14 +20,13 @@ import { PageSkeleton, Skeleton, SkeletonRow } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
 import { VariablesList } from "@/components/VariablesList";
-import { useChannels, useGuildConfig, useRoles } from "@/hooks/queries";
+import { useChannels, useGuildConfig, useRoles, useTickets } from "@/hooks/queries";
 import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import type { Channel, GuildConfig, Role, Ticket, TicketStatus } from "@/lib/api";
+import type { Channel, GuildConfig, Role, TicketStatus } from "@/lib/api";
 import {
   closeTicket,
   deleteTicket,
-  getTickets,
   reopenTicket,
   sendTicketPanel,
   updateGuildConfig,
@@ -83,8 +82,6 @@ export default function TicketsPage() {
   const [channels, setChannels] = useState<Channel[]>([]);
   const [saving, setSaving] = useState(false);
 
-  const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [ticketsLoading, setTicketsLoading] = useState(false);
   const [filter, setFilter] = useState<StatusFilter>("all");
 
   const [panelChannelId, setPanelChannelId] = useState("");
@@ -95,29 +92,16 @@ export default function TicketsPage() {
   const configQ = useGuildConfig(guildId);
   const rolesQ = useRoles(guildId);
   const channelsQ = useChannels(guildId);
+  // Zawsze pobieramy WSZYSTKIE tickety — liczniki liczone z pełnego zbioru,
+  // filtrowanie zakładką odbywa się po stronie klienta (poniżej).
+  const ticketsQ = useTickets(guildId);
+  const tickets = ticketsQ.data ?? [];
+  const ticketsLoading = ticketsQ.isLoading;
   const loading = configQ.isLoading || rolesQ.isLoading || channelsQ.isLoading;
   useRedirectOnError(configQ.isError, configQ.error);
-  useSeedOnce(configQ.data, setConfig);
+  const configReady = useSeedOnce(configQ.data, setConfig);
   useSeedOnce(rolesQ.data, setRoles);
   useSeedOnce(channelsQ.data, setChannels);
-
-  useEffect(() => {
-    fetchTickets();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [guildId]);
-
-  async function fetchTickets() {
-    setTicketsLoading(true);
-    try {
-      // Zawsze pobieramy WSZYSTKIE tickety — liczniki liczone z pełnego zbioru,
-      // filtrowanie zakładką odbywa się po stronie klienta (poniżej).
-      setTickets(await getTickets(guildId));
-    } catch {
-      // non-blocking
-    } finally {
-      setTicketsLoading(false);
-    }
-  }
 
   async function handleSave() {
     setSaving(true);
@@ -142,7 +126,7 @@ export default function TicketsPage() {
     try {
       await closeTicket(guildId, threadId);
       toast("Ticket zamknięty.", "success");
-      await fetchTickets();
+      await ticketsQ.refetch();
     } catch {
       toast("Nie udało się zamknąć ticketu.", "error");
     } finally {
@@ -155,7 +139,7 @@ export default function TicketsPage() {
     try {
       await reopenTicket(guildId, threadId);
       toast("Ticket otwarty ponownie.", "success");
-      await fetchTickets();
+      await ticketsQ.refetch();
     } catch {
       toast("Nie udało się otworzyć ticketu (wątek mógł zostać usunięty).", "error");
     } finally {
@@ -169,7 +153,7 @@ export default function TicketsPage() {
     try {
       await deleteTicket(guildId, threadId);
       toast("Ticket usunięty.", "success");
-      await fetchTickets();
+      await ticketsQ.refetch();
     } catch {
       toast("Nie udało się usunąć ticketu.", "error");
     } finally {
@@ -206,7 +190,7 @@ export default function TicketsPage() {
       ticketPanelButton: config.ticketPanelButton,
     }),
     handleSave,
-    !loading,
+    configReady,
   );
 
   if (loading) return <TicketsSkeleton />;

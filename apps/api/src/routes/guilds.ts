@@ -8,16 +8,23 @@ import {
   xpRepository,
 } from "@jurassic-haven/db";
 import { Hono } from "hono";
+import { z } from "zod";
 
 import { channelInGuild } from "../lib/channelGuard";
 import { sanitizeConfigPatch } from "../lib/configSanitize";
+import {
+  botHeaders,
+  DISCORD_API,
+  discordJson,
+  fetchGuildCounts,
+  requireBotToken,
+  serverVarReplacer,
+} from "../lib/discord";
 import { canAccessGuild, fetchAccessibleGuilds } from "../lib/guildGuard";
 import { createMemberResolver } from "../lib/memberResolver";
 import { channelIdSchema, nameSchema, parseBody } from "../lib/validation";
 import { authMiddleware } from "../middleware/authMiddleware";
 import type { AppVariables } from "../types";
-
-const DISCORD_API = "https://discord.com/api/v10";
 
 const DISCORD_CHANNEL_TYPES = {
   GuildText: 0,
@@ -68,6 +75,18 @@ const DEFAULT_FEEDBACK_PANEL_EMBED = {
     "Twoja opinia trafi prosto do ekipy.",
   color: 0xd4a843,
 };
+
+const discordChannelSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.number(),
+});
+const discordRoleSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  position: z.number(),
+  managed: z.boolean().optional(),
+});
 
 export const guildRoutes = new Hono<{ Variables: AppVariables }>();
 
@@ -120,12 +139,12 @@ guildRoutes.put("/:guildId/config", async (c) => {
 
 guildRoutes.get("/:guildId/channels", async (c) => {
   const guildId = c.req.param("guildId");
-  const botToken = process.env.DISCORD_TOKEN;
-  if (!botToken) return c.json({ error: "Missing bot token" }, 500);
+  const botToken = requireBotToken(c);
+  if (botToken instanceof Response) return botToken;
 
   try {
     const res = await fetch(`${DISCORD_API}/guilds/${guildId}/channels`, {
-      headers: { Authorization: `Bot ${botToken}` },
+      headers: botHeaders(botToken),
     });
 
     if (res.status === 429) {
@@ -142,11 +161,7 @@ guildRoutes.get("/:guildId/channels", async (c) => {
       return c.json({ error: "Failed to fetch channels" }, 502);
     }
 
-    const channels = (await res.json()) as Array<{
-      id: string;
-      name: string;
-      type: number;
-    }>;
+    const channels = z.array(discordChannelSchema).parse(await res.json());
 
     const textChannels = channels
       .filter(
@@ -165,8 +180,8 @@ guildRoutes.get("/:guildId/channels", async (c) => {
 
 guildRoutes.post("/:guildId/channels", async (c) => {
   const guildId = c.req.param("guildId");
-  const botToken = process.env.DISCORD_TOKEN;
-  if (!botToken) return c.json({ error: "Missing bot token" }, 500);
+  const botToken = requireBotToken(c);
+  if (botToken instanceof Response) return botToken;
 
   const parsed = await parseBody(c, nameSchema);
   if (!parsed.ok) return parsed.res;
@@ -175,10 +190,7 @@ guildRoutes.post("/:guildId/channels", async (c) => {
   try {
     const res = await fetch(`${DISCORD_API}/guilds/${guildId}/channels`, {
       method: "POST",
-      headers: {
-        Authorization: `Bot ${botToken}`,
-        "Content-Type": "application/json",
-      },
+      headers: botHeaders(botToken, { "Content-Type": "application/json" }),
       body: JSON.stringify({ name, type: DISCORD_CHANNEL_TYPES.GuildText }),
     });
 
@@ -196,7 +208,7 @@ guildRoutes.post("/:guildId/channels", async (c) => {
       return c.json({ error: "Failed to create channel" }, 502);
     }
 
-    const ch = (await res.json()) as { id: string; name: string; type: number };
+    const ch = discordChannelSchema.parse(await res.json());
     return c.json({ id: ch.id, name: ch.name, type: ch.type }, 201);
   } catch (e) {
     console.error(`[guilds] Błąd tworzenia kanału dla ${guildId}:`, e);
@@ -205,8 +217,8 @@ guildRoutes.post("/:guildId/channels", async (c) => {
 });
 
 guildRoutes.post("/:guildId/ticket-panel", async (c) => {
-  const botToken = process.env.DISCORD_TOKEN;
-  if (!botToken) return c.json({ error: "Missing bot token" }, 500);
+  const botToken = requireBotToken(c);
+  if (botToken instanceof Response) return botToken;
 
   const parsed = await parseBody(c, channelIdSchema);
   if (!parsed.ok) return parsed.res;
@@ -224,26 +236,7 @@ guildRoutes.post("/:guildId/ticket-panel", async (c) => {
   const cfg = await guildConfigRepository.get(guildId);
 
   // Zmienne kontekstu serwera ({server}, {member_count}) — best-effort.
-  let serverName = "";
-  let memberCount = "";
-  try {
-    const gRes = await fetch(`${DISCORD_API}/guilds/${guildId}?with_counts=true`, {
-      headers: { Authorization: `Bot ${botToken}` },
-    });
-    if (gRes.ok) {
-      const g = (await gRes.json()) as {
-        name?: string;
-        approximate_member_count?: number;
-      };
-      serverName = g.name ?? "";
-      memberCount =
-        g.approximate_member_count != null ? String(g.approximate_member_count) : "";
-    }
-  } catch {
-    // ignore — zmienne zostaną puste
-  }
-  const replace = (s: string) =>
-    s.replace(/{server}/g, serverName).replace(/{member_count}/g, memberCount);
+  const replace = await serverVarReplacer(guildId, botToken);
 
   const embed = toDiscordEmbed(
     cfg?.ticketPanelEmbed ?? DEFAULT_TICKET_PANEL_EMBED,
@@ -273,10 +266,7 @@ guildRoutes.post("/:guildId/ticket-panel", async (c) => {
   try {
     const res = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
       method: "POST",
-      headers: {
-        Authorization: `Bot ${botToken}`,
-        "Content-Type": "application/json",
-      },
+      headers: botHeaders(botToken, { "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
     });
 
@@ -302,8 +292,8 @@ guildRoutes.post("/:guildId/ticket-panel", async (c) => {
 });
 
 guildRoutes.post("/:guildId/feedback-panel", async (c) => {
-  const botToken = process.env.DISCORD_TOKEN;
-  if (!botToken) return c.json({ error: "Missing bot token" }, 500);
+  const botToken = requireBotToken(c);
+  if (botToken instanceof Response) return botToken;
 
   const guildId = c.req.param("guildId");
   const cfg = await guildConfigRepository.get(guildId);
@@ -319,26 +309,7 @@ guildRoutes.post("/:guildId/feedback-panel", async (c) => {
   }
 
   // Zmienne kontekstu serwera ({server}, {member_count}) — best-effort.
-  let serverName = "";
-  let memberCount = "";
-  try {
-    const gRes = await fetch(`${DISCORD_API}/guilds/${guildId}?with_counts=true`, {
-      headers: { Authorization: `Bot ${botToken}` },
-    });
-    if (gRes.ok) {
-      const g = (await gRes.json()) as {
-        name?: string;
-        approximate_member_count?: number;
-      };
-      serverName = g.name ?? "";
-      memberCount =
-        g.approximate_member_count != null ? String(g.approximate_member_count) : "";
-    }
-  } catch {
-    // ignore — zmienne zostaną puste
-  }
-  const replace = (s: string) =>
-    s.replace(/{server}/g, serverName).replace(/{member_count}/g, memberCount);
+  const replace = await serverVarReplacer(guildId, botToken);
 
   // custom_id "feedback_open" obsługuje bot — musi pozostać niezmienny.
   const embed = toDiscordEmbed(
@@ -367,10 +338,7 @@ guildRoutes.post("/:guildId/feedback-panel", async (c) => {
   try {
     const res = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
       method: "POST",
-      headers: {
-        Authorization: `Bot ${botToken}`,
-        "Content-Type": "application/json",
-      },
+      headers: botHeaders(botToken, { "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
     });
 
@@ -425,12 +393,12 @@ guildRoutes.delete("/:guildId/feedback/:feedbackId", async (c) => {
 
 guildRoutes.get("/:guildId/roles", async (c) => {
   const guildId = c.req.param("guildId");
-  const botToken = process.env.DISCORD_TOKEN;
-  if (!botToken) return c.json({ error: "Missing bot token" }, 500);
+  const botToken = requireBotToken(c);
+  if (botToken instanceof Response) return botToken;
 
   try {
     const res = await fetch(`${DISCORD_API}/guilds/${guildId}/roles`, {
-      headers: { Authorization: `Bot ${botToken}` },
+      headers: botHeaders(botToken),
     });
 
     if (res.status === 429) {
@@ -447,12 +415,7 @@ guildRoutes.get("/:guildId/roles", async (c) => {
       return c.json({ error: "Failed to fetch roles" }, 502);
     }
 
-    const roles = (await res.json()) as Array<{
-      id: string;
-      name: string;
-      position: number;
-      managed: boolean;
-    }>;
+    const roles = z.array(discordRoleSchema).parse(await res.json());
 
     const filtered = roles
       .filter((r) => !r.managed && r.name !== "@everyone")
@@ -466,8 +429,8 @@ guildRoutes.get("/:guildId/roles", async (c) => {
 
 guildRoutes.post("/:guildId/roles", async (c) => {
   const guildId = c.req.param("guildId");
-  const botToken = process.env.DISCORD_TOKEN;
-  if (!botToken) return c.json({ error: "Missing bot token" }, 500);
+  const botToken = requireBotToken(c);
+  if (botToken instanceof Response) return botToken;
 
   const parsed = await parseBody(c, nameSchema);
   if (!parsed.ok) return parsed.res;
@@ -476,10 +439,7 @@ guildRoutes.post("/:guildId/roles", async (c) => {
   try {
     const res = await fetch(`${DISCORD_API}/guilds/${guildId}/roles`, {
       method: "POST",
-      headers: {
-        Authorization: `Bot ${botToken}`,
-        "Content-Type": "application/json",
-      },
+      headers: botHeaders(botToken, { "Content-Type": "application/json" }),
       body: JSON.stringify({ name }),
     });
 
@@ -497,7 +457,7 @@ guildRoutes.post("/:guildId/roles", async (c) => {
       return c.json({ error: "Failed to create role" }, 502);
     }
 
-    const role = (await res.json()) as { id: string; name: string; position: number };
+    const role = discordRoleSchema.parse(await res.json());
     return c.json({ id: role.id, name: role.name, position: role.position }, 201);
   } catch (e) {
     console.error(`[guilds] Błąd tworzenia roli dla ${guildId}:`, e);
@@ -507,8 +467,8 @@ guildRoutes.post("/:guildId/roles", async (c) => {
 
 guildRoutes.get("/:guildId/leaderboard", async (c) => {
   const guildId = c.req.param("guildId");
-  const botToken = process.env.DISCORD_TOKEN;
-  if (!botToken) return c.json({ error: "Missing bot token" }, 500);
+  const botToken = requireBotToken(c);
+  if (botToken instanceof Response) return botToken;
 
   const raw = Number(c.req.query("limit") ?? 10);
   const limit = Number.isFinite(raw) && raw > 0 ? Math.min(raw, 100) : 10;
@@ -546,39 +506,29 @@ guildRoutes.get("/:guildId/leaderboard", async (c) => {
 // gdy Discord/uprawnienia zawiodą, dane pole jest null (panel pokaże „—").
 guildRoutes.get("/:guildId/stats", async (c) => {
   const guildId = c.req.param("guildId");
-  const botToken = process.env.DISCORD_TOKEN;
-  if (!botToken) return c.json({ error: "Missing bot token" }, 500);
+  const botToken = requireBotToken(c);
+  if (botToken instanceof Response) return botToken;
 
-  const auth = { headers: { Authorization: `Bot ${botToken}` } };
+  const auth = { headers: botHeaders(botToken) };
 
   // Liczba członków + online (approximate z Discorda)
   const guildInfo = (async () => {
-    try {
-      const res = await fetch(`${DISCORD_API}/guilds/${guildId}?with_counts=true`, auth);
-      if (!res.ok) return { memberCount: null, onlineCount: null };
-      const g = (await res.json()) as {
-        approximate_member_count?: number;
-        approximate_presence_count?: number;
-      };
-      return {
-        memberCount: g.approximate_member_count ?? null,
-        onlineCount: g.approximate_presence_count ?? null,
-      };
-    } catch {
-      return { memberCount: null, onlineCount: null };
-    }
+    const g = await fetchGuildCounts(guildId, botToken);
+    return {
+      memberCount: g?.approximate_member_count ?? null,
+      onlineCount: g?.approximate_presence_count ?? null,
+    };
   })();
 
   // Liczba banów — pierwsza strona (max 1000). Wymaga uprawnienia BAN_MEMBERS.
   const banInfo = (async () => {
-    try {
-      const res = await fetch(`${DISCORD_API}/guilds/${guildId}/bans?limit=1000`, auth);
-      if (!res.ok) return { banCount: null as number | null, banCountCapped: false };
-      const bans = (await res.json()) as unknown[];
-      return { banCount: bans.length, banCountCapped: bans.length >= 1000 };
-    } catch {
-      return { banCount: null as number | null, banCountCapped: false };
-    }
+    const bans = await discordJson(
+      `/guilds/${guildId}/bans?limit=1000`,
+      z.array(z.unknown()),
+      auth,
+    );
+    if (!bans) return { banCount: null as number | null, banCountCapped: false };
+    return { banCount: bans.length, banCountCapped: bans.length >= 1000 };
   })();
 
   const [{ memberCount, onlineCount }, { banCount, banCountCapped }, warnCount, tickets] =

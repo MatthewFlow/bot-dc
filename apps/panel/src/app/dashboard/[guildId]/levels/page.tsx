@@ -2,7 +2,7 @@
 
 import { Crown, TrendingUp } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 
 import { ChannelSelect } from "@/components/ChannelSelect";
 import { ConfirmModal } from "@/components/confirmModal";
@@ -19,18 +19,11 @@ import { PageSkeleton, Skeleton, SkeletonRow } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { useChannels, useGuildConfig, useRoles } from "@/hooks/queries";
+import { useChannels, useGuildConfig, useLeaderboard, useRoles } from "@/hooks/queries";
 import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import type {
-  Channel,
-  EmbedConfig,
-  GuildConfig,
-  LeaderboardEntry,
-  LevelingConfig,
-  Role,
-} from "@/lib/api";
-import { getLeaderboard, updateGuildConfig } from "@/lib/api";
+import type { Channel, EmbedConfig, GuildConfig, LevelingConfig, Role } from "@/lib/api";
+import { updateGuildConfig } from "@/lib/api";
 import { LEVEL_VARS, previewReplacer } from "@/lib/embed";
 
 const DEFAULT_LEVELING: LevelingConfig = {
@@ -172,8 +165,6 @@ export default function LevelsPage() {
   const [config, setConfig] = useState<GuildConfig>({});
   const [roles, setRoles] = useState<Role[]>([]);
   const [channels, setChannels] = useState<Channel[]>([]);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
-  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [newLevel, setNewLevel] = useState("");
   const [newRoleId, setNewRoleId] = useState("");
@@ -182,9 +173,12 @@ export default function LevelsPage() {
   const configQ = useGuildConfig(guildId);
   const rolesQ = useRoles(guildId);
   const channelsQ = useChannels(guildId);
+  const lbQ = useLeaderboard(guildId, 10);
+  const leaderboard = lbQ.data ?? [];
+  const leaderboardLoading = lbQ.isLoading;
   const loading = configQ.isLoading || rolesQ.isLoading || channelsQ.isLoading;
   useRedirectOnError(configQ.isError, configQ.error);
-  useSeedOnce(configQ.data, setConfig);
+  const configReady = useSeedOnce(configQ.data, setConfig);
   useSeedOnce(rolesQ.data, setRoles);
   useSeedOnce(channelsQ.data, setChannels);
 
@@ -196,22 +190,6 @@ export default function LevelsPage() {
       leveling: { ...DEFAULT_LEVELING, ...c.leveling, ...patch },
     }));
   const channelName = (id: string) => channels.find((c) => c.id === id)?.name ?? id;
-
-  useEffect(() => {
-    fetchLeaderboard();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [guildId]);
-
-  async function fetchLeaderboard(force = false) {
-    setLeaderboardLoading(true);
-    try {
-      setLeaderboard(await getLeaderboard(guildId, 10, force));
-    } catch {
-      // leaderboard jest opcjonalny — błąd fetch nie blokuje reszty strony
-    } finally {
-      setLeaderboardLoading(false);
-    }
-  }
 
   function roleName(roleId: string) {
     return roles.find((r) => r.id === roleId)?.name ?? roleId;
@@ -260,7 +238,7 @@ export default function LevelsPage() {
       levelUpEmbed: config.levelUpEmbed,
     }),
     handleSave,
-    !loading,
+    configReady,
   );
 
   if (loading) return <LevelsSkeleton />;
@@ -558,10 +536,7 @@ export default function LevelsPage() {
               <p className="text-xs text-gray-400">Najaktywniejsi członkowie serwera</p>
             </div>
           </div>
-          <RefreshButton
-            onClick={() => fetchLeaderboard(true)}
-            loading={leaderboardLoading}
-          />
+          <RefreshButton onClick={() => lbQ.refetch()} loading={lbQ.isFetching} />
         </div>
 
         <LeaderboardRows entries={leaderboard} loading={leaderboardLoading} rows={10} />

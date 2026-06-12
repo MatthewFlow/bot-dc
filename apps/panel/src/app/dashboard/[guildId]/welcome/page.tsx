@@ -104,7 +104,7 @@ export default function WelcomePage() {
   const channelsQ = useChannels(guildId);
   const loading = configQ.isLoading || channelsQ.isLoading;
   useRedirectOnError(configQ.isError, configQ.error);
-  useSeedOnce(configQ.data, setConfig);
+  const configReady = useSeedOnce(configQ.data, setConfig);
   useSeedOnce(channelsQ.data, setChannels);
 
   async function handleSave() {
@@ -171,7 +171,7 @@ export default function WelcomePage() {
       goodbyeEmbed: config.goodbyeEmbed ?? null,
     }),
     handleSave,
-    !loading,
+    configReady,
   );
 
   if (loading) return <WelcomeSkeleton />;

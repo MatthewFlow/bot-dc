@@ -66,7 +66,7 @@ export default function AutoRolePage() {
   const rolesQ = useRoles(guildId);
   const loading = configQ.isLoading || rolesQ.isLoading;
   useRedirectOnError(configQ.isError, configQ.error);
-  useSeedOnce(configQ.data, (cfg) => {
+  const configReady = useSeedOnce(configQ.data, (cfg) => {
     setConfig(cfg);
     setSavedRoleId(cfg.joinRoleId);
     setSavedVerifiedRoleId(cfg.verifiedRoleId);
@@ -98,7 +98,7 @@ export default function AutoRolePage() {
       verifiedRoleId: config.verifiedRoleId,
     }),
     handleSave,
-    !loading,
+    configReady,
   );
 
   const hasChanges =

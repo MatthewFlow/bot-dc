@@ -1,6 +1,8 @@
 import { guildConfigRepository } from "@jurassic-haven/db";
+import { z } from "zod";
 
-const DISCORD_API = "https://discord.com/api/v10";
+import { botHeaders, discordJson } from "./discord";
+
 const ADMIN_PERM = BigInt(0x8); // ADMINISTRATOR
 const MANAGE_GUILD_PERM = BigInt(0x20); // MANAGE_GUILD ("Manage Server")
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
@@ -12,12 +14,17 @@ export function canManageGuild(permissions: string): boolean {
   return (p & ADMIN_PERM) === ADMIN_PERM || (p & MANAGE_GUILD_PERM) === MANAGE_GUILD_PERM;
 }
 
-export type GuildEntry = {
-  id: string;
-  name: string;
-  icon: string | null;
-  permissions: string;
-};
+const guildEntrySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  icon: z.string().nullable(),
+  permissions: z.string(),
+});
+export type GuildEntry = z.infer<typeof guildEntrySchema>;
+const guildArraySchema = z.array(guildEntrySchema);
+const botGuildArraySchema = z.array(z.object({ id: z.string() }));
+const memberRolesSchema = z.object({ roles: z.array(z.string()).optional() });
+
 type CacheEntry = { guilds: GuildEntry[]; expiresAt: number };
 
 // Per-token guild list cache
@@ -33,16 +40,14 @@ export async function fetchGuilds(accessToken: string): Promise<GuildEntry[]> {
 
   if (pending.has(accessToken)) return pending.get(accessToken)!;
 
-  const p = fetch(`${DISCORD_API}/users/@me/guilds`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  })
-    .then(async (res) => {
-      if (!res.ok) return cache.get(accessToken)?.guilds ?? [];
-      const guilds = (await res.json()) as GuildEntry[];
-      cache.set(accessToken, { guilds, expiresAt: Date.now() + CACHE_TTL_MS });
-      return guilds;
-    })
-    .finally(() => pending.delete(accessToken));
+  const p = (async () => {
+    const guilds = await discordJson(`/users/@me/guilds`, guildArraySchema, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!guilds) return cache.get(accessToken)?.guilds ?? [];
+    cache.set(accessToken, { guilds, expiresAt: Date.now() + CACHE_TTL_MS });
+    return guilds;
+  })().finally(() => pending.delete(accessToken));
 
   pending.set(accessToken, p);
   return p;
@@ -66,18 +71,13 @@ let botGuildsCache: { ids: Set<string>; expiresAt: number } | null = null;
 async function fetchBotGuildIds(): Promise<Set<string>> {
   if (botGuildsCache && botGuildsCache.expiresAt > Date.now()) return botGuildsCache.ids;
   if (!BOT_TOKEN) return new Set();
-  try {
-    const res = await fetch(`${DISCORD_API}/users/@me/guilds?limit=200`, {
-      headers: { Authorization: `Bot ${BOT_TOKEN}` },
-    });
-    if (!res.ok) return botGuildsCache?.ids ?? new Set();
-    const arr = (await res.json()) as { id: string }[];
-    const ids = new Set(arr.map((g) => g.id));
-    botGuildsCache = { ids, expiresAt: Date.now() + CACHE_TTL_MS };
-    return ids;
-  } catch {
-    return botGuildsCache?.ids ?? new Set();
-  }
+  const arr = await discordJson(`/users/@me/guilds?limit=200`, botGuildArraySchema, {
+    headers: botHeaders(BOT_TOKEN),
+  });
+  if (!arr) return botGuildsCache?.ids ?? new Set();
+  const ids = new Set(arr.map((g) => g.id));
+  botGuildsCache = { ids, expiresAt: Date.now() + CACHE_TTL_MS };
+  return ids;
 }
 
 /** Czy użytkownik ma w danym serwerze rolę „admina bota" (adminRoleId z configu). */
@@ -88,20 +88,15 @@ async function hasBotAdminRole(userId: string, guildId: string): Promise<boolean
   if (hit && hit.expiresAt > Date.now()) return hit.ok;
 
   let ok = false;
-  try {
-    const cfg = await guildConfigRepository.get(guildId);
-    const roleId = cfg?.adminRoleId;
-    if (roleId) {
-      const res = await fetch(`${DISCORD_API}/guilds/${guildId}/members/${userId}`, {
-        headers: { Authorization: `Bot ${BOT_TOKEN}` },
-      });
-      if (res.ok) {
-        const member = (await res.json()) as { roles?: string[] };
-        ok = Array.isArray(member.roles) && member.roles.includes(roleId);
-      }
-    }
-  } catch {
-    ok = false;
+  const cfg = await guildConfigRepository.get(guildId);
+  const roleId = cfg?.adminRoleId;
+  if (roleId) {
+    const member = await discordJson(
+      `/guilds/${guildId}/members/${userId}`,
+      memberRolesSchema,
+      { headers: botHeaders(BOT_TOKEN) },
+    );
+    ok = member?.roles?.includes(roleId) ?? false;
   }
   roleAccessCache.set(key, { ok, expiresAt: Date.now() + CACHE_TTL_MS });
   return ok;

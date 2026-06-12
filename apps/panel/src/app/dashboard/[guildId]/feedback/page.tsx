@@ -119,7 +119,7 @@ export default function FeedbackPage() {
   const loading = feedbackQ.isLoading || configQ.isLoading || channelsQ.isLoading;
   useRedirectOnError(configQ.isError, configQ.error);
   useSeedOnce(feedbackQ.data, (fb) => setList(fb.items));
-  useSeedOnce(configQ.data, setConfig);
+  const configReady = useSeedOnce(configQ.data, setConfig);
   useSeedOnce(channelsQ.data, setChannels);
 
   async function handleSubmit() {
@@ -186,7 +186,7 @@ export default function FeedbackPage() {
       feedbackPanelEmbed: config.feedbackPanelEmbed ?? null,
     }),
     handleSavePanel,
-    !loading,
+    configReady,
   );
 
   if (loading) return <FeedbackSkeleton />;

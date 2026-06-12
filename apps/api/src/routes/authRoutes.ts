@@ -1,11 +1,20 @@
 import { Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { jwtVerify, SignJWT } from "jose";
+import { z } from "zod";
 
+import { DISCORD_API } from "../lib/discord";
 import { sessions } from "../lib/sessions";
 
-const DISCORD_API = "https://discord.com/api/v10";
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+const tokenResponseSchema = z.object({ access_token: z.string() });
+const discordUserSchema = z.object({
+  id: z.string(),
+  username: z.string(),
+  global_name: z.string().nullish(),
+  avatar: z.string().nullable(),
+});
 
 // Ciasteczka Secure działają tylko po HTTPS. Domyślnie wł. w produkcji (wdrożenie z domeną/TLS),
 // ale przy wdrożeniu na samym IP po HTTP trzeba ustawić COOKIE_SECURE=false, inaczej przeglądarka
@@ -106,7 +115,9 @@ authRoutes.get("/callback", async (c) => {
     return c.json({ error: "Failed to exchange code" }, 400);
   }
 
-  const tokenData = (await tokenRes.json()) as { access_token: string };
+  const tokenParsed = tokenResponseSchema.safeParse(await tokenRes.json());
+  if (!tokenParsed.success) return c.json({ error: "Failed to exchange code" }, 400);
+  const tokenData = tokenParsed.data;
 
   const userRes = await fetch(`${DISCORD_API}/users/@me`, {
     headers: { Authorization: `Bearer ${tokenData.access_token}` },
@@ -116,12 +127,9 @@ authRoutes.get("/callback", async (c) => {
     return c.json({ error: "Failed to fetch user" }, 400);
   }
 
-  const user = (await userRes.json()) as {
-    id: string;
-    username: string;
-    global_name?: string | null;
-    avatar: string | null;
-  };
+  const userParsed = discordUserSchema.safeParse(await userRes.json());
+  if (!userParsed.success) return c.json({ error: "Failed to fetch user" }, 400);
+  const user = userParsed.data;
 
   // Store Discord access_token server-side — never expose it in the JWT
   await sessions.set(user.id, tokenData.access_token, SESSION_TTL_MS);

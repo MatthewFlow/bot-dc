@@ -2,7 +2,7 @@
 
 import { Search, ShieldAlert, Trash2 } from "lucide-react";
 import { useParams } from "next/navigation";
-import { type CSSProperties, useEffect, useState } from "react";
+import { type CSSProperties, useState } from "react";
 
 import { MOD_ACTION, ModActionBadge } from "@/components/badges";
 import { ChannelField } from "@/components/ChannelField";
@@ -13,10 +13,10 @@ import { RefreshButton } from "@/components/RefreshButton";
 import { SaveButton } from "@/components/SaveButton";
 import { PageSkeleton, Skeleton, SkeletonRow } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
-import { useChannels, useGuildConfig } from "@/hooks/queries";
+import { useChannels, useGuildConfig, useModActions } from "@/hooks/queries";
 import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
-import type { Channel, GuildConfig, ModAction, Warn } from "@/lib/api";
-import { clearWarnings, getModActions, getWarnings, updateGuildConfig } from "@/lib/api";
+import type { Channel, GuildConfig, Warn } from "@/lib/api";
+import { clearWarnings, getWarnings, updateGuildConfig } from "@/lib/api";
 
 function ModSkeleton() {
   return (
@@ -42,31 +42,15 @@ export default function ModerationPage() {
   const [warnsLoading, setWarnsLoading] = useState(false);
   const [pendingClear, setPendingClear] = useState(false);
 
-  const [actions, setActions] = useState<ModAction[]>([]);
-  const [actionsLoading, setActionsLoading] = useState(false);
-
   const configQ = useGuildConfig(guildId);
   const channelsQ = useChannels(guildId);
+  const actionsQ = useModActions(guildId, 25);
+  const actions = actionsQ.data ?? [];
+  const actionsLoading = actionsQ.isLoading;
   const loading = configQ.isLoading || channelsQ.isLoading;
   useRedirectOnError(configQ.isError, configQ.error);
   useSeedOnce(configQ.data, setConfig);
   useSeedOnce(channelsQ.data, setChannels);
-
-  useEffect(() => {
-    fetchActions();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [guildId]);
-
-  async function fetchActions() {
-    setActionsLoading(true);
-    try {
-      setActions(await getModActions(guildId, 25));
-    } catch {
-      // audyt jest opcjonalny — błąd nie blokuje strony
-    } finally {
-      setActionsLoading(false);
-    }
-  }
 
   async function handleSave() {
     setSaving(true);
@@ -101,7 +85,7 @@ export default function ModerationPage() {
       await clearWarnings(guildId, searchedId);
       setWarns([]);
       toast("Ostrzeżenia usunięte.", "success");
-      fetchActions();
+      actionsQ.refetch();
     } catch {
       toast("Nie udało się wyczyścić ostrzeżeń.", "error");
     }
@@ -260,7 +244,10 @@ export default function ModerationPage() {
             </p>
             <p className="text-base font-semibold text-white">📋 Dziennik akcji</p>
           </div>
-          <RefreshButton onClick={() => fetchActions()} loading={actionsLoading} />
+          <RefreshButton
+            onClick={() => actionsQ.refetch()}
+            loading={actionsQ.isFetching}
+          />
         </div>
 
         {actionsLoading ? (

@@ -101,7 +101,7 @@ export default function ServerLogPage() {
   const rolesQ = useRoles(guildId);
   const loading = configQ.isLoading || channelsQ.isLoading || rolesQ.isLoading;
   useRedirectOnError(configQ.isError, configQ.error);
-  useSeedOnce(configQ.data, setConfig);
+  const configReady = useSeedOnce(configQ.data, setConfig);
   useSeedOnce(channelsQ.data, setChannels);
   useSeedOnce(rolesQ.data, setRoles);
 
@@ -132,7 +132,7 @@ export default function ServerLogPage() {
   const { status: autoSaveStatus } = useAutoSave(
     JSON.stringify(config.serverLog ?? DEFAULT_SERVERLOG),
     handleSave,
-    !loading,
+    configReady,
   );
 
   if (loading) return <ServerLogSkeleton />;
