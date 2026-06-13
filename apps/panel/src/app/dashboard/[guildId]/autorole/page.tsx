@@ -17,32 +17,26 @@ import { useAutoSave } from "@/hooks/useAutoSave";
 import type { GuildConfig, Role } from "@/lib/api";
 import { updateGuildConfig } from "@/lib/api";
 
+/** Szkielet tylko karty z danymi — nagłówek i „Jak to działa" renderują się od razu. */
 function AutoRoleSkeleton() {
   return (
-    <div className="jh-in flex flex-col p-4 sm:p-6 lg:p-8">
-      <div className="mb-8">
-        <Skeleton className="mb-2 h-3 w-24" />
-        <Skeleton className="mb-2 h-7 w-48" />
-        <Skeleton className="h-3 w-64" />
+    <div className="flex flex-col gap-6 lg:flex-row">
+      <div className="flex-1 surface-raised rounded-xl bg-card">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+          <div className="space-y-2">
+            <Skeleton className="h-3 w-48" />
+            <Skeleton className="h-4 w-36" />
+          </div>
+          <Skeleton className="h-6 w-11 rounded-full" />
+        </div>
+        <div className="space-y-4 p-6">
+          <Skeleton className="h-3 w-full" />
+          <Skeleton className="h-3 w-3/4" />
+          <Skeleton className="h-10 w-72 rounded-lg" />
+        </div>
       </div>
-      <div className="flex flex-col gap-6 lg:flex-row">
-        <div className="flex-1 surface-raised rounded-xl bg-card">
-          <div className="flex items-center justify-between border-b border-border px-6 py-4">
-            <div className="space-y-2">
-              <Skeleton className="h-3 w-48" />
-              <Skeleton className="h-4 w-36" />
-            </div>
-            <Skeleton className="h-6 w-11 rounded-full" />
-          </div>
-          <div className="space-y-4 p-6">
-            <Skeleton className="h-3 w-full" />
-            <Skeleton className="h-3 w-3/4" />
-            <Skeleton className="h-10 w-72 rounded-lg" />
-          </div>
-        </div>
-        <div className="w-full lg:w-72">
-          <Skeleton className="h-52 w-full rounded-xl" />
-        </div>
+      <div className="w-full lg:w-72">
+        <Skeleton className="h-52 w-full rounded-xl" />
       </div>
     </div>
   );
@@ -64,7 +58,8 @@ export default function AutoRolePage() {
 
   const configQ = useGuildConfig(guildId);
   const rolesQ = useRoles(guildId);
-  const loading = configQ.isLoading || rolesQ.isLoading;
+  // Bramka tylko na config; lista ról (proxy do Discorda) dopełni się w selektach w tle.
+  const loading = configQ.isLoading;
   useRedirectOnError(configQ.isError, configQ.error);
   const configReady = useSeedOnce(configQ.data, (cfg) => {
     setConfig(cfg);
@@ -106,8 +101,6 @@ export default function AutoRolePage() {
   const activeRole = roles.find((r) => r.id === savedRoleId);
   const activeVerifiedRole = roles.find((r) => r.id === savedVerifiedRoleId);
 
-  if (loading) return <AutoRoleSkeleton />;
-
   return (
     <div className="jh-in flex flex-col p-4 sm:p-6 lg:p-8">
       <PageHeader
@@ -131,121 +124,127 @@ export default function AutoRolePage() {
         ]}
       />
 
-      <div className="flex flex-col gap-6 lg:flex-row">
-        <div className="flex-1 surface-raised rounded-xl bg-card">
-          <div className="flex items-center justify-between border-b border-border px-6 py-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                Nadawane automatycznie nowym członkom
-              </p>
-              <p className="text-base font-semibold text-white">
-                Auto-role przy dołączeniu
-              </p>
-            </div>
-            <Switch
-              checked={!!config.joinRoleId}
-              onCheckedChange={(v) => {
-                if (!v) setConfig((c) => ({ ...c, joinRoleId: undefined }));
-              }}
-            />
-          </div>
-
-          <div className="border-b border-border p-6">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-400">
-              Rola niezweryfikowanego
-            </p>
-            <p className="mb-3 text-sm text-gray-300">
-              Nadawana każdemu nowemu członkowi przy dołączeniu. Zazwyczaj{" "}
-              <span className="text-white">@Niezweryfikowany</span>.
-            </p>
-            <div className="flex max-w-sm flex-wrap items-center gap-2">
-              <RoleSelect
-                value={config.joinRoleId ?? ""}
-                onChange={(v) => setConfig((c) => ({ ...c, joinRoleId: v || undefined }))}
-                roles={roles}
-                placeholder="— Nie ustawiono —"
-                className="min-w-0 flex-1 px-4 py-2.5"
-              />
-              <CreateRoleButton
-                guildId={guildId}
-                defaultName="Niezweryfikowany"
-                onCreated={(role) => {
-                  setRoles((prev) =>
-                    [...prev, role].sort((a, b) => b.position - a.position),
-                  );
-                  setConfig((c) => ({ ...c, joinRoleId: role.id }));
+      {loading ? (
+        <AutoRoleSkeleton />
+      ) : (
+        <div className="flex flex-col gap-6 lg:flex-row">
+          <div className="flex-1 surface-raised rounded-xl bg-card">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                  Nadawane automatycznie nowym członkom
+                </p>
+                <p className="text-base font-semibold text-white">
+                  Auto-role przy dołączeniu
+                </p>
+              </div>
+              <Switch
+                checked={!!config.joinRoleId}
+                onCheckedChange={(v) => {
+                  if (!v) setConfig((c) => ({ ...c, joinRoleId: undefined }));
                 }}
               />
             </div>
-            {activeRole && (
-              <div className="mt-4 flex items-center gap-3 rounded-lg bg-background px-4 py-3">
-                <span className="h-2.5 w-2.5 rounded-full bg-discord" />
-                <span className="text-sm text-white">@{activeRole.name}</span>
-                <span className="ml-auto text-xs text-gray-400">
-                  Aktywna rola przy dołączeniu
-                </span>
-              </div>
-            )}
-          </div>
 
-          <div className="p-6">
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-400">
-              Rola zweryfikowanego
-            </p>
-            <p className="mb-3 text-sm text-gray-300">
-              Gdy użytkownik zareaguje emoji w systemie Reaction Roles i ta rola zostanie
-              mu nadana — bot automatycznie odbierze rolę niezweryfikowanego.
-            </p>
-            <div className="flex max-w-sm flex-wrap items-center gap-2">
-              <RoleSelect
-                value={config.verifiedRoleId ?? ""}
-                onChange={(v) =>
-                  setConfig((c) => ({ ...c, verifiedRoleId: v || undefined }))
-                }
-                roles={roles}
-                placeholder="— Nie ustawiono —"
-                className="min-w-0 flex-1 px-4 py-2.5"
-              />
-              <CreateRoleButton
-                guildId={guildId}
-                defaultName="Zweryfikowany"
-                onCreated={(role) => {
-                  setRoles((prev) =>
-                    [...prev, role].sort((a, b) => b.position - a.position),
-                  );
-                  setConfig((c) => ({ ...c, verifiedRoleId: role.id }));
-                }}
-              />
+            <div className="border-b border-border p-6">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                Rola niezweryfikowanego
+              </p>
+              <p className="mb-3 text-sm text-gray-300">
+                Nadawana każdemu nowemu członkowi przy dołączeniu. Zazwyczaj{" "}
+                <span className="text-white">@Niezweryfikowany</span>.
+              </p>
+              <div className="flex max-w-sm flex-wrap items-center gap-2">
+                <RoleSelect
+                  value={config.joinRoleId ?? ""}
+                  onChange={(v) =>
+                    setConfig((c) => ({ ...c, joinRoleId: v || undefined }))
+                  }
+                  roles={roles}
+                  placeholder="— Nie ustawiono —"
+                  className="min-w-0 flex-1 px-4 py-2.5"
+                />
+                <CreateRoleButton
+                  guildId={guildId}
+                  defaultName="Niezweryfikowany"
+                  onCreated={(role) => {
+                    setRoles((prev) =>
+                      [...prev, role].sort((a, b) => b.position - a.position),
+                    );
+                    setConfig((c) => ({ ...c, joinRoleId: role.id }));
+                  }}
+                />
+              </div>
+              {activeRole && (
+                <div className="mt-4 flex items-center gap-3 rounded-lg bg-background px-4 py-3">
+                  <span className="h-2.5 w-2.5 rounded-full bg-discord" />
+                  <span className="text-sm text-white">@{activeRole.name}</span>
+                  <span className="ml-auto text-xs text-gray-400">
+                    Aktywna rola przy dołączeniu
+                  </span>
+                </div>
+              )}
             </div>
-            {activeVerifiedRole && (
-              <div className="mt-4 flex items-center gap-3 rounded-lg bg-background px-4 py-3">
-                <span className="h-2.5 w-2.5 rounded-full bg-success" />
-                <span className="text-sm text-white">@{activeVerifiedRole.name}</span>
-                <span className="ml-auto text-xs text-gray-400">
-                  Aktywna rola zweryfikowanego
-                </span>
-              </div>
-            )}
-            {hasChanges && (
-              <p className="mt-3 text-xs text-primary">● Masz niezapisane zmiany</p>
-            )}
-          </div>
 
-          <div className="border-t border-border px-6 py-4">
-            <div className="flex items-center gap-4">
-              <SaveButton
-                onClick={handleSave}
-                saving={saving}
-                saved={saved}
-                autoSaveStatus={autoSaveStatus}
-                disabled={!hasChanges}
-                className="px-6 py-2.5"
-              />
-              {error && <p className="text-xs text-red-400">{error}</p>}
+            <div className="p-6">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wider text-gray-400">
+                Rola zweryfikowanego
+              </p>
+              <p className="mb-3 text-sm text-gray-300">
+                Gdy użytkownik zareaguje emoji w systemie Reaction Roles i ta rola
+                zostanie mu nadana — bot automatycznie odbierze rolę niezweryfikowanego.
+              </p>
+              <div className="flex max-w-sm flex-wrap items-center gap-2">
+                <RoleSelect
+                  value={config.verifiedRoleId ?? ""}
+                  onChange={(v) =>
+                    setConfig((c) => ({ ...c, verifiedRoleId: v || undefined }))
+                  }
+                  roles={roles}
+                  placeholder="— Nie ustawiono —"
+                  className="min-w-0 flex-1 px-4 py-2.5"
+                />
+                <CreateRoleButton
+                  guildId={guildId}
+                  defaultName="Zweryfikowany"
+                  onCreated={(role) => {
+                    setRoles((prev) =>
+                      [...prev, role].sort((a, b) => b.position - a.position),
+                    );
+                    setConfig((c) => ({ ...c, verifiedRoleId: role.id }));
+                  }}
+                />
+              </div>
+              {activeVerifiedRole && (
+                <div className="mt-4 flex items-center gap-3 rounded-lg bg-background px-4 py-3">
+                  <span className="h-2.5 w-2.5 rounded-full bg-success" />
+                  <span className="text-sm text-white">@{activeVerifiedRole.name}</span>
+                  <span className="ml-auto text-xs text-gray-400">
+                    Aktywna rola zweryfikowanego
+                  </span>
+                </div>
+              )}
+              {hasChanges && (
+                <p className="mt-3 text-xs text-primary">● Masz niezapisane zmiany</p>
+              )}
+            </div>
+
+            <div className="border-t border-border px-6 py-4">
+              <div className="flex items-center gap-4">
+                <SaveButton
+                  onClick={handleSave}
+                  saving={saving}
+                  saved={saved}
+                  autoSaveStatus={autoSaveStatus}
+                  disabled={!hasChanges}
+                  className="px-6 py-2.5"
+                />
+                {error && <p className="text-xs text-red-400">{error}</p>}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -15,7 +15,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { RefreshButton } from "@/components/RefreshButton";
 import { RoleSelect } from "@/components/RoleSelect";
 import { SaveButton } from "@/components/SaveButton";
-import { PageSkeleton, Skeleton, SkeletonRow } from "@/components/Skeleton";
+import { Skeleton, SkeletonRow } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -118,9 +118,10 @@ function XpSlider({
   );
 }
 
+/** Szkielet tylko kart z danymi — nagłówek i „Jak to działa" renderują się od razu. */
 function LevelsSkeleton() {
   return (
-    <PageSkeleton>
+    <>
       <div className="flex flex-col gap-6 lg:flex-row">
         <div className="flex-1 surface-raised rounded-xl bg-card">
           <div className="flex items-center justify-between border-b border-border px-6 py-4">
@@ -153,7 +154,7 @@ function LevelsSkeleton() {
           </div>
         ))}
       </div>
-    </PageSkeleton>
+    </>
   );
 }
 
@@ -176,7 +177,8 @@ export default function LevelsPage() {
   const lbQ = useLeaderboard(guildId, 10);
   const leaderboard = lbQ.data ?? [];
   const leaderboardLoading = lbQ.isLoading;
-  const loading = configQ.isLoading || rolesQ.isLoading || channelsQ.isLoading;
+  // Bramka tylko na config; role/kanały (proxy do Discorda) i leaderboard dopełnią się w tle.
+  const loading = configQ.isLoading;
   useRedirectOnError(configQ.isError, configQ.error);
   const configReady = useSeedOnce(configQ.data, setConfig);
   useSeedOnce(rolesQ.data, setRoles);
@@ -241,8 +243,6 @@ export default function LevelsPage() {
     configReady,
   );
 
-  if (loading) return <LevelsSkeleton />;
-
   const rewards = (config.roleRewards ?? []).slice().sort((a, b) => a.level - b.level);
 
   return (
@@ -268,279 +268,302 @@ export default function LevelsPage() {
         ]}
       />
 
-      <div className="flex flex-col gap-6 lg:flex-row">
-        <div className="flex-1 surface-raised rounded-xl bg-card">
-          <div className="flex items-center justify-between border-b border-border px-6 py-4">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                Mapowanie progu XP na istniejącą rolę Discord
-              </p>
-              <p className="text-base font-semibold text-white">Tiery → Role</p>
-            </div>
-            <SaveButton
-              onClick={handleSave}
-              saving={saving}
-              autoSaveStatus={autoSaveStatus}
-              className="px-4 py-2"
-            />
-          </div>
+      {loading ? (
+        <LevelsSkeleton />
+      ) : (
+        <>
+          <div className="flex flex-col gap-6 lg:flex-row">
+            <div className="flex-1 surface-raised rounded-xl bg-card">
+              <div className="flex items-center justify-between border-b border-border px-6 py-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    Mapowanie progu XP na istniejącą rolę Discord
+                  </p>
+                  <p className="text-base font-semibold text-white">Tiery → Role</p>
+                </div>
+                <SaveButton
+                  onClick={handleSave}
+                  saving={saving}
+                  autoSaveStatus={autoSaveStatus}
+                  className="px-4 py-2"
+                />
+              </div>
 
-          <div className="grid grid-cols-3 border-b border-border px-6 py-2">
-            {["Lv.", "Tier", "Discord rola"].map((h) => (
-              <span
-                key={h}
-                className="text-xs font-semibold uppercase tracking-wider text-gray-400"
-              >
-                {h}
-              </span>
-            ))}
-          </div>
-
-          {rewards.length === 0 ? (
-            <div className="px-6 py-8 text-center text-sm text-gray-400">
-              Brak progów. Dodaj pierwszy po prawej.
-            </div>
-          ) : (
-            rewards.map((r) => (
-              <div
-                key={r.level}
-                className="grid grid-cols-3 items-center border-b border-border px-6 py-3 last:border-0"
-              >
-                <span className="text-sm font-bold text-white">Lv. {r.level}</span>
-                <span className="inline-flex">
-                  <span className="rounded bg-primary/20 px-2 py-0.5 text-xs font-semibold text-primary">
-                    {roleName(r.roleId).toUpperCase()}
-                  </span>
-                </span>
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5 text-sm text-gray-300">
-                    <span className="h-2 w-2 rounded-full bg-discord" />
-                    {roleName(r.roleId)}
-                  </span>
-                  <button
-                    onClick={() => setPendingDelete(r.level)}
-                    className="text-gray-400 hover:text-red-400"
+              <div className="grid grid-cols-3 border-b border-border px-6 py-2">
+                {["Lv.", "Tier", "Discord rola"].map((h) => (
+                  <span
+                    key={h}
+                    className="text-xs font-semibold uppercase tracking-wider text-gray-400"
                   >
-                    ✕
-                  </button>
+                    {h}
+                  </span>
+                ))}
+              </div>
+
+              {rewards.length === 0 ? (
+                <div className="px-6 py-8 text-center text-sm text-gray-400">
+                  Brak progów. Dodaj pierwszy po prawej.
+                </div>
+              ) : (
+                rewards.map((r) => (
+                  <div
+                    key={r.level}
+                    className="grid grid-cols-3 items-center border-b border-border px-6 py-3 last:border-0"
+                  >
+                    <span className="text-sm font-bold text-white">Lv. {r.level}</span>
+                    <span className="inline-flex">
+                      <span className="rounded bg-primary/20 px-2 py-0.5 text-xs font-semibold text-primary">
+                        {roleName(r.roleId).toUpperCase()}
+                      </span>
+                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 text-sm text-gray-300">
+                        <span className="h-2 w-2 rounded-full bg-discord" />
+                        {roleName(r.roleId)}
+                      </span>
+                      <button
+                        onClick={() => setPendingDelete(r.level)}
+                        className="text-gray-400 hover:text-red-400"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="flex w-full flex-col gap-4 lg:w-72">
+              <div className="surface-raised rounded-xl bg-card p-6">
+                <p className="mb-4 text-sm font-semibold text-white">Dodaj próg</p>
+                <div className="flex flex-col gap-3">
+                  <div>
+                    <label
+                      className="mb-1 block text-xs text-gray-400"
+                      htmlFor="newLevel"
+                    >
+                      Level
+                    </label>
+                    <input
+                      id="newLevel"
+                      name="newLevel"
+                      type="number"
+                      min={1}
+                      value={newLevel}
+                      onChange={(e) => setNewLevel(e.target.value)}
+                      placeholder="np. 10"
+                      className="w-full rounded-lg bg-background px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs text-gray-400">
+                      Rola Discord
+                    </label>
+                    <RoleSelect
+                      value={newRoleId}
+                      onChange={setNewRoleId}
+                      roles={roles}
+                      className="w-full px-3 py-2"
+                    />
+                    <div className="mt-2">
+                      <CreateRoleButton
+                        guildId={guildId}
+                        onCreated={(role) => {
+                          setRoles((prev) =>
+                            [...prev, role].sort((a, b) => b.position - a.position),
+                          );
+                          setNewRoleId(role.id);
+                        }}
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    onClick={addReward}
+                    disabled={!newLevel || !newRoleId}
+                    className="mt-1"
+                  >
+                    + Dodaj tier
+                  </Button>
                 </div>
               </div>
-            ))
-          )}
-        </div>
+            </div>
+          </div>
 
-        <div className="flex w-full flex-col gap-4 lg:w-72">
-          <div className="surface-raised rounded-xl bg-card p-6">
-            <p className="mb-4 text-sm font-semibold text-white">Dodaj próg</p>
-            <div className="flex flex-col gap-3">
-              <div>
-                <label className="mb-1 block text-xs text-gray-400" htmlFor="newLevel">
-                  Level
-                </label>
-                <input
-                  id="newLevel"
-                  name="newLevel"
-                  type="number"
-                  min={1}
-                  value={newLevel}
-                  onChange={(e) => setNewLevel(e.target.value)}
-                  placeholder="np. 10"
-                  className="w-full rounded-lg bg-background px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+          {/* Ustawienia XP */}
+          <div className="surface-raised rounded-xl border border-border bg-card">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <p className="text-sm font-semibold text-white">Ustawienia XP</p>
+              <SaveButton
+                onClick={handleSave}
+                saving={saving}
+                className="px-4 py-1.5 text-xs"
+              />
+            </div>
+            <div className="grid grid-cols-1 gap-6 p-6 lg:grid-cols-2">
+              <div className="flex flex-col gap-5">
+                <XpSlider
+                  label="XP za wiadomość"
+                  desc="Ile XP członek dostaje za wiadomość (z cooldownem antyspamowym). 0 = wyłączone."
+                  value={lv.messageXp ?? 0}
+                  onChange={(v) => setLv({ messageXp: v })}
                 />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs text-gray-400">Rola Discord</label>
-                <RoleSelect
-                  value={newRoleId}
-                  onChange={setNewRoleId}
-                  roles={roles}
-                  className="w-full px-3 py-2"
+                <XpSlider
+                  label="XP za minutę na kanale głosowym"
+                  desc="Naliczane co minutę po przekroczeniu 1 min na głosówce (poza AFK / wyciszonymi). 0 = wyłączone."
+                  value={lv.voiceXp ?? 0}
+                  onChange={(v) => setLv({ voiceXp: v })}
                 />
-                <div className="mt-2">
-                  <CreateRoleButton
-                    guildId={guildId}
-                    onCreated={(role) => {
-                      setRoles((prev) =>
-                        [...prev, role].sort((a, b) => b.position - a.position),
-                      );
-                      setNewRoleId(role.id);
-                    }}
+                <div className="flex flex-col gap-4 border-t border-border pt-4">
+                  <LvToggle
+                    checked={lv.levelUpEnabled}
+                    onChange={(v) => setLv({ levelUpEnabled: v })}
+                    label="Powiadomienia o awansie na kanale"
+                    desc="Wysyłaj wiadomość o nowym levelu na kanał level-up."
+                  />
+                  <LvToggle
+                    checked={lv.levelUpDm}
+                    onChange={(v) => setLv({ levelUpDm: v })}
+                    label="Powiadomienia w DM"
+                    desc="Dodatkowo wyślij informację o awansie w prywatnej wiadomości."
                   />
                 </div>
               </div>
-              <Button
-                onClick={addReward}
-                disabled={!newLevel || !newRoleId}
-                className="mt-1"
-              >
-                + Dodaj tier
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Ustawienia XP */}
-      <div className="surface-raised rounded-xl border border-border bg-card">
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
-          <p className="text-sm font-semibold text-white">Ustawienia XP</p>
-          <SaveButton
-            onClick={handleSave}
-            saving={saving}
-            className="px-4 py-1.5 text-xs"
-          />
-        </div>
-        <div className="grid grid-cols-1 gap-6 p-6 lg:grid-cols-2">
-          <div className="flex flex-col gap-5">
-            <XpSlider
-              label="XP za wiadomość"
-              desc="Ile XP członek dostaje za wiadomość (z cooldownem antyspamowym). 0 = wyłączone."
-              value={lv.messageXp ?? 0}
-              onChange={(v) => setLv({ messageXp: v })}
-            />
-            <XpSlider
-              label="XP za minutę na kanale głosowym"
-              desc="Naliczane co minutę po przekroczeniu 1 min na głosówce (poza AFK / wyciszonymi). 0 = wyłączone."
-              value={lv.voiceXp ?? 0}
-              onChange={(v) => setLv({ voiceXp: v })}
-            />
-            <div className="flex flex-col gap-4 border-t border-border pt-4">
-              <LvToggle
-                checked={lv.levelUpEnabled}
-                onChange={(v) => setLv({ levelUpEnabled: v })}
-                label="Powiadomienia o awansie na kanale"
-                desc="Wysyłaj wiadomość o nowym levelu na kanał level-up."
-              />
-              <LvToggle
-                checked={lv.levelUpDm}
-                onChange={(v) => setLv({ levelUpDm: v })}
-                label="Powiadomienia w DM"
-                desc="Dodatkowo wyślij informację o awansie w prywatnej wiadomości."
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-5">
-            <div>
-              <label className="mb-1 block text-xs text-gray-400">Kanały bez XP</label>
-              <ChannelSelect
-                value=""
-                onChange={(v) =>
-                  v &&
-                  !lv.noXpChannelIds.includes(v) &&
-                  setLv({ noXpChannelIds: [...lv.noXpChannelIds, v] })
-                }
-                channels={channels.filter((c) => !lv.noXpChannelIds.includes(c.id))}
-                placeholder="+ Dodaj kanał"
-                className="w-full px-3 py-2"
-              />
-              <div className="mt-2 flex flex-wrap gap-2">
-                {lv.noXpChannelIds.map((id) => (
-                  <button
-                    key={id}
-                    onClick={() =>
-                      setLv({ noXpChannelIds: lv.noXpChannelIds.filter((x) => x !== id) })
+              <div className="flex flex-col gap-5">
+                <div>
+                  <label className="mb-1 block text-xs text-gray-400">
+                    Kanały bez XP
+                  </label>
+                  <ChannelSelect
+                    value=""
+                    onChange={(v) =>
+                      v &&
+                      !lv.noXpChannelIds.includes(v) &&
+                      setLv({ noXpChannelIds: [...lv.noXpChannelIds, v] })
                     }
-                    className="rounded-full bg-background px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
-                  >
-                    #{channelName(id)} ✕
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs text-gray-400">Role bez XP</label>
-              <RoleSelect
-                value=""
-                onChange={(v) =>
-                  v &&
-                  !lv.noXpRoleIds.includes(v) &&
-                  setLv({ noXpRoleIds: [...lv.noXpRoleIds, v] })
-                }
-                roles={roles.filter((r) => !lv.noXpRoleIds.includes(r.id))}
-                placeholder="+ Dodaj rolę"
-                className="w-full px-3 py-2"
-              />
-              <div className="mt-2 flex flex-wrap gap-2">
-                {lv.noXpRoleIds.map((id) => (
-                  <button
-                    key={id}
-                    onClick={() =>
-                      setLv({ noXpRoleIds: lv.noXpRoleIds.filter((x) => x !== id) })
+                    channels={channels.filter((c) => !lv.noXpChannelIds.includes(c.id))}
+                    placeholder="+ Dodaj kanał"
+                    className="w-full px-3 py-2"
+                  />
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {lv.noXpChannelIds.map((id) => (
+                      <button
+                        key={id}
+                        onClick={() =>
+                          setLv({
+                            noXpChannelIds: lv.noXpChannelIds.filter((x) => x !== id),
+                          })
+                        }
+                        className="rounded-full bg-background px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
+                      >
+                        #{channelName(id)} ✕
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs text-gray-400">Role bez XP</label>
+                  <RoleSelect
+                    value=""
+                    onChange={(v) =>
+                      v &&
+                      !lv.noXpRoleIds.includes(v) &&
+                      setLv({ noXpRoleIds: [...lv.noXpRoleIds, v] })
                     }
-                    className="rounded-full bg-background px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
-                  >
-                    @{roleName(id)} ✕
-                  </button>
-                ))}
+                    roles={roles.filter((r) => !lv.noXpRoleIds.includes(r.id))}
+                    placeholder="+ Dodaj rolę"
+                    className="w-full px-3 py-2"
+                  />
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {lv.noXpRoleIds.map((id) => (
+                      <button
+                        key={id}
+                        onClick={() =>
+                          setLv({ noXpRoleIds: lv.noXpRoleIds.filter((x) => x !== id) })
+                        }
+                        className="rounded-full bg-background px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
+                      >
+                        @{roleName(id)} ✕
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* Wiadomość o awansie (embed) */}
-      <div className="surface-raised rounded-xl border border-border bg-card">
-        <div className="flex items-center justify-between border-b border-border px-6 py-4">
-          <div>
-            <p className="text-sm font-semibold text-white">Wiadomość o awansie</p>
-            <p className="text-xs text-gray-400">
-              Embed wysyłany przy zdobyciu nowego poziomu.
-            </p>
+          {/* Wiadomość o awansie (embed) */}
+          <div className="surface-raised rounded-xl border border-border bg-card">
+            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+              <div>
+                <p className="text-sm font-semibold text-white">Wiadomość o awansie</p>
+                <p className="text-xs text-gray-400">
+                  Embed wysyłany przy zdobyciu nowego poziomu.
+                </p>
+              </div>
+              <SaveButton
+                onClick={handleSave}
+                saving={saving}
+                className="px-4 py-1.5 text-xs"
+              />
+            </div>
+            <div className="p-6">
+              <div className="mb-4 max-w-xs">
+                <LvToggle
+                  checked={Boolean(config.levelUpEmbed)}
+                  onChange={(v) =>
+                    setConfig((c) => ({
+                      ...c,
+                      levelUpEmbed: v ? DEFAULT_LEVELUP_EMBED : undefined,
+                    }))
+                  }
+                  label="Własny embed"
+                  desc="Wyłączone = wbudowany domyślny embed."
+                />
+              </div>
+              {config.levelUpEmbed && (
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                  <EmbedEditor
+                    value={config.levelUpEmbed}
+                    onChange={(embed) =>
+                      setConfig((c) => ({ ...c, levelUpEmbed: embed }))
+                    }
+                    variables={LEVEL_VARS}
+                  />
+                  <div className="lg:sticky lg:top-20 lg:self-start">
+                    <p className="mb-2 text-xs text-gray-400">Podgląd</p>
+                    <EmbedPreview embed={config.levelUpEmbed} replace={previewReplacer} />
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-          <SaveButton
-            onClick={handleSave}
-            saving={saving}
-            className="px-4 py-1.5 text-xs"
-          />
-        </div>
-        <div className="p-6">
-          <div className="mb-4 max-w-xs">
-            <LvToggle
-              checked={Boolean(config.levelUpEmbed)}
-              onChange={(v) =>
-                setConfig((c) => ({
-                  ...c,
-                  levelUpEmbed: v ? DEFAULT_LEVELUP_EMBED : undefined,
-                }))
-              }
-              label="Własny embed"
-              desc="Wyłączone = wbudowany domyślny embed."
+
+          {/* Leaderboard — ten sam komponent rankingu co na przeglądzie */}
+          <div className="surface-raised rounded-xl border border-border bg-card">
+            <div className="flex items-center justify-between border-b border-border px-5 py-4">
+              <div className="flex items-center gap-2.5">
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 text-primary">
+                  <Crown size={15} />
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-white">Leaderboard</p>
+                  <p className="text-xs text-gray-400">
+                    Najaktywniejsi członkowie serwera
+                  </p>
+                </div>
+              </div>
+              <RefreshButton onClick={() => lbQ.refetch()} loading={lbQ.isFetching} />
+            </div>
+
+            <LeaderboardRows
+              entries={leaderboard}
+              loading={leaderboardLoading}
+              rows={10}
             />
           </div>
-          {config.levelUpEmbed && (
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <EmbedEditor
-                value={config.levelUpEmbed}
-                onChange={(embed) => setConfig((c) => ({ ...c, levelUpEmbed: embed }))}
-                variables={LEVEL_VARS}
-              />
-              <div className="lg:sticky lg:top-20 lg:self-start">
-                <p className="mb-2 text-xs text-gray-400">Podgląd</p>
-                <EmbedPreview embed={config.levelUpEmbed} replace={previewReplacer} />
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Leaderboard — ten sam komponent rankingu co na przeglądzie */}
-      <div className="surface-raised rounded-xl border border-border bg-card">
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 text-primary">
-              <Crown size={15} />
-            </span>
-            <div>
-              <p className="text-sm font-semibold text-white">Leaderboard</p>
-              <p className="text-xs text-gray-400">Najaktywniejsi członkowie serwera</p>
-            </div>
-          </div>
-          <RefreshButton onClick={() => lbQ.refetch()} loading={lbQ.isFetching} />
-        </div>
-
-        <LeaderboardRows entries={leaderboard} loading={leaderboardLoading} rows={10} />
-      </div>
+        </>
+      )}
 
       {pendingDelete !== null && (
         <ConfirmModal

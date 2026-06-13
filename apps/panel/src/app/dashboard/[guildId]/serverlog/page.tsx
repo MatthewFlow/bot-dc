@@ -10,7 +10,7 @@ import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
 import { RoleSelect } from "@/components/RoleSelect";
 import { SaveButton } from "@/components/SaveButton";
-import { PageSkeleton, Skeleton } from "@/components/Skeleton";
+import { Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { Switch } from "@/components/ui/switch";
 import { useChannels, useGuildConfig, useRoles } from "@/hooks/queries";
@@ -75,12 +75,9 @@ function Toggle({
   );
 }
 
+/** Szkielet tylko karty z danymi — nagłówek i „Jak to działa" renderują się od razu. */
 function ServerLogSkeleton() {
-  return (
-    <PageSkeleton>
-      <Skeleton className="h-80 w-full rounded-xl" />
-    </PageSkeleton>
-  );
+  return <Skeleton className="h-80 w-full rounded-xl" />;
 }
 
 const CARD = "surface-raised rounded-xl border border-border bg-card";
@@ -99,7 +96,8 @@ export default function ServerLogPage() {
   const configQ = useGuildConfig(guildId);
   const channelsQ = useChannels(guildId);
   const rolesQ = useRoles(guildId);
-  const loading = configQ.isLoading || channelsQ.isLoading || rolesQ.isLoading;
+  // Bramka tylko na config; kanały/role (proxy do Discorda) dopełnią selekty w tle.
+  const loading = configQ.isLoading;
   useRedirectOnError(configQ.isError, configQ.error);
   const configReady = useSeedOnce(configQ.data, setConfig);
   useSeedOnce(channelsQ.data, setChannels);
@@ -139,25 +137,17 @@ export default function ServerLogPage() {
 
   return (
     <div className="jh-in flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <PageHeader
-          category="Audyt serwera"
-          icon={ScrollText}
-          title={
-            <>
-              Logi <span className="italic text-primary">serwera</span>
-            </>
-          }
-          description="Zapisuj zdarzenia serwera na wybranym kanale."
-          className="mb-0"
-        />
-        <SaveButton
-          onClick={handleSave}
-          saving={saving}
-          autoSaveStatus={autoSaveStatus}
-          className="px-5 py-2"
-        />
-      </div>
+      <PageHeader
+        category="Audyt serwera"
+        icon={ScrollText}
+        title={
+          <>
+            Logi <span className="italic text-primary">serwera</span>
+          </>
+        }
+        description="Zapisuj zdarzenia serwera na wybranym kanale."
+        className="mb-0"
+      />
 
       <HowItWorks
         steps={[
@@ -168,120 +158,138 @@ export default function ServerLogPage() {
         ]}
       />
 
-      <div className={`${CARD} p-6`}>
-        <Toggle
-          checked={sl.enabled}
-          onChange={(v) => setSl({ enabled: v })}
-          label="Włącz logi serwera"
-          desc="Gdy wyłączone, nic nie jest logowane."
-        />
-      </div>
-
-      <div className={sl.enabled ? "" : "pointer-events-none opacity-50"}>
-        <div className="flex flex-col gap-6 lg:flex-row">
-          <div className="flex-1">
-            <div className={CARD}>
-              <p className={SECTION_HEAD}>Kategorie</p>
-              <div className="grid grid-cols-1 gap-5 p-6 sm:grid-cols-2">
-                {CATEGORIES.map((cat) => (
-                  <Toggle
-                    key={cat.key}
-                    checked={sl[cat.key]}
-                    onChange={(v) => setSl({ [cat.key]: v })}
-                    label={cat.label}
-                    desc={cat.desc}
-                  />
-                ))}
-              </div>
-            </div>
+      {loading ? (
+        <ServerLogSkeleton />
+      ) : (
+        <>
+          <div className={`${CARD} p-6`}>
+            <Toggle
+              checked={sl.enabled}
+              onChange={(v) => setSl({ enabled: v })}
+              label="Włącz logi serwera"
+              desc="Gdy wyłączone, nic nie jest logowane."
+            />
           </div>
 
-          <div className="flex w-full flex-col gap-6 lg:w-80">
-            <div className={CARD}>
-              <p className={SECTION_HEAD}>Kanał logów</p>
-              <div className="p-6">
-                <ChannelField
-                  value={sl.channelId ?? ""}
-                  onChange={(v) => setSl({ channelId: v || undefined })}
-                  channels={channels}
-                  onChannelsChange={setChannels}
-                  guildId={guildId}
-                  defaultName="logi-serwera"
-                  hint="Tu trafiają wszystkie włączone zdarzenia."
-                />
-              </div>
-            </div>
-
-            <div className={CARD}>
-              <p className={SECTION_HEAD}>Wyjątki</p>
-              <div className="flex flex-col gap-4 p-6">
-                <div>
-                  <label className="mb-1 block text-xs text-gray-400">
-                    Pomijane role
-                  </label>
-                  <RoleSelect
-                    value=""
-                    onChange={(v) =>
-                      v &&
-                      !sl.exemptRoleIds.includes(v) &&
-                      setSl({ exemptRoleIds: [...sl.exemptRoleIds, v] })
-                    }
-                    roles={roles.filter((r) => !sl.exemptRoleIds.includes(r.id))}
-                    placeholder="+ Dodaj rolę"
-                    className="w-full px-3 py-2"
-                  />
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {sl.exemptRoleIds.map((id) => (
-                      <button
-                        key={id}
-                        onClick={() =>
-                          setSl({
-                            exemptRoleIds: sl.exemptRoleIds.filter((x) => x !== id),
-                          })
-                        }
-                        className="rounded-full bg-background px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
-                      >
-                        @{roleName(id)} ✕
-                      </button>
-                    ))}
+          <div className={sl.enabled ? "" : "pointer-events-none opacity-50"}>
+            <div className="flex flex-col gap-6 lg:flex-row">
+              <div className="flex-1">
+                <div className={CARD}>
+                  <div className="flex items-center justify-between border-b border-border px-6 py-4">
+                    <p className="text-sm font-semibold text-white">Kategorie</p>
+                    <SaveButton
+                      onClick={handleSave}
+                      saving={saving}
+                      autoSaveStatus={autoSaveStatus}
+                      className="px-4 py-1.5 text-xs"
+                    />
                   </div>
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs text-gray-400">
-                    Pomijane kanały
-                  </label>
-                  <ChannelSelect
-                    value=""
-                    onChange={(v) =>
-                      v &&
-                      !sl.exemptChannelIds.includes(v) &&
-                      setSl({ exemptChannelIds: [...sl.exemptChannelIds, v] })
-                    }
-                    channels={channels.filter((c) => !sl.exemptChannelIds.includes(c.id))}
-                    placeholder="+ Dodaj kanał"
-                    className="w-full px-3 py-2"
-                  />
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {sl.exemptChannelIds.map((id) => (
-                      <button
-                        key={id}
-                        onClick={() =>
-                          setSl({
-                            exemptChannelIds: sl.exemptChannelIds.filter((x) => x !== id),
-                          })
-                        }
-                        className="rounded-full bg-background px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
-                      >
-                        #{channelName(id)} ✕
-                      </button>
+                  <div className="grid grid-cols-1 gap-5 p-6 sm:grid-cols-2">
+                    {CATEGORIES.map((cat) => (
+                      <Toggle
+                        key={cat.key}
+                        checked={sl[cat.key]}
+                        onChange={(v) => setSl({ [cat.key]: v })}
+                        label={cat.label}
+                        desc={cat.desc}
+                      />
                     ))}
                   </div>
                 </div>
               </div>
+
+              <div className="flex w-full flex-col gap-6 lg:w-80">
+                <div className={CARD}>
+                  <p className={SECTION_HEAD}>Kanał logów</p>
+                  <div className="p-6">
+                    <ChannelField
+                      value={sl.channelId ?? ""}
+                      onChange={(v) => setSl({ channelId: v || undefined })}
+                      channels={channels}
+                      onChannelsChange={setChannels}
+                      guildId={guildId}
+                      defaultName="logi-serwera"
+                      hint="Tu trafiają wszystkie włączone zdarzenia."
+                    />
+                  </div>
+                </div>
+
+                <div className={CARD}>
+                  <p className={SECTION_HEAD}>Wyjątki</p>
+                  <div className="flex flex-col gap-4 p-6">
+                    <div>
+                      <label className="mb-1 block text-xs text-gray-400">
+                        Pomijane role
+                      </label>
+                      <RoleSelect
+                        value=""
+                        onChange={(v) =>
+                          v &&
+                          !sl.exemptRoleIds.includes(v) &&
+                          setSl({ exemptRoleIds: [...sl.exemptRoleIds, v] })
+                        }
+                        roles={roles.filter((r) => !sl.exemptRoleIds.includes(r.id))}
+                        placeholder="+ Dodaj rolę"
+                        className="w-full px-3 py-2"
+                      />
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {sl.exemptRoleIds.map((id) => (
+                          <button
+                            key={id}
+                            onClick={() =>
+                              setSl({
+                                exemptRoleIds: sl.exemptRoleIds.filter((x) => x !== id),
+                              })
+                            }
+                            className="rounded-full bg-background px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
+                          >
+                            @{roleName(id)} ✕
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs text-gray-400">
+                        Pomijane kanały
+                      </label>
+                      <ChannelSelect
+                        value=""
+                        onChange={(v) =>
+                          v &&
+                          !sl.exemptChannelIds.includes(v) &&
+                          setSl({ exemptChannelIds: [...sl.exemptChannelIds, v] })
+                        }
+                        channels={channels.filter(
+                          (c) => !sl.exemptChannelIds.includes(c.id),
+                        )}
+                        placeholder="+ Dodaj kanał"
+                        className="w-full px-3 py-2"
+                      />
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {sl.exemptChannelIds.map((id) => (
+                          <button
+                            key={id}
+                            onClick={() =>
+                              setSl({
+                                exemptChannelIds: sl.exemptChannelIds.filter(
+                                  (x) => x !== id,
+                                ),
+                              })
+                            }
+                            className="rounded-full bg-background px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
+                          >
+                            #{channelName(id)} ✕
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }

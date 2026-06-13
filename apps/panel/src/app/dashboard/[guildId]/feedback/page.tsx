@@ -21,7 +21,7 @@ import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
 import { PanelCard } from "@/components/PanelCard";
 import { SaveButton } from "@/components/SaveButton";
-import { PageSkeleton, Skeleton } from "@/components/Skeleton";
+import { Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -85,11 +85,16 @@ const CAT_META: Record<
   },
 };
 
+/** Szkielet tylko kart z danymi — nagłówek i „Jak to działa" renderują się od razu. */
 function FeedbackSkeleton() {
   return (
-    <PageSkeleton>
+    <>
       <Skeleton className="h-80 w-full rounded-xl" />
-    </PageSkeleton>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Skeleton className="h-96 w-full rounded-xl" />
+        <Skeleton className="h-96 w-full rounded-xl" />
+      </div>
+    </>
   );
 }
 
@@ -116,7 +121,8 @@ export default function FeedbackPage() {
   const feedbackQ = useGuildFeedback(guildId);
   const configQ = useGuildConfig(guildId);
   const channelsQ = useChannels(guildId);
-  const loading = feedbackQ.isLoading || configQ.isLoading || channelsQ.isLoading;
+  // Bramka na zgłoszenia + config (nasza baza, szybko); kanały dopełnią selekt w tle.
+  const loading = feedbackQ.isLoading || configQ.isLoading;
   useRedirectOnError(configQ.isError, configQ.error);
   useSeedOnce(feedbackQ.data, (fb) => setList(fb.items));
   const configReady = useSeedOnce(configQ.data, setConfig);
@@ -189,8 +195,6 @@ export default function FeedbackPage() {
     configReady,
   );
 
-  if (loading) return <FeedbackSkeleton />;
-
   return (
     <div className="jh-in flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <PageHeader
@@ -214,222 +218,230 @@ export default function FeedbackPage() {
         ]}
       />
 
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-        <div className="flex-1">
-          <div className={CARD}>
-            <p className="border-b border-border px-6 py-4 text-sm font-semibold text-white">
-              Nowe zgłoszenie
-            </p>
-            <div className="flex flex-col gap-5 p-6">
-              {/* Kategoria */}
-              <div>
-                <label className="mb-2 block text-xs text-gray-400">Kategoria</label>
-                <div className="flex flex-wrap gap-2">
-                  {CATEGORIES.map((cat) => (
-                    <button
-                      key={cat.value}
-                      onClick={() => setCategory(cat.value)}
-                      className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
-                        category === cat.value
-                          ? "bg-primary text-black"
-                          : "bg-background text-gray-300 hover:text-white"
-                      }`}
-                    >
-                      {cat.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Ocena (opcjonalna) */}
-              <div>
-                <label className="mb-2 block text-xs text-gray-400">
-                  Ocena <span className="text-gray-400">(opcjonalnie)</span>
-                </label>
-                <div className="flex items-center gap-1">
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <button
-                      key={n}
-                      onClick={() => setRating(n === rating ? 0 : n)}
-                      onMouseEnter={() => setHover(n)}
-                      onMouseLeave={() => setHover(0)}
-                      className="p-0.5 text-gray-400 transition"
-                      aria-label={`Ocena ${n}`}
-                    >
-                      <Star
-                        className={`h-6 w-6 ${
-                          n <= (hover || rating)
-                            ? "fill-primary text-primary"
-                            : "text-gray-400"
-                        }`}
-                      />
-                    </button>
-                  ))}
-                  {rating > 0 && (
-                    <span className="ml-2 text-xs text-gray-400">{rating}/5</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Treść */}
-              <div>
-                <label
-                  className="mb-1 block text-xs text-gray-400"
-                  htmlFor="feedbackMessage"
-                >
-                  Treść
-                </label>
-                <textarea
-                  id="feedbackMessage"
-                  name="feedbackMessage"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  maxLength={2000}
-                  rows={5}
-                  placeholder="Opisz swoje spostrzeżenie, pomysł lub problem…"
-                  className="w-full resize-y rounded-lg bg-background px-3 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
-                />
-                <p className="mt-1 text-right text-xs text-gray-400">
-                  {message.length}/2000
+      {loading ? (
+        <FeedbackSkeleton />
+      ) : (
+        <>
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+            <div className="flex-1">
+              <div className={CARD}>
+                <p className="border-b border-border px-6 py-4 text-sm font-semibold text-white">
+                  Nowe zgłoszenie
                 </p>
-              </div>
-
-              <div className="flex justify-end">
-                <SaveButton
-                  onClick={handleSubmit}
-                  saving={saving}
-                  disabled={!message.trim()}
-                  label="Wyślij zgłoszenie"
-                  className="px-5 py-2"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Zgłoszenia z serwera (widoczne dla całej ekipy) */}
-        <div className="flex-1">
-          <div className={CARD}>
-            <div className="flex items-center justify-between border-b border-border px-6 py-4">
-              <p className="text-sm font-semibold text-white">Zgłoszenia z serwera</p>
-              {list.length > 0 && <Badge variant="secondary">{list.length}</Badge>}
-            </div>
-            {list.length === 0 ? (
-              <div className="flex flex-col items-center gap-3 px-6 py-14 text-center">
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <Inbox className="size-6" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-300">Brak zgłoszeń</p>
-                  <p className="mt-1 text-xs text-gray-400">
-                    Opinie wysłane przez członków serwera pojawią się tutaj.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="flex max-h-[640px] flex-col gap-3 overflow-y-auto p-4">
-                {list.map((f, i) => {
-                  const meta = CAT_META[f.category];
-                  const Icon = meta.icon;
-                  const date = new Date(f.createdAt);
-                  return (
-                    <div
-                      key={f.id}
-                      style={{ "--i": i } as CSSProperties}
-                      className={`jh-stagger group flex flex-col gap-2 rounded-lg border border-border border-l-2 ${meta.accent} bg-background/40 p-3 transition hover:bg-background`}
-                    >
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge variant={meta.badge}>
-                          <Icon className="size-3" />
-                          {meta.label}
-                        </Badge>
-                        {f.rating ? (
-                          <span className="flex items-center gap-0.5 text-xs text-primary">
-                            <Star className="h-3 w-3 fill-primary" />
-                            {f.rating}/5
-                          </span>
-                        ) : null}
-                        <span className="text-xs font-medium text-gray-300">
-                          {f.username}
-                        </span>
-                        <span
-                          className="ml-auto text-xs text-gray-400"
-                          title={date.toLocaleString("pl-PL")}
-                        >
-                          {dayAgo(date)}
-                        </span>
+                <div className="flex flex-col gap-5 p-6">
+                  {/* Kategoria */}
+                  <div>
+                    <label className="mb-2 block text-xs text-gray-400">Kategoria</label>
+                    <div className="flex flex-wrap gap-2">
+                      {CATEGORIES.map((cat) => (
                         <button
-                          onClick={() => setConfirmId(f.id)}
-                          title="Usuń zgłoszenie"
-                          className="flex size-7 shrink-0 items-center justify-center rounded-md text-gray-400 opacity-0 transition-all hover:bg-red-500/10 hover:text-red-400 focus-visible:opacity-100 active:scale-90 group-hover:opacity-100"
+                          key={cat.value}
+                          onClick={() => setCategory(cat.value)}
+                          className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                            category === cat.value
+                              ? "bg-primary text-black"
+                              : "bg-background text-gray-300 hover:text-white"
+                          }`}
                         >
-                          <Trash2 size={14} />
+                          {cat.label}
                         </button>
-                      </div>
-                      <p className="whitespace-pre-wrap text-sm text-gray-300">
-                        {f.message}
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Ocena (opcjonalna) */}
+                  <div>
+                    <label className="mb-2 block text-xs text-gray-400">
+                      Ocena <span className="text-gray-400">(opcjonalnie)</span>
+                    </label>
+                    <div className="flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <button
+                          key={n}
+                          onClick={() => setRating(n === rating ? 0 : n)}
+                          onMouseEnter={() => setHover(n)}
+                          onMouseLeave={() => setHover(0)}
+                          className="p-0.5 text-gray-400 transition"
+                          aria-label={`Ocena ${n}`}
+                        >
+                          <Star
+                            className={`h-6 w-6 ${
+                              n <= (hover || rating)
+                                ? "fill-primary text-primary"
+                                : "text-gray-400"
+                            }`}
+                          />
+                        </button>
+                      ))}
+                      {rating > 0 && (
+                        <span className="ml-2 text-xs text-gray-400">{rating}/5</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Treść */}
+                  <div>
+                    <label
+                      className="mb-1 block text-xs text-gray-400"
+                      htmlFor="feedbackMessage"
+                    >
+                      Treść
+                    </label>
+                    <textarea
+                      id="feedbackMessage"
+                      name="feedbackMessage"
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      maxLength={2000}
+                      rows={5}
+                      placeholder="Opisz swoje spostrzeżenie, pomysł lub problem…"
+                      className="w-full resize-y rounded-lg bg-background px-3 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <p className="mt-1 text-right text-xs text-gray-400">
+                      {message.length}/2000
+                    </p>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <SaveButton
+                      onClick={handleSubmit}
+                      saving={saving}
+                      disabled={!message.trim()}
+                      label="Wyślij zgłoszenie"
+                      className="px-5 py-2"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Zgłoszenia z serwera (widoczne dla całej ekipy) */}
+            <div className="flex-1">
+              <div className={CARD}>
+                <div className="flex items-center justify-between border-b border-border px-6 py-4">
+                  <p className="text-sm font-semibold text-white">Zgłoszenia z serwera</p>
+                  {list.length > 0 && <Badge variant="secondary">{list.length}</Badge>}
+                </div>
+                {list.length === 0 ? (
+                  <div className="flex flex-col items-center gap-3 px-6 py-14 text-center">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                      <Inbox className="size-6" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-300">Brak zgłoszeń</p>
+                      <p className="mt-1 text-xs text-gray-400">
+                        Opinie wysłane przez członków serwera pojawią się tutaj.
                       </p>
                     </div>
-                  );
-                })}
+                  </div>
+                ) : (
+                  <div className="flex max-h-[640px] flex-col gap-3 overflow-y-auto p-4">
+                    {list.map((f, i) => {
+                      const meta = CAT_META[f.category];
+                      const Icon = meta.icon;
+                      const date = new Date(f.createdAt);
+                      return (
+                        <div
+                          key={f.id}
+                          style={{ "--i": i } as CSSProperties}
+                          className={`jh-stagger group flex flex-col gap-2 rounded-lg border border-border border-l-2 ${meta.accent} bg-background/40 p-3 transition hover:bg-background`}
+                        >
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant={meta.badge}>
+                              <Icon className="size-3" />
+                              {meta.label}
+                            </Badge>
+                            {f.rating ? (
+                              <span className="flex items-center gap-0.5 text-xs text-primary">
+                                <Star className="h-3 w-3 fill-primary" />
+                                {f.rating}/5
+                              </span>
+                            ) : null}
+                            <span className="text-xs font-medium text-gray-300">
+                              {f.username}
+                            </span>
+                            <span
+                              className="ml-auto text-xs text-gray-400"
+                              title={date.toLocaleString("pl-PL")}
+                            >
+                              {dayAgo(date)}
+                            </span>
+                            <button
+                              onClick={() => setConfirmId(f.id)}
+                              title="Usuń zgłoszenie"
+                              className="flex size-7 shrink-0 items-center justify-center rounded-md text-gray-400 opacity-0 transition-all hover:bg-red-500/10 hover:text-red-400 focus-visible:opacity-100 active:scale-90 group-hover:opacity-100"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                          <p className="whitespace-pre-wrap text-sm text-gray-300">
+                            {f.message}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Panel feedbacku — osobno edytor, osobno podgląd (50/50) */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
-        <PanelCard
-          title="Panel feedbacku"
-          description="Embed z przyciskiem „Podziel się opinią” wysyłany na kanał, by każdy mógł zgłaszać opinie z Discorda."
-        >
-          <ChannelField
-            label="Kanał feedbacku"
-            value={config.feedbackChannelId ?? ""}
-            onChange={(v) =>
-              setConfig((c) => ({ ...c, feedbackChannelId: v || undefined }))
-            }
-            channels={channels}
-            onChannelsChange={setChannels}
-            guildId={guildId}
-            defaultName="feedback"
-            placeholder="— Nie ustawiono —"
-            hint={
-              <>
-                Tu trafiają zgłoszenia z komendy <code>/feedback</code> oraz panel z
-                przyciskiem.
-              </>
-            }
-          />
-
-          <EmbedEditor
-            value={config.feedbackPanelEmbed ?? DEFAULT_FEEDBACK_PANEL_EMBED}
-            onChange={(embed) => setConfig((c) => ({ ...c, feedbackPanelEmbed: embed }))}
-            variables={TICKET_VARS}
-          />
-
-          <div className="border-t border-border pt-4">
-            <Button
-              onClick={handleSendPanel}
-              disabled={sendingPanel || !config.feedbackChannelId}
-              className="w-full"
+          {/* Panel feedbacku — osobno edytor, osobno podgląd (50/50) */}
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
+            <PanelCard
+              title="Panel feedbacku"
+              description="Embed z przyciskiem „Podziel się opinią” wysyłany na kanał, by każdy mógł zgłaszać opinie z Discorda."
             >
-              {sendingPanel ? "Publikowanie…" : "Opublikuj"}
-            </Button>
-            {!config.feedbackChannelId && (
-              <p className="mt-2 text-xs text-gray-400">
-                Najpierw ustaw kanał feedbacku powyżej i zapisz.
-              </p>
-            )}
-          </div>
-        </PanelCard>
+              <ChannelField
+                label="Kanał feedbacku"
+                value={config.feedbackChannelId ?? ""}
+                onChange={(v) =>
+                  setConfig((c) => ({ ...c, feedbackChannelId: v || undefined }))
+                }
+                channels={channels}
+                onChannelsChange={setChannels}
+                guildId={guildId}
+                defaultName="feedback"
+                placeholder="— Nie ustawiono —"
+                hint={
+                  <>
+                    Tu trafiają zgłoszenia z komendy <code>/feedback</code> oraz panel z
+                    przyciskiem.
+                  </>
+                }
+              />
 
-        <EmbedPreviewCard
-          embed={config.feedbackPanelEmbed ?? DEFAULT_FEEDBACK_PANEL_EMBED}
-          className="lg:sticky lg:top-20"
-        />
-      </div>
+              <EmbedEditor
+                value={config.feedbackPanelEmbed ?? DEFAULT_FEEDBACK_PANEL_EMBED}
+                onChange={(embed) =>
+                  setConfig((c) => ({ ...c, feedbackPanelEmbed: embed }))
+                }
+                variables={TICKET_VARS}
+              />
+
+              <div className="border-t border-border pt-4">
+                <Button
+                  onClick={handleSendPanel}
+                  disabled={sendingPanel || !config.feedbackChannelId}
+                  className="w-full"
+                >
+                  {sendingPanel ? "Publikowanie…" : "Opublikuj"}
+                </Button>
+                {!config.feedbackChannelId && (
+                  <p className="mt-2 text-xs text-gray-400">
+                    Najpierw ustaw kanał feedbacku powyżej i zapisz.
+                  </p>
+                )}
+              </div>
+            </PanelCard>
+
+            <EmbedPreviewCard
+              embed={config.feedbackPanelEmbed ?? DEFAULT_FEEDBACK_PANEL_EMBED}
+              className="lg:sticky lg:top-20"
+            />
+          </div>
+        </>
+      )}
 
       {confirmId && (
         <ConfirmModal

@@ -8,21 +8,13 @@ import { CommandsBoard } from "@/components/CommandsBoard";
 import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
 import { SaveButton } from "@/components/SaveButton";
-import { PageSkeleton, Skeleton } from "@/components/Skeleton";
+import { Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { useGuildConfig } from "@/hooks/queries";
 import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import type { GuildConfig } from "@/lib/api";
 import { updateGuildConfig } from "@/lib/api";
-
-function CommandsSkeleton() {
-  return (
-    <PageSkeleton>
-      <Skeleton className="h-96 w-full rounded-xl" />
-    </PageSkeleton>
-  );
-}
 
 export default function CommandsPage() {
   const params = useParams();
@@ -61,29 +53,19 @@ export default function CommandsPage() {
     configReady,
   );
 
-  if (loading) return <CommandsSkeleton />;
-
   return (
     <div className="jh-in flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <PageHeader
-          category="Konfiguracja serwera"
-          icon={SlidersHorizontal}
-          title={
-            <>
-              Komendy <span className="italic text-primary">bota</span>
-            </>
-          }
-          description="Włączaj i wyłączaj komendy bota na tym serwerze."
-          className="mb-0"
-        />
-        <SaveButton
-          onClick={handleSave}
-          saving={saving}
-          autoSaveStatus={autoSaveStatus}
-          className="px-5 py-2"
-        />
-      </div>
+      <PageHeader
+        category="Konfiguracja serwera"
+        icon={SlidersHorizontal}
+        title={
+          <>
+            Komendy <span className="italic text-primary">bota</span>
+          </>
+        }
+        description="Włączaj i wyłączaj komendy bota na tym serwerze."
+        className="mb-0"
+      />
 
       <HowItWorks
         steps={[
@@ -94,7 +76,22 @@ export default function CommandsPage() {
         ]}
       />
 
-      <CommandsBoard disabled={disabled} onChange={setDisabled} />
+      {loading ? (
+        <Skeleton className="h-96 w-full rounded-xl" />
+      ) : (
+        <>
+          {/* Przycisk nad kartami (na razie) — wyrównany do prawej. */}
+          <div className="flex justify-end">
+            <SaveButton
+              onClick={handleSave}
+              saving={saving}
+              autoSaveStatus={autoSaveStatus}
+              className="px-5 py-2"
+            />
+          </div>
+          <CommandsBoard disabled={disabled} onChange={setDisabled} />
+        </>
+      )}
     </div>
   );
 }

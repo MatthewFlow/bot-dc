@@ -140,20 +140,24 @@ body {
 @keyframes jh-fade-up {
   from {
     opacity: 0;
-    transform: translateY(6px);
+    /* Drobny unos + ledwie wyczuwalne „dosiadanie" skali — element ląduje, nie wskakuje. */
+    transform: translateY(8px) scale(0.985);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
   }
 }
 
+/* fill: backwards (nie both) — po wejściu element NIE zatrzymuje transformu z animacji,
+   dzięki czemu hover-owy tilt (.jh-tilt) może przejąć transform. Stan końcowy animacji
+   == domyślny (opacity 1, brak transformu), więc brak mignięcia. */
 .jh-in {
-  animation: jh-fade-up var(--dur) var(--ease-out) both;
+  animation: jh-fade-up var(--dur) var(--ease-out) backwards;
 }
 
 .jh-stagger {
-  animation: jh-fade-up var(--dur) var(--ease-out) both;
+  animation: jh-fade-up var(--dur) var(--ease-out) backwards;
   /* Limit, by długie listy nie czekały sekundami; po ~10. elemencie pełna prędkość. */
   animation-delay: calc(min(var(--i, 0), 10) * 30ms);
 }
@@ -168,6 +172,44 @@ body {
   box-shadow: var(--shadow-elevated);
 }
 
+/* `jh-sheen` — jednorazowy, miękki przejazd światła po powierzchni przy wejściu.
+   Sweep to tylko `transform` na pseudo-elemencie (kompozytowane), więc tani.
+   Daje efekt „premium" hero/brandu bez pętli, która by rozpraszała. */
+.jh-sheen {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.jh-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 62%
+  );
+  transform: translateX(-130%);
+  animation: jh-sheen 1.5s var(--ease-out) 0.2s both;
+  pointer-events: none;
+}
+@keyframes jh-sheen {
+  to {
+    transform: translateX(130%);
+  }
+}
+
+/* `jh-glow` — statyczna, miękka złota poświata logotypu marki.
+   WAŻNE dla INP: świadomie BEZ animacji. Wcześniej animowany `box-shadow` przemalowywał
+   się co klatkę w nieskończoność (box-shadow nie jest kompozytowany przez GPU), co podbijało
+   „next paint". Statyczny cień maluje się raz — zero kosztu na klatkę, a efekt premium zostaje. */
+.jh-glow {
+  box-shadow:
+    0 0 0 1px rgba(212, 168, 67, 0.25),
+    0 0 28px -6px rgba(212, 168, 67, 0.6);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .jh-in,
   .jh-stagger {
@@ -179,9 +221,57 @@ body {
   .jh-card:hover {
     transform: none;
   }
+  .jh-sheen::after,
+  .jh-glow {
+    animation: none;
+  }
+  .jh-sheen::after {
+    display: none;
+  }
+}
+
+/* ── Tilt cards ──────────────────────────────────────────────────────
+   Efekt obejmuje KAŻDĄ kartę (klasa `.surface-raised`) oraz element jawnie oznaczony
+   `.jh-tilt`. Na hover karta lekko przechyla się w stronę kursora (przechył liczy globalny
+   TiltProvider → --rx/--ry) i podnosi się: akcentowe obramowanie + mocniejszy cień.
+   BEZ świetlnej poświaty pod kursorem. Transform tylko na :hover (w spoczynku karta płaska
+   → ostry tekst, brak stałych warstw GPU). */
+.jh-tilt,
+.surface-raised {
+  transition:
+    transform var(--dur-slow) var(--ease-out),
+    box-shadow var(--dur) var(--ease-out),
+    border-color var(--dur) var(--ease-out);
+}
+.jh-tilt:hover,
+.surface-raised:hover {
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  border-color: color-mix(in srgb, var(--primary) 30%, transparent);
+  box-shadow: var(--shadow-elevated);
+}
+
+/* Dostępność: bez przestrzennego ruchu (zostaje hover obramowania + cienia). */
+@media (prefers-reduced-motion: reduce) {
+  .jh-tilt:hover,
+  .surface-raised:hover {
+    transform: none;
+  }
 }
 
 /* ── Animated background blobs ─────────────────────────────────────── */
+/* Łagodne wejście całego tła — plamy nie „wskakują", tylko się wyłaniają. */
+.jh-bg {
+  animation: jh-bg-in 1.1s var(--ease-out) both;
+}
+@keyframes jh-bg-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .jh-blob {
   position: absolute;
   border-radius: 9999px;

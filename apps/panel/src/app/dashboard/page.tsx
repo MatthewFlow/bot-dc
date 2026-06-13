@@ -27,6 +27,36 @@ function GuildSkeleton() {
   );
 }
 
+/** Karta wyboru serwera — wejście kaskadą (wrapper) + spotlight/tilt na klikalnym
+ *  przycisku (efekt z globalnego TiltProvider via `.surface-raised`/`.jh-tilt`). */
+function GuildCard({
+  guild,
+  index,
+  onSelect,
+}: {
+  guild: Guild;
+  index: number;
+  onSelect: () => void;
+}) {
+  return (
+    <div className="jh-stagger" style={{ "--i": index } as CSSProperties}>
+      <button
+        onClick={onSelect}
+        className="jh-tilt group flex w-full items-center gap-4 surface-raised rounded-xl border border-border bg-card p-4 text-left outline-none hover:bg-elevated focus-visible:ring-2 focus-visible:ring-primary/40"
+      >
+        <Avatar src={guildIconUrl(guild)} name={guild.name} size="lg" />
+        <span className="min-w-0 flex-1 truncate font-medium text-white">
+          {guild.name}
+        </span>
+        <ChevronRight
+          size={18}
+          className="shrink-0 text-gray-400 transition group-hover:translate-x-0.5 group-hover:text-primary"
+        />
+      </button>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
@@ -59,7 +89,7 @@ export default function DashboardPage() {
         {/* Topbar */}
         <div className="mb-10 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-card text-lg font-bold text-primary">
+            <div className="jh-glow flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-card text-lg font-bold text-primary">
               JH
             </div>
             <h1 className="text-xl font-bold text-white">Jurassic Haven</h1>
@@ -183,21 +213,12 @@ export default function DashboardPage() {
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
             {filtered.map((guild, i) => (
-              <button
+              <GuildCard
                 key={guild.id}
-                onClick={() => router.push(`/dashboard/${guild.id}`)}
-                style={{ "--i": i } as CSSProperties}
-                className="jh-stagger group flex items-center gap-4 surface-raised rounded-xl border border-border bg-card p-4 text-left outline-none transition hover:-translate-y-0.5 hover:border-white/10 hover:bg-elevated focus-visible:ring-2 focus-visible:ring-primary/40"
-              >
-                <Avatar src={guildIconUrl(guild)} name={guild.name} size="lg" />
-                <span className="min-w-0 flex-1 truncate font-medium text-white">
-                  {guild.name}
-                </span>
-                <ChevronRight
-                  size={18}
-                  className="shrink-0 text-gray-400 transition group-hover:translate-x-0.5 group-hover:text-primary"
-                />
-              </button>
+                guild={guild}
+                index={i}
+                onSelect={() => router.push(`/dashboard/${guild.id}`)}
+              />
             ))}
           </div>
         )}

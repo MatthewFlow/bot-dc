@@ -3,7 +3,9 @@ import "./globals.css";
 import type { Metadata } from "next";
 
 import { QueryProvider } from "@/components/QueryProvider";
+import { TiltProvider } from "@/components/TiltProvider";
 import { ToastProvider } from "@/components/toast";
+import { WebVitals } from "@/components/WebVitals";
 
 export const metadata: Metadata = {
   title: "Jurassic Haven",
@@ -20,6 +22,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         suppressHydrationWarning
         className="bg-background text-white min-h-screen antialiased"
       >
+        <WebVitals />
+        <TiltProvider />
         <QueryProvider>
           <ToastProvider>{children}</ToastProvider>
         </QueryProvider>

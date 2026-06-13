@@ -12,12 +12,7 @@ import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
 import { PanelCard } from "@/components/PanelCard";
 import { RoleSelect } from "@/components/RoleSelect";
-import {
-  PageSkeleton,
-  Skeleton,
-  SkeletonForm,
-  SkeletonTable,
-} from "@/components/Skeleton";
+import { Skeleton, SkeletonForm, SkeletonTable } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
 import { useButtonRoles, useChannels, useReactionRoles, useRoles } from "@/hooks/queries";
@@ -66,6 +61,21 @@ function itemTitle(item: SelfRole): string {
   );
 }
 
+/** Szkielet tylko kart z danymi — nagłówek i „Jak to działa" renderują się od razu. */
+function RolesSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:items-start">
+      <div className="w-full">
+        <SkeletonForm />
+      </div>
+      <div className="flex flex-col gap-4">
+        <Skeleton className="h-44 w-full rounded-xl" />
+        <SkeletonTable rows={3} />
+      </div>
+    </div>
+  );
+}
+
 export default function RolesPage() {
   const params = useParams();
   const guildId = params.guildId as string;
@@ -85,11 +95,8 @@ export default function RolesPage() {
   const reactionRolesQ = useReactionRoles(guildId);
   const channelsQ = useChannels(guildId);
   const rolesQ = useRoles(guildId);
-  const loading =
-    buttonRolesQ.isLoading ||
-    reactionRolesQ.isLoading ||
-    channelsQ.isLoading ||
-    rolesQ.isLoading;
+  // Bramka tylko na opublikowane listy (nasza baza); kanały/role dopełnią selekty w tle.
+  const loading = buttonRolesQ.isLoading || reactionRolesQ.isLoading;
   useRedirectOnError(buttonRolesQ.isError, buttonRolesQ.error);
   useSeedOnce(channelsQ.data, setChannels);
   useSeedOnce(rolesQ.data, setRoles);
@@ -245,22 +252,6 @@ export default function RolesPage() {
     setForm((f) => ({ ...f, type }));
   }
 
-  if (loading) {
-    return (
-      <PageSkeleton>
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:items-start">
-          <div className="w-full">
-            <SkeletonForm />
-          </div>
-          <div className="flex flex-col gap-4">
-            <Skeleton className="h-44 w-full rounded-xl" />
-            <SkeletonTable rows={3} />
-          </div>
-        </div>
-      </PageSkeleton>
-    );
-  }
-
   const typeTab = (active: boolean) =>
     `flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition ${
       active ? "bg-primary text-black" : "text-gray-300 hover:text-white"
@@ -289,251 +280,255 @@ export default function RolesPage() {
         ]}
       />
 
-      <div className="flex flex-col gap-8">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:items-start">
-          {/* Form */}
-          <PanelCard
-            title={editing ? "Edytuj wiadomość" : "Nowa wiadomość"}
-            action={
-              editing ? (
+      {loading ? (
+        <RolesSkeleton />
+      ) : (
+        <div className="flex flex-col gap-8">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 lg:items-start">
+            {/* Form */}
+            <PanelCard
+              title={editing ? "Edytuj wiadomość" : "Nowa wiadomość"}
+              action={
+                editing ? (
+                  <button
+                    onClick={cancelEdit}
+                    className="text-xs text-gray-400 hover:text-gray-300"
+                  >
+                    Anuluj
+                  </button>
+                ) : undefined
+              }
+            >
+              {/* Typ */}
+              <div className="flex gap-1 rounded-lg bg-background p-1">
                 <button
-                  onClick={cancelEdit}
-                  className="text-xs text-gray-400 hover:text-gray-300"
+                  onClick={() => setType("button")}
+                  className={typeTab(form.type === "button")}
                 >
-                  Anuluj
+                  <MousePointerClick size={15} />
+                  Przyciski
                 </button>
-              ) : undefined
-            }
-          >
-            {/* Typ */}
-            <div className="flex gap-1 rounded-lg bg-background p-1">
-              <button
-                onClick={() => setType("button")}
-                className={typeTab(form.type === "button")}
-              >
-                <MousePointerClick size={15} />
-                Przyciski
-              </button>
-              <button
-                onClick={() => setType("reaction")}
-                className={typeTab(form.type === "reaction")}
-              >
-                <SmilePlus size={15} />
-                Reakcje
-              </button>
-            </div>
+                <button
+                  onClick={() => setType("reaction")}
+                  className={typeTab(form.type === "reaction")}
+                >
+                  <SmilePlus size={15} />
+                  Reakcje
+                </button>
+              </div>
 
-            <div>
-              <label className="mb-1 block text-xs text-gray-400">Kanał</label>
-              <ChannelSelect
-                value={form.channelId}
-                onChange={(v) => setForm((f) => ({ ...f, channelId: v }))}
-                channels={channels}
-                placeholder="— Wybierz kanał —"
-                className="w-full px-3 py-2.5"
+              <div>
+                <label className="mb-1 block text-xs text-gray-400">Kanał</label>
+                <ChannelSelect
+                  value={form.channelId}
+                  onChange={(v) => setForm((f) => ({ ...f, channelId: v }))}
+                  channels={channels}
+                  placeholder="— Wybierz kanał —"
+                  className="w-full px-3 py-2.5"
+                />
+              </div>
+
+              <EmbedEditor
+                value={form.embed}
+                onChange={(embed) => setForm((f) => ({ ...f, embed }))}
               />
-            </div>
 
-            <EmbedEditor
-              value={form.embed}
-              onChange={(embed) => setForm((f) => ({ ...f, embed }))}
-            />
-
-            <div>
-              <label className="mb-1 block text-xs text-gray-400">
-                {form.type === "button"
-                  ? "Przyciski (etykieta · emoji · rola)"
-                  : "Pary emoji → rola"}
-              </label>
-              <p className="mb-2 text-xs text-gray-400">
-                {form.type === "button"
-                  ? "Etykieta wymagana, emoji opcjonalne. Każda rola może mieć tylko jeden przycisk."
-                  : "Emoji wymagane (np. ✅). Custom emoji z serwera podaj jako <:nazwa:id>."}
-              </p>
-              <div className="flex flex-col gap-2">
-                {form.entries.map((entry, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    {form.type === "button" && (
+              <div>
+                <label className="mb-1 block text-xs text-gray-400">
+                  {form.type === "button"
+                    ? "Przyciski (etykieta · emoji · rola)"
+                    : "Pary emoji → rola"}
+                </label>
+                <p className="mb-2 text-xs text-gray-400">
+                  {form.type === "button"
+                    ? "Etykieta wymagana, emoji opcjonalne. Każda rola może mieć tylko jeden przycisk."
+                    : "Emoji wymagane (np. ✅). Custom emoji z serwera podaj jako <:nazwa:id>."}
+                </p>
+                <div className="flex flex-col gap-2">
+                  {form.entries.map((entry, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      {form.type === "button" && (
+                        <input
+                          name={`sr-label-${idx}`}
+                          aria-label="Etykieta przycisku"
+                          value={entry.label}
+                          onChange={(e) => updateEntry(idx, "label", e.target.value)}
+                          placeholder="Etykieta"
+                          maxLength={80}
+                          className="w-28 rounded-lg bg-background px-2 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+                        />
+                      )}
                       <input
-                        name={`sr-label-${idx}`}
-                        aria-label="Etykieta przycisku"
-                        value={entry.label}
-                        onChange={(e) => updateEntry(idx, "label", e.target.value)}
-                        placeholder="Etykieta"
-                        maxLength={80}
-                        className="w-28 rounded-lg bg-background px-2 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+                        name={`sr-emoji-${idx}`}
+                        aria-label="Emoji"
+                        value={entry.emoji}
+                        onChange={(e) => updateEntry(idx, "emoji", e.target.value)}
+                        placeholder="emoji"
+                        className="w-16 rounded-lg bg-background px-2 py-2 text-center text-sm text-white outline-none focus:ring-2 focus:ring-primary"
                       />
-                    )}
-                    <input
-                      name={`sr-emoji-${idx}`}
-                      aria-label="Emoji"
-                      value={entry.emoji}
-                      onChange={(e) => updateEntry(idx, "emoji", e.target.value)}
-                      placeholder="emoji"
-                      className="w-16 rounded-lg bg-background px-2 py-2 text-center text-sm text-white outline-none focus:ring-2 focus:ring-primary"
-                    />
-                    <RoleSelect
-                      value={entry.roleId}
-                      onChange={(v) => updateEntry(idx, "roleId", v)}
-                      roles={roles}
-                      placeholder="— Rola —"
-                      className="flex-1 px-3 py-2"
-                    />
-                    {form.entries.length > 1 && (
-                      <button
-                        onClick={() => removeEntry(idx)}
-                        className="text-gray-400 hover:text-red-400"
+                      <RoleSelect
+                        value={entry.roleId}
+                        onChange={(v) => updateEntry(idx, "roleId", v)}
+                        roles={roles}
+                        placeholder="— Rola —"
+                        className="flex-1 px-3 py-2"
+                      />
+                      {form.entries.length > 1 && (
+                        <button
+                          onClick={() => removeEntry(idx)}
+                          className="text-gray-400 hover:text-red-400"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {form.entries.length < maxEntries && (
+                  <button
+                    onClick={addEntry}
+                    className="mt-2 text-xs text-primary hover:text-primary-hover"
+                  >
+                    + Dodaj kolejną pozycję
+                  </button>
+                )}
+              </div>
+
+              <Button
+                onClick={handlePublish}
+                disabled={publishing || !isFormValid}
+                className="w-full"
+              >
+                {publishing ? "Publikowanie..." : editing ? "Zapisz zmiany" : "Opublikuj"}
+              </Button>
+            </PanelCard>
+
+            {/* Podgląd */}
+            <EmbedPreviewCard embed={form.embed} className="lg:sticky lg:top-20">
+              {filled.length > 0 &&
+                (form.type === "button" ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {filled.map((e, i) => (
+                      <span
+                        key={i}
+                        className="inline-flex items-center gap-1.5 rounded-md bg-[#4e5058] px-3 py-1.5 text-sm font-medium text-white"
                       >
-                        ✕
-                      </button>
-                    )}
+                        {e.emoji && <span>{e.emoji}</span>}
+                        <span>{e.label || "Przycisk"}</span>
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {filled.map((e, i) => (
+                      <span
+                        key={i}
+                        className="inline-flex items-center rounded-full bg-white/5 px-2 py-0.5 text-sm"
+                      >
+                        {e.emoji || "❔"}
+                      </span>
+                    ))}
                   </div>
                 ))}
+            </EmbedPreviewCard>
+          </div>
+
+          {/* Opublikowane wiadomości — pełna szerokość, osobny wiersz pod spodem */}
+          <PanelCard
+            title={
+              <>
+                Opublikowane wiadomości
+                <span className="ml-2 text-xs text-gray-400">{list.length}</span>
+              </>
+            }
+            bodyClassName=""
+          >
+            {list.length === 0 ? (
+              <div className="px-6 py-8 text-center text-sm text-gray-400">
+                Brak wiadomości. Opublikuj pierwszą po lewej.
               </div>
-              {form.entries.length < maxEntries && (
-                <button
-                  onClick={addEntry}
-                  className="mt-2 text-xs text-primary hover:text-primary-hover"
-                >
-                  + Dodaj kolejną pozycję
-                </button>
-              )}
-            </div>
-
-            <Button
-              onClick={handlePublish}
-              disabled={publishing || !isFormValid}
-              className="w-full"
-            >
-              {publishing ? "Publikowanie..." : editing ? "Zapisz zmiany" : "Opublikuj"}
-            </Button>
-          </PanelCard>
-
-          {/* Podgląd */}
-          <EmbedPreviewCard embed={form.embed} className="lg:sticky lg:top-20">
-            {filled.length > 0 &&
-              (form.type === "button" ? (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {filled.map((e, i) => (
-                    <span
-                      key={i}
-                      className="inline-flex items-center gap-1.5 rounded-md bg-[#4e5058] px-3 py-1.5 text-sm font-medium text-white"
-                    >
-                      {e.emoji && <span>{e.emoji}</span>}
-                      <span>{e.label || "Przycisk"}</span>
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <div className="mt-3 flex flex-wrap gap-1.5">
-                  {filled.map((e, i) => (
-                    <span
-                      key={i}
-                      className="inline-flex items-center rounded-full bg-white/5 px-2 py-0.5 text-sm"
-                    >
-                      {e.emoji || "❔"}
-                    </span>
-                  ))}
-                </div>
-              ))}
-          </EmbedPreviewCard>
-        </div>
-
-        {/* Opublikowane wiadomości — pełna szerokość, osobny wiersz pod spodem */}
-        <PanelCard
-          title={
-            <>
-              Opublikowane wiadomości
-              <span className="ml-2 text-xs text-gray-400">{list.length}</span>
-            </>
-          }
-          bodyClassName=""
-        >
-          {list.length === 0 ? (
-            <div className="px-6 py-8 text-center text-sm text-gray-400">
-              Brak wiadomości. Opublikuj pierwszą po lewej.
-            </div>
-          ) : (
-            list.map((item, i) => {
-              const isEditing =
-                editing?.kind === item.kind && editing?.messageId === item.messageId;
-              return (
-                <div
-                  key={`${item.kind}-${item.messageId}`}
-                  style={{ "--i": i } as CSSProperties}
-                  className={`jh-stagger border-b border-border px-6 py-4 last:border-0 ${isEditing ? "bg-primary/5" : ""}`}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        {colorHex(item) && (
+            ) : (
+              list.map((item, i) => {
+                const isEditing =
+                  editing?.kind === item.kind && editing?.messageId === item.messageId;
+                return (
+                  <div
+                    key={`${item.kind}-${item.messageId}`}
+                    style={{ "--i": i } as CSSProperties}
+                    className={`jh-stagger border-b border-border px-6 py-4 last:border-0 ${isEditing ? "bg-primary/5" : ""}`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          {colorHex(item) && (
+                            <span
+                              className="h-3 w-3 rounded-full"
+                              style={{ backgroundColor: colorHex(item) }}
+                            />
+                          )}
                           <span
-                            className="h-3 w-3 rounded-full"
-                            style={{ backgroundColor: colorHex(item) }}
-                          />
-                        )}
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
-                            item.kind === "button"
-                              ? "bg-primary/15 text-primary"
-                              : "bg-discord/20 text-discord"
-                          }`}
-                        >
-                          {item.kind === "button" ? "Przyciski" : "Reakcje"}
-                        </span>
-                        <p className="text-xs text-gray-400">
-                          # {channelName(item.channelId)}
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                              item.kind === "button"
+                                ? "bg-primary/15 text-primary"
+                                : "bg-discord/20 text-discord"
+                            }`}
+                          >
+                            {item.kind === "button" ? "Przyciski" : "Reakcje"}
+                          </span>
+                          <p className="text-xs text-gray-400">
+                            # {channelName(item.channelId)}
+                          </p>
+                        </div>
+                        <p className="mt-1 text-sm font-semibold text-white">
+                          {itemTitle(item)}
                         </p>
-                      </div>
-                      <p className="mt-1 text-sm font-semibold text-white">
-                        {itemTitle(item)}
-                      </p>
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {item.kind === "button"
-                          ? item.entries.map((e, j) => (
-                              <span
-                                key={j}
-                                className="flex items-center gap-1.5 rounded-full bg-background px-2.5 py-1 text-xs text-gray-300"
-                              >
-                                {e.emoji && <span>{e.emoji}</span>}
-                                <span>{e.label}</span>
-                                <span className="text-gray-500">
-                                  → @{roleName(e.roleId)}
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {item.kind === "button"
+                            ? item.entries.map((e, j) => (
+                                <span
+                                  key={j}
+                                  className="flex items-center gap-1.5 rounded-full bg-background px-2.5 py-1 text-xs text-gray-300"
+                                >
+                                  {e.emoji && <span>{e.emoji}</span>}
+                                  <span>{e.label}</span>
+                                  <span className="text-gray-500">
+                                    → @{roleName(e.roleId)}
+                                  </span>
                                 </span>
-                              </span>
-                            ))
-                          : item.entries.map((e, j) => (
-                              <span
-                                key={j}
-                                className="flex items-center gap-1.5 rounded-full bg-background px-2.5 py-1 text-xs text-gray-300"
-                              >
-                                <span>{e.emoji}</span>
-                                <span>@{roleName(e.roleId)}</span>
-                              </span>
-                            ))}
+                              ))
+                            : item.entries.map((e, j) => (
+                                <span
+                                  key={j}
+                                  className="flex items-center gap-1.5 rounded-full bg-background px-2.5 py-1 text-xs text-gray-300"
+                                >
+                                  <span>{e.emoji}</span>
+                                  <span>@{roleName(e.roleId)}</span>
+                                </span>
+                              ))}
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex shrink-0 gap-2">
-                      <button
-                        onClick={() => startEdit(item)}
-                        className="rounded-lg bg-background px-3 py-1.5 text-xs text-gray-300 hover:text-white"
-                      >
-                        Edytuj
-                      </button>
-                      <button
-                        onClick={() => setPendingDelete(item)}
-                        className="rounded-lg bg-background px-3 py-1.5 text-xs text-red-400 hover:bg-red-400/10"
-                      >
-                        Usuń
-                      </button>
+                      <div className="flex shrink-0 gap-2">
+                        <button
+                          onClick={() => startEdit(item)}
+                          className="rounded-lg bg-background px-3 py-1.5 text-xs text-gray-300 hover:text-white"
+                        >
+                          Edytuj
+                        </button>
+                        <button
+                          onClick={() => setPendingDelete(item)}
+                          className="rounded-lg bg-background px-3 py-1.5 text-xs text-red-400 hover:bg-red-400/10"
+                        >
+                          Usuń
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })
-          )}
-        </PanelCard>
-      </div>
+                );
+              })
+            )}
+          </PanelCard>
+        </div>
+      )}
 
       {pendingDelete !== null && (
         <ConfirmModal

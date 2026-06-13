@@ -42,6 +42,7 @@ function StatCard({
   sub,
   accent,
   onClick,
+  index = 0,
 }: {
   icon: typeof Users;
   label: string;
@@ -49,7 +50,10 @@ function StatCard({
   sub?: string;
   accent: string;
   onClick?: () => void;
+  index?: number;
 }) {
+  const stagger = "jh-stagger";
+  const style = { "--i": index } as CSSProperties;
   const inner = (
     <>
       <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${accent}`}>
@@ -65,13 +69,18 @@ function StatCard({
     return (
       <button
         onClick={onClick}
-        className={`${CARD_BASE} block p-5 text-left hover:-translate-y-0.5 hover:border-white/10 hover:bg-elevated`}
+        style={style}
+        className={`${stagger} ${CARD_BASE} block p-5 text-left hover:bg-elevated`}
       >
         {inner}
       </button>
     );
   }
-  return <div className={`${CARD_BASE} p-5`}>{inner}</div>;
+  return (
+    <div style={style} className={`${stagger} ${CARD_BASE} p-5`}>
+      {inner}
+    </div>
+  );
 }
 
 function StatCardSkeleton() {
@@ -339,7 +348,7 @@ export default function GuildOverviewPage() {
   return (
     <div className="jh-in flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
       {/* Hero — powitanie + status serwera (bez wykresów / przycisków) */}
-      <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-violet-600/25 via-indigo-700/15 to-amber-500/10 p-6 sm:p-8">
+      <div className="jh-sheen relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-violet-600/25 via-indigo-700/15 to-amber-500/10 p-6 sm:p-8">
         <div
           aria-hidden
           className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-violet-500/20 blur-3xl"
@@ -368,6 +377,7 @@ export default function GuildOverviewPage() {
         ) : (
           <>
             <StatCard
+              index={0}
               icon={Users}
               label="Członkowie"
               value={fmt(stats.memberCount)}
@@ -377,6 +387,7 @@ export default function GuildOverviewPage() {
               accent="bg-discord/15 text-[#8b93f8]"
             />
             <StatCard
+              index={1}
               icon={Gavel}
               label="Bany"
               value={
@@ -389,6 +400,7 @@ export default function GuildOverviewPage() {
               onClick={() => go("/moderation")}
             />
             <StatCard
+              index={2}
               icon={AlertTriangle}
               label="Ostrzeżenia"
               value={fmt(stats.warnCount)}
@@ -396,6 +408,7 @@ export default function GuildOverviewPage() {
               onClick={() => go("/moderation")}
             />
             <StatCard
+              index={3}
               icon={Ticket}
               label="Tickety"
               value={fmt(stats.tickets.total)}

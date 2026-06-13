@@ -6,7 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "e2e": "playwright test",
+    "lhci": "lhci autorun"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.16",
@@ -28,6 +30,8 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@lhci/cli": "^0.15.1",
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4.3.0",
     "@tanstack/react-query-devtools": "^5.101.0",
     "@types/node": "^25.9.3",

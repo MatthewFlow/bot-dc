@@ -60,31 +60,25 @@ function seedEmbed(tab: Tab, message: string): EmbedConfig {
   };
 }
 
+/** Szkielet tylko karty z danymi — nagłówek i „Jak to działa" renderują się od razu. */
 function WelcomeSkeleton() {
   return (
-    <div className="jh-in flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
-      <div>
-        <Skeleton className="mb-2 h-3 w-24" />
-        <Skeleton className="mb-2 h-7 w-48" />
-        <Skeleton className="h-3 w-64" />
-      </div>
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
-        <div className="w-full">
-          <div className="surface-raised rounded-xl bg-card">
-            <div className="border-b border-border px-6 py-4">
-              <Skeleton className="h-4 w-24" />
-            </div>
-            <div className="flex flex-col gap-4 p-6">
-              <Skeleton className="h-10 w-full rounded-lg" />
-              <Skeleton className="h-10 w-full rounded-lg" />
-              <Skeleton className="h-9 w-full rounded-lg" />
-              <Skeleton className="h-24 w-full rounded-lg" />
-              <Skeleton className="h-12 w-full rounded-lg" />
-            </div>
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
+      <div className="w-full">
+        <div className="surface-raised rounded-xl bg-card">
+          <div className="border-b border-border px-6 py-4">
+            <Skeleton className="h-4 w-24" />
+          </div>
+          <div className="flex flex-col gap-4 p-6">
+            <Skeleton className="h-10 w-full rounded-lg" />
+            <Skeleton className="h-10 w-full rounded-lg" />
+            <Skeleton className="h-9 w-full rounded-lg" />
+            <Skeleton className="h-24 w-full rounded-lg" />
+            <Skeleton className="h-12 w-full rounded-lg" />
           </div>
         </div>
-        <Skeleton className="h-96 w-full rounded-xl" />
       </div>
+      <Skeleton className="h-96 w-full rounded-xl" />
     </div>
   );
 }
@@ -102,7 +96,9 @@ export default function WelcomePage() {
 
   const configQ = useGuildConfig(guildId);
   const channelsQ = useChannels(guildId);
-  const loading = configQ.isLoading || channelsQ.isLoading;
+  // Bramka tylko na config (nasza baza, szybko). Kanały (proxy do Discorda, wolniej)
+  // dopełnią się w selektach w tle — formularz nie czeka na nie.
+  const loading = configQ.isLoading;
   useRedirectOnError(configQ.isError, configQ.error);
   const configReady = useSeedOnce(configQ.data, setConfig);
   useSeedOnce(channelsQ.data, setChannels);
@@ -174,8 +170,6 @@ export default function WelcomePage() {
     configReady,
   );
 
-  if (loading) return <WelcomeSkeleton />;
-
   return (
     <div className="jh-in flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <PageHeader
@@ -198,140 +192,148 @@ export default function WelcomePage() {
           "Zmiany zapisują się automatycznie — bot reaguje od razu, bez restartu.",
         ]}
       />
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
-        <div className="w-full">
-          <PanelCard title="Wiadomość">
-            {/* Welcome / Goodbye */}
-            <div className="flex gap-1 rounded-lg bg-background p-1">
-              {TABS.map(({ id, label, Icon }) => (
-                <button
-                  key={id}
-                  onClick={() => setTab(id)}
-                  className={`flex flex-1 items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition ${tab === id ? "bg-primary text-black" : "text-gray-300 hover:text-white"}`}
-                >
-                  <Icon size={15} />
-                  {label}
-                </button>
-              ))}
-            </div>
+      {loading ? (
+        <WelcomeSkeleton />
+      ) : (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
+          <div className="w-full">
+            <PanelCard title="Wiadomość">
+              {/* Welcome / Goodbye */}
+              <div className="flex gap-1 rounded-lg bg-background p-1">
+                {TABS.map(({ id, label, Icon }) => (
+                  <button
+                    key={id}
+                    onClick={() => setTab(id)}
+                    className={`flex flex-1 items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition ${tab === id ? "bg-primary text-black" : "text-gray-300 hover:text-white"}`}
+                  >
+                    <Icon size={15} />
+                    {label}
+                  </button>
+                ))}
+              </div>
 
-            {/* Kanał */}
-            <ChannelField
-              label="Kanał"
-              value={channelId ?? ""}
-              onChange={(val) =>
-                setConfig((c) =>
-                  tab === "welcome"
-                    ? { ...c, welcomeChannelId: val || undefined }
-                    : { ...c, goodbyeChannelId: val || undefined },
-                )
-              }
-              channels={channels}
-              onChannelsChange={setChannels}
-              guildId={guildId}
-              defaultName={tab === "welcome" ? "powitania" : "pozegnania"}
-              placeholder="— Nie ustawiono —"
-            />
-
-            {/* Tryb: prosty tekst vs embed */}
-            <div className="flex gap-1 rounded-lg bg-background p-1">
-              <button
-                onClick={() => toggleEmbed(false)}
-                className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${!useEmbed ? "bg-elevated text-white" : "text-gray-400 hover:text-gray-300"}`}
-              >
-                Prosty tekst
-              </button>
-              <button
-                onClick={() => toggleEmbed(true)}
-                className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${useEmbed ? "bg-elevated text-primary" : "text-gray-400 hover:text-gray-300"}`}
-              >
-                Embed (zaawansowany)
-              </button>
-            </div>
-
-            {useEmbed && activeEmbed ? (
-              <EmbedEditor
-                value={activeEmbed}
-                onChange={setActiveEmbed}
-                variables={WELCOME_VARS}
+              {/* Kanał */}
+              <ChannelField
+                label="Kanał"
+                value={channelId ?? ""}
+                onChange={(val) =>
+                  setConfig((c) =>
+                    tab === "welcome"
+                      ? { ...c, welcomeChannelId: val || undefined }
+                      : { ...c, goodbyeChannelId: val || undefined },
+                  )
+                }
+                channels={channels}
+                onChannelsChange={setChannels}
+                guildId={guildId}
+                defaultName={tab === "welcome" ? "powitania" : "pozegnania"}
+                placeholder="— Nie ustawiono —"
               />
-            ) : (
-              <div>
-                <label className="mb-1 block text-xs text-gray-400">
-                  Treść (Markdown + zmienne)
-                </label>
-                <textarea
-                  ref={textareaRef}
-                  name="welcomeMessage"
-                  aria-label="Treść wiadomości (Markdown + zmienne)"
-                  value={message}
-                  onChange={(e) => setConfig((c) => ({ ...c, [field]: e.target.value }))}
-                  rows={4}
-                  className="w-full resize-none rounded-lg bg-background px-3 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+
+              {/* Tryb: prosty tekst vs embed */}
+              <div className="flex gap-1 rounded-lg bg-background p-1">
+                <button
+                  onClick={() => toggleEmbed(false)}
+                  className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${!useEmbed ? "bg-elevated text-white" : "text-gray-400 hover:text-gray-300"}`}
+                >
+                  Prosty tekst
+                </button>
+                <button
+                  onClick={() => toggleEmbed(true)}
+                  className={`flex-1 rounded-md py-1.5 text-xs font-medium transition ${useEmbed ? "bg-elevated text-primary" : "text-gray-400 hover:text-gray-300"}`}
+                >
+                  Embed (zaawansowany)
+                </button>
+              </div>
+
+              {useEmbed && activeEmbed ? (
+                <EmbedEditor
+                  value={activeEmbed}
+                  onChange={setActiveEmbed}
+                  variables={WELCOME_VARS}
                 />
-                <div className="mt-3">
-                  <p className="mb-2 text-xs text-gray-400">
-                    Kliknij zmienną aby wstawić:
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {VARIABLES.map((v) => (
-                      <button
-                        key={v.label}
-                        onClick={() => insertVariable(v.label)}
-                        title={v.desc}
-                        className="rounded bg-background px-2.5 py-1 text-xs font-mono text-primary transition hover:bg-primary hover:text-black"
-                      >
-                        {v.label}
-                      </button>
-                    ))}
+              ) : (
+                <div>
+                  <label className="mb-1 block text-xs text-gray-400">
+                    Treść (Markdown + zmienne)
+                  </label>
+                  <textarea
+                    ref={textareaRef}
+                    name="welcomeMessage"
+                    aria-label="Treść wiadomości (Markdown + zmienne)"
+                    value={message}
+                    onChange={(e) =>
+                      setConfig((c) => ({ ...c, [field]: e.target.value }))
+                    }
+                    rows={4}
+                    className="w-full resize-none rounded-lg bg-background px-3 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <div className="mt-3">
+                    <p className="mb-2 text-xs text-gray-400">
+                      Kliknij zmienną aby wstawić:
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {VARIABLES.map((v) => (
+                        <button
+                          key={v.label}
+                          onClick={() => insertVariable(v.label)}
+                          title={v.desc}
+                          className="rounded bg-background px-2.5 py-1 text-xs font-mono text-primary transition hover:bg-primary hover:text-black"
+                        >
+                          {v.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <SaveButton
+                onClick={handleSave}
+                saving={saving}
+                autoSaveStatus={autoSaveStatus}
+                className="w-full px-6 py-3 font-semibold"
+              />
+            </PanelCard>
+          </div>
+
+          <PanelCard title="Podgląd" bodyClassName="p-6" className="lg:sticky lg:top-20">
+            {useEmbed && activeEmbed ? (
+              <EmbedPreview embed={activeEmbed} replace={previewReplacer} />
+            ) : (
+              <div className="rounded-lg bg-sidebar p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-black">
+                    JH
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-semibold text-white">
+                        Jurassic Haven
+                      </span>
+                      <span className="rounded bg-discord px-1 py-0.5 text-xs text-white">
+                        APP
+                      </span>
+                      <span className="text-xs text-gray-400">— dziś</span>
+                    </div>
+                    <div className="mt-2 rounded-lg border-l-4 border-primary bg-card p-3">
+                      <p className="text-sm font-semibold text-white">
+                        {tab === "welcome"
+                          ? "🎉 Witamy na serwerze!"
+                          : "👋 Do zobaczenia!"}
+                      </p>
+                      <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-300">
+                        {resolvePreview(message)}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             )}
-
-            <SaveButton
-              onClick={handleSave}
-              saving={saving}
-              autoSaveStatus={autoSaveStatus}
-              className="w-full px-6 py-3 font-semibold"
-            />
+            <VariablesList items={VARIABLES} className="mt-6" />
           </PanelCard>
         </div>
-
-        <PanelCard title="Podgląd" bodyClassName="p-6" className="lg:sticky lg:top-20">
-          {useEmbed && activeEmbed ? (
-            <EmbedPreview embed={activeEmbed} replace={previewReplacer} />
-          ) : (
-            <div className="rounded-lg bg-sidebar p-4">
-              <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-black">
-                  JH
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-white">
-                      Jurassic Haven
-                    </span>
-                    <span className="rounded bg-discord px-1 py-0.5 text-xs text-white">
-                      APP
-                    </span>
-                    <span className="text-xs text-gray-400">— dziś</span>
-                  </div>
-                  <div className="mt-2 rounded-lg border-l-4 border-primary bg-card p-3">
-                    <p className="text-sm font-semibold text-white">
-                      {tab === "welcome" ? "🎉 Witamy na serwerze!" : "👋 Do zobaczenia!"}
-                    </p>
-                    <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-300">
-                      {resolvePreview(message)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-          <VariablesList items={VARIABLES} className="mt-6" />
-        </PanelCard>
-      </div>
+      )}
     </div>
   );
 }

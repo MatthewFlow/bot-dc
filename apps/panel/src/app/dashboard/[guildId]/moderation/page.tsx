@@ -11,19 +11,21 @@ import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
 import { RefreshButton } from "@/components/RefreshButton";
 import { SaveButton } from "@/components/SaveButton";
-import { PageSkeleton, Skeleton, SkeletonRow } from "@/components/Skeleton";
+import { Skeleton, SkeletonRow } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { useChannels, useGuildConfig, useModActions } from "@/hooks/queries";
 import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import type { Channel, GuildConfig, Warn } from "@/lib/api";
 import { clearWarnings, getWarnings, updateGuildConfig } from "@/lib/api";
 
+/** Szkielet tylko bloku konfiguracji/ostrzeżeń — nagłówek, „Jak to działa"
+ *  i dziennik akcji (własny stan ładowania) renderują się od razu. */
 function ModSkeleton() {
   return (
-    <PageSkeleton>
-      <Skeleton className="h-32 w-full rounded-xl" />
-      <Skeleton className="h-48 w-full rounded-xl" />
-    </PageSkeleton>
+    <div className="flex flex-col gap-6 lg:flex-row">
+      <Skeleton className="h-32 w-full rounded-xl lg:w-80" />
+      <Skeleton className="h-48 w-full flex-1 rounded-xl" />
+    </div>
   );
 }
 
@@ -47,7 +49,8 @@ export default function ModerationPage() {
   const actionsQ = useModActions(guildId, 25);
   const actions = actionsQ.data ?? [];
   const actionsLoading = actionsQ.isLoading;
-  const loading = configQ.isLoading || channelsQ.isLoading;
+  // Bramka tylko na config; kanały dopełnią selekt w tle, a dziennik akcji ma własny loader.
+  const loading = configQ.isLoading;
   useRedirectOnError(configQ.isError, configQ.error);
   useSeedOnce(configQ.data, setConfig);
   useSeedOnce(channelsQ.data, setChannels);
@@ -91,8 +94,6 @@ export default function ModerationPage() {
     }
   }
 
-  if (loading) return <ModSkeleton />;
-
   return (
     <div className="jh-in flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
       <PageHeader
@@ -116,124 +117,128 @@ export default function ModerationPage() {
         ]}
       />
 
-      <div className="flex flex-col gap-6 lg:flex-row">
-        {/* Config */}
-        <div className="flex flex-col gap-4 lg:w-80">
-          <div className="surface-raised rounded-xl border border-border bg-card">
-            <div className="flex items-center justify-between border-b border-border px-6 py-4">
-              <p className="text-sm font-semibold text-white">Konfiguracja</p>
-              <SaveButton
-                onClick={handleSave}
-                saving={saving}
-                className="px-4 py-1.5 text-xs"
-              />
-            </div>
-            <div className="flex flex-col gap-4 p-6">
-              <ChannelField
-                label="Kanał logów moderacji"
-                value={config.modLogChannelId ?? ""}
-                onChange={(v) => setConfig((c) => ({ ...c, modLogChannelId: v }))}
-                channels={channels}
-                onChannelsChange={setChannels}
-                guildId={guildId}
-                defaultName="mod-logi"
-                hint="Tutaj trafiają logi: warn, mute, kick, ban. Audyt zapisuje się też do bazy."
-              />
+      {loading ? (
+        <ModSkeleton />
+      ) : (
+        <div className="flex flex-col gap-6 lg:flex-row">
+          {/* Config */}
+          <div className="flex flex-col gap-4 lg:w-80">
+            <div className="surface-raised rounded-xl border border-border bg-card">
+              <div className="flex items-center justify-between border-b border-border px-6 py-4">
+                <p className="text-sm font-semibold text-white">Konfiguracja</p>
+                <SaveButton
+                  onClick={handleSave}
+                  saving={saving}
+                  className="px-4 py-1.5 text-xs"
+                />
+              </div>
+              <div className="flex flex-col gap-4 p-6">
+                <ChannelField
+                  label="Kanał logów moderacji"
+                  value={config.modLogChannelId ?? ""}
+                  onChange={(v) => setConfig((c) => ({ ...c, modLogChannelId: v }))}
+                  channels={channels}
+                  onChannelsChange={setChannels}
+                  guildId={guildId}
+                  defaultName="mod-logi"
+                  hint="Tutaj trafiają logi: warn, mute, kick, ban. Audyt zapisuje się też do bazy."
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Warnings */}
-        <div className="flex-1">
-          <div className="surface-raised rounded-xl border border-border bg-card">
-            <div className="border-b border-border px-6 py-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                Wyszukaj po Discord User ID
-              </p>
-              <p className="text-sm font-semibold text-white">Ostrzeżenia</p>
-            </div>
-
-            <div className="p-6">
-              <div className="flex gap-2">
-                <input
-                  name="warnUserId"
-                  aria-label="ID użytkownika"
-                  value={searchId}
-                  onChange={(e) => setSearchId(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                  placeholder="np. 123456789012345678"
-                  className="flex-1 rounded-lg bg-background px-3 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
-                />
-                <button
-                  onClick={handleSearch}
-                  disabled={!searchId.trim() || warnsLoading}
-                  className="flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-primary-hover disabled:opacity-40"
-                >
-                  <Search className="h-4 w-4" />
-                  <span className="hidden sm:inline">
-                    {warnsLoading ? "Szukam…" : "Szukaj"}
-                  </span>
-                </button>
+          {/* Warnings */}
+          <div className="flex-1">
+            <div className="surface-raised rounded-xl border border-border bg-card">
+              <div className="border-b border-border px-6 py-4">
+                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                  Wyszukaj po Discord User ID
+                </p>
+                <p className="text-sm font-semibold text-white">Ostrzeżenia</p>
               </div>
 
-              {searchedId && !warnsLoading && (
-                <div className="mt-4">
-                  <div className="mb-3 flex items-center justify-between">
-                    <p className="text-xs text-gray-400">
-                      User <span className="font-mono text-gray-300">{searchedId}</span> ·{" "}
-                      <span className="text-white">{warns.length}</span> ostrzeżeń
-                    </p>
-                    {warns.length > 0 && (
-                      <button
-                        onClick={() => setPendingClear(true)}
-                        className="flex shrink-0 items-center gap-1.5 rounded-lg bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-400 transition hover:bg-red-500/20"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        Wyczyść wszystkie
-                      </button>
+              <div className="p-6">
+                <div className="flex gap-2">
+                  <input
+                    name="warnUserId"
+                    aria-label="ID użytkownika"
+                    value={searchId}
+                    onChange={(e) => setSearchId(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                    placeholder="np. 123456789012345678"
+                    className="flex-1 rounded-lg bg-background px-3 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <button
+                    onClick={handleSearch}
+                    disabled={!searchId.trim() || warnsLoading}
+                    className="flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-primary-hover disabled:opacity-40"
+                  >
+                    <Search className="h-4 w-4" />
+                    <span className="hidden sm:inline">
+                      {warnsLoading ? "Szukam…" : "Szukaj"}
+                    </span>
+                  </button>
+                </div>
+
+                {searchedId && !warnsLoading && (
+                  <div className="mt-4">
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-xs text-gray-400">
+                        User <span className="font-mono text-gray-300">{searchedId}</span>{" "}
+                        · <span className="text-white">{warns.length}</span> ostrzeżeń
+                      </p>
+                      {warns.length > 0 && (
+                        <button
+                          onClick={() => setPendingClear(true)}
+                          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-400 transition hover:bg-red-500/20"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                          Wyczyść wszystkie
+                        </button>
+                      )}
+                    </div>
+
+                    {warns.length === 0 ? (
+                      <p className="py-6 text-center text-sm text-gray-400">
+                        Brak ostrzeżeń dla tego użytkownika.
+                      </p>
+                    ) : (
+                      <div className="flex flex-col gap-2">
+                        {warns.map((w, i) => (
+                          <div
+                            key={w.id}
+                            style={{ "--i": i } as CSSProperties}
+                            className="jh-stagger flex items-start gap-3 rounded-lg bg-background px-4 py-3"
+                          >
+                            <span
+                              className={`mt-0.5 rounded px-1.5 py-0.5 text-xs font-bold ${MOD_ACTION.warn.cls}`}
+                            >
+                              #{i + 1}
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-white">{w.reason}</p>
+                              <p className="mt-0.5 text-xs text-gray-400">
+                                Przez <span className="font-mono">{w.moderatorId}</span> ·{" "}
+                                {new Date(w.createdAt).toLocaleString("pl-PL")}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
+                )}
 
-                  {warns.length === 0 ? (
-                    <p className="py-6 text-center text-sm text-gray-400">
-                      Brak ostrzeżeń dla tego użytkownika.
-                    </p>
-                  ) : (
-                    <div className="flex flex-col gap-2">
-                      {warns.map((w, i) => (
-                        <div
-                          key={w.id}
-                          style={{ "--i": i } as CSSProperties}
-                          className="jh-stagger flex items-start gap-3 rounded-lg bg-background px-4 py-3"
-                        >
-                          <span
-                            className={`mt-0.5 rounded px-1.5 py-0.5 text-xs font-bold ${MOD_ACTION.warn.cls}`}
-                          >
-                            #{i + 1}
-                          </span>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm text-white">{w.reason}</p>
-                            <p className="mt-0.5 text-xs text-gray-400">
-                              Przez <span className="font-mono">{w.moderatorId}</span> ·{" "}
-                              {new Date(w.createdAt).toLocaleString("pl-PL")}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {!searchedId && (
-                <p className="mt-4 text-center text-sm text-gray-400">
-                  Wpisz Discord User ID i kliknij Szukaj.
-                </p>
-              )}
+                {!searchedId && (
+                  <p className="mt-4 text-center text-sm text-gray-400">
+                    Wpisz Discord User ID i kliknij Szukaj.
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Audit log — trwała historia wszystkich akcji moderacyjnych */}
       <div className="surface-raised rounded-xl border border-border bg-card">

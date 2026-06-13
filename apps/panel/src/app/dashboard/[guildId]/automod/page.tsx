@@ -9,7 +9,7 @@ import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
 import { RoleSelect } from "@/components/RoleSelect";
 import { SaveButton } from "@/components/SaveButton";
-import { PageSkeleton, Skeleton } from "@/components/Skeleton";
+import { Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { Switch } from "@/components/ui/switch";
 import { useChannels, useGuildConfig, useRoles } from "@/hooks/queries";
@@ -60,12 +60,9 @@ function Toggle({
   );
 }
 
+/** Szkielet tylko karty z danymi — nagłówek i „Jak to działa" renderują się od razu. */
 function AutoModSkeleton() {
-  return (
-    <PageSkeleton>
-      <Skeleton className="h-96 w-full rounded-xl" />
-    </PageSkeleton>
-  );
+  return <Skeleton className="h-96 w-full rounded-xl" />;
 }
 
 const CARD = "surface-raised rounded-xl border border-border bg-card";
@@ -86,7 +83,8 @@ export default function AutoModPage() {
   const configQ = useGuildConfig(guildId);
   const rolesQ = useRoles(guildId);
   const channelsQ = useChannels(guildId);
-  const loading = configQ.isLoading || rolesQ.isLoading || channelsQ.isLoading;
+  // Bramka tylko na config; role/kanały (proxy do Discorda) dopełnią selekty w tle.
+  const loading = configQ.isLoading;
   useRedirectOnError(configQ.isError, configQ.error);
   const configReady = useSeedOnce(configQ.data, setConfig);
   useSeedOnce(rolesQ.data, setRoles);
@@ -122,25 +120,17 @@ export default function AutoModPage() {
 
   return (
     <div className="jh-in flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <PageHeader
-          category="Ochrona automatyczna"
-          icon={ShieldBan}
-          title={
-            <>
-              Auto-<span className="italic text-primary">moderacja</span>
-            </>
-          }
-          description="Automatyczne wykrywanie i usuwanie niepożądanych wiadomości."
-          className="mb-0"
-        />
-        <SaveButton
-          onClick={handleSave}
-          saving={saving}
-          autoSaveStatus={autoSaveStatus}
-          className="px-5 py-2"
-        />
-      </div>
+      <PageHeader
+        category="Ochrona automatyczna"
+        icon={ShieldBan}
+        title={
+          <>
+            Auto-<span className="italic text-primary">moderacja</span>
+          </>
+        }
+        description="Automatyczne wykrywanie i usuwanie niepożądanych wiadomości."
+        className="mb-0"
+      />
 
       <HowItWorks
         steps={[
@@ -151,221 +141,239 @@ export default function AutoModPage() {
         ]}
       />
 
-      {/* Master switch */}
-      <div className={`${CARD} p-6`}>
-        <Toggle
-          checked={am.enabled}
-          onChange={(v) => setAm({ enabled: v })}
-          label="Włącz auto-moderację"
-          desc="Gdy wyłączona, żadne filtry nie działają. Administratorzy i moderatorzy (Zarządzanie wiadomościami) są zawsze pomijani."
-        />
-      </div>
+      {loading ? (
+        <AutoModSkeleton />
+      ) : (
+        <>
+          {/* Master switch */}
+          <div className={`${CARD} p-6`}>
+            <Toggle
+              checked={am.enabled}
+              onChange={(v) => setAm({ enabled: v })}
+              label="Włącz auto-moderację"
+              desc="Gdy wyłączona, żadne filtry nie działają. Administratorzy i moderatorzy (Zarządzanie wiadomościami) są zawsze pomijani."
+            />
+          </div>
 
-      <div className={am.enabled ? "" : "pointer-events-none opacity-50"}>
-        <div className="flex flex-col gap-6 lg:flex-row">
-          <div className="flex flex-1 flex-col gap-6">
-            {/* Filtry */}
-            <div className={CARD}>
-              <p className={SECTION_HEAD}>Filtry</p>
-              <div className="flex flex-col gap-5 p-6">
-                <Toggle
-                  checked={am.blockInvites}
-                  onChange={(v) => setAm({ blockInvites: v })}
-                  label="Blokuj zaproszenia Discord"
-                  desc="Wiadomości z linkami discord.gg / invite."
-                />
-                <Toggle
-                  checked={am.blockLinks}
-                  onChange={(v) => setAm({ blockLinks: v })}
-                  label="Blokuj linki"
-                  desc="Dowolne adresy http(s)."
-                />
-
-                <div>
-                  <label
-                    className="mb-1 block text-xs text-gray-400"
-                    htmlFor="bannedWords"
-                  >
-                    Niedozwolone słowa (jedno na linię)
-                  </label>
-                  <textarea
-                    id="bannedWords"
-                    name="bannedWords"
-                    value={am.bannedWords.join("\n")}
-                    onChange={(e) =>
-                      setAm({
-                        bannedWords: e.target.value
-                          .split(/[\n,]/)
-                          .map((w) => w.trim())
-                          .filter(Boolean),
-                      })
-                    }
-                    rows={4}
-                    placeholder="np. spamword"
-                    className="w-full resize-y rounded-lg bg-background px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-
-                <div className="border-t border-border pt-4">
-                  <Toggle
-                    checked={am.spamEnabled}
-                    onChange={(v) => setAm({ spamEnabled: v })}
-                    label="Anty-spam"
-                    desc="Reaguj, gdy użytkownik wysyła zbyt wiele wiadomości w krótkim czasie."
-                  />
-                  {am.spamEnabled && (
-                    <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-gray-300">
-                      <span>Maks.</span>
-                      <input
-                        type="number"
-                        name="spamMaxMessages"
-                        aria-label="Maksymalna liczba wiadomości"
-                        min={2}
-                        max={50}
-                        value={am.spamMaxMessages}
-                        onChange={(e) =>
-                          setAm({ spamMaxMessages: Number(e.target.value) })
-                        }
-                        className={NUM_INPUT}
-                      />
-                      <span>wiadomości w</span>
-                      <input
-                        type="number"
-                        name="spamWindowSeconds"
-                        aria-label="Okno czasowe w sekundach"
-                        min={1}
-                        max={60}
-                        value={am.spamWindowSeconds}
-                        onChange={(e) =>
-                          setAm({ spamWindowSeconds: Number(e.target.value) })
-                        }
-                        className={NUM_INPUT}
-                      />
-                      <span>sekund.</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Akcja */}
-            <div className={CARD}>
-              <p className={SECTION_HEAD}>Akcja przy wykryciu</p>
-              <div className="flex flex-col gap-4 p-6">
-                <div className="flex flex-wrap gap-2">
-                  {ACTIONS.map((a) => (
-                    <button
-                      key={a.value}
-                      onClick={() => setAm({ action: a.value })}
-                      className={`rounded-lg px-4 py-2 text-sm transition ${
-                        am.action === a.value
-                          ? "bg-primary font-semibold text-black"
-                          : "bg-background text-gray-300 hover:text-white"
-                      }`}
-                    >
-                      {a.label}
-                    </button>
-                  ))}
-                </div>
-                {am.action === "mute" && (
-                  <div className="flex flex-wrap items-center gap-2 text-sm text-gray-300">
-                    <span>Czas timeoutu:</span>
-                    <input
-                      type="number"
-                      name="muteDurationSeconds"
-                      aria-label="Czas timeoutu w sekundach"
-                      min={10}
-                      max={2419200}
-                      value={am.muteDurationSeconds}
-                      onChange={(e) =>
-                        setAm({ muteDurationSeconds: Number(e.target.value) })
-                      }
-                      className={NUM_INPUT}
+          <div className={am.enabled ? "" : "pointer-events-none opacity-50"}>
+            <div className="flex flex-col gap-6 lg:flex-row">
+              <div className="flex flex-1 flex-col gap-6">
+                {/* Filtry */}
+                <div className={CARD}>
+                  <div className="flex items-center justify-between border-b border-border px-6 py-4">
+                    <p className="text-sm font-semibold text-white">Filtry</p>
+                    <SaveButton
+                      onClick={handleSave}
+                      saving={saving}
+                      autoSaveStatus={autoSaveStatus}
+                      className="px-4 py-1.5 text-xs"
                     />
-                    <span>sekund.</span>
                   </div>
-                )}
-                <p className="text-xs text-gray-400">
-                  Każda akcja usuwa wiadomość. „Ostrzeż” zapisuje warn, „Timeout” wycisza
-                  użytkownika. Obie trafiają do logów moderacji.
-                </p>
-              </div>
-            </div>
-          </div>
+                  <div className="flex flex-col gap-5 p-6">
+                    <Toggle
+                      checked={am.blockInvites}
+                      onChange={(v) => setAm({ blockInvites: v })}
+                      label="Blokuj zaproszenia Discord"
+                      desc="Wiadomości z linkami discord.gg / invite."
+                    />
+                    <Toggle
+                      checked={am.blockLinks}
+                      onChange={(v) => setAm({ blockLinks: v })}
+                      label="Blokuj linki"
+                      desc="Dowolne adresy http(s)."
+                    />
 
-          {/* Wyjątki */}
-          <div className="flex w-full flex-col gap-6 lg:w-80">
-            <div className={CARD}>
-              <p className={SECTION_HEAD}>Wyjątki</p>
-              <div className="flex flex-col gap-4 p-6">
-                <div>
-                  <label className="mb-1 block text-xs text-gray-400">
-                    Pomijane role
-                  </label>
-                  <RoleSelect
-                    value=""
-                    onChange={(v) =>
-                      v &&
-                      !am.exemptRoleIds.includes(v) &&
-                      setAm({ exemptRoleIds: [...am.exemptRoleIds, v] })
-                    }
-                    roles={roles.filter((r) => !am.exemptRoleIds.includes(r.id))}
-                    placeholder="+ Dodaj rolę"
-                    className="w-full px-3 py-2"
-                  />
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {am.exemptRoleIds.map((id) => (
-                      <button
-                        key={id}
-                        onClick={() =>
+                    <div>
+                      <label
+                        className="mb-1 block text-xs text-gray-400"
+                        htmlFor="bannedWords"
+                      >
+                        Niedozwolone słowa (jedno na linię)
+                      </label>
+                      <textarea
+                        id="bannedWords"
+                        name="bannedWords"
+                        value={am.bannedWords.join("\n")}
+                        onChange={(e) =>
                           setAm({
-                            exemptRoleIds: am.exemptRoleIds.filter((x) => x !== id),
+                            bannedWords: e.target.value
+                              .split(/[\n,]/)
+                              .map((w) => w.trim())
+                              .filter(Boolean),
                           })
                         }
-                        className="rounded-full bg-background px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
-                      >
-                        @{roleName(id)} ✕
-                      </button>
-                    ))}
+                        rows={4}
+                        placeholder="np. spamword"
+                        className="w-full resize-y rounded-lg bg-background px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+
+                    <div className="border-t border-border pt-4">
+                      <Toggle
+                        checked={am.spamEnabled}
+                        onChange={(v) => setAm({ spamEnabled: v })}
+                        label="Anty-spam"
+                        desc="Reaguj, gdy użytkownik wysyła zbyt wiele wiadomości w krótkim czasie."
+                      />
+                      {am.spamEnabled && (
+                        <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-gray-300">
+                          <span>Maks.</span>
+                          <input
+                            type="number"
+                            name="spamMaxMessages"
+                            aria-label="Maksymalna liczba wiadomości"
+                            min={2}
+                            max={50}
+                            value={am.spamMaxMessages}
+                            onChange={(e) =>
+                              setAm({ spamMaxMessages: Number(e.target.value) })
+                            }
+                            className={NUM_INPUT}
+                          />
+                          <span>wiadomości w</span>
+                          <input
+                            type="number"
+                            name="spamWindowSeconds"
+                            aria-label="Okno czasowe w sekundach"
+                            min={1}
+                            max={60}
+                            value={am.spamWindowSeconds}
+                            onChange={(e) =>
+                              setAm({ spamWindowSeconds: Number(e.target.value) })
+                            }
+                            className={NUM_INPUT}
+                          />
+                          <span>sekund.</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <label className="mb-1 block text-xs text-gray-400">
-                    Pomijane kanały
-                  </label>
-                  <ChannelSelect
-                    value=""
-                    onChange={(v) =>
-                      v &&
-                      !am.exemptChannelIds.includes(v) &&
-                      setAm({ exemptChannelIds: [...am.exemptChannelIds, v] })
-                    }
-                    channels={channels.filter((c) => !am.exemptChannelIds.includes(c.id))}
-                    placeholder="+ Dodaj kanał"
-                    className="w-full px-3 py-2"
-                  />
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {am.exemptChannelIds.map((id) => (
-                      <button
-                        key={id}
-                        onClick={() =>
-                          setAm({
-                            exemptChannelIds: am.exemptChannelIds.filter((x) => x !== id),
-                          })
+                {/* Akcja */}
+                <div className={CARD}>
+                  <p className={SECTION_HEAD}>Akcja przy wykryciu</p>
+                  <div className="flex flex-col gap-4 p-6">
+                    <div className="flex flex-wrap gap-2">
+                      {ACTIONS.map((a) => (
+                        <button
+                          key={a.value}
+                          onClick={() => setAm({ action: a.value })}
+                          className={`rounded-lg px-4 py-2 text-sm transition ${
+                            am.action === a.value
+                              ? "bg-primary font-semibold text-black"
+                              : "bg-background text-gray-300 hover:text-white"
+                          }`}
+                        >
+                          {a.label}
+                        </button>
+                      ))}
+                    </div>
+                    {am.action === "mute" && (
+                      <div className="flex flex-wrap items-center gap-2 text-sm text-gray-300">
+                        <span>Czas timeoutu:</span>
+                        <input
+                          type="number"
+                          name="muteDurationSeconds"
+                          aria-label="Czas timeoutu w sekundach"
+                          min={10}
+                          max={2419200}
+                          value={am.muteDurationSeconds}
+                          onChange={(e) =>
+                            setAm({ muteDurationSeconds: Number(e.target.value) })
+                          }
+                          className={NUM_INPUT}
+                        />
+                        <span>sekund.</span>
+                      </div>
+                    )}
+                    <p className="text-xs text-gray-400">
+                      Każda akcja usuwa wiadomość. „Ostrzeż” zapisuje warn, „Timeout”
+                      wycisza użytkownika. Obie trafiają do logów moderacji.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Wyjątki */}
+              <div className="flex w-full flex-col gap-6 lg:w-80">
+                <div className={CARD}>
+                  <p className={SECTION_HEAD}>Wyjątki</p>
+                  <div className="flex flex-col gap-4 p-6">
+                    <div>
+                      <label className="mb-1 block text-xs text-gray-400">
+                        Pomijane role
+                      </label>
+                      <RoleSelect
+                        value=""
+                        onChange={(v) =>
+                          v &&
+                          !am.exemptRoleIds.includes(v) &&
+                          setAm({ exemptRoleIds: [...am.exemptRoleIds, v] })
                         }
-                        className="rounded-full bg-background px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
-                      >
-                        #{channelName(id)} ✕
-                      </button>
-                    ))}
+                        roles={roles.filter((r) => !am.exemptRoleIds.includes(r.id))}
+                        placeholder="+ Dodaj rolę"
+                        className="w-full px-3 py-2"
+                      />
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {am.exemptRoleIds.map((id) => (
+                          <button
+                            key={id}
+                            onClick={() =>
+                              setAm({
+                                exemptRoleIds: am.exemptRoleIds.filter((x) => x !== id),
+                              })
+                            }
+                            className="rounded-full bg-background px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
+                          >
+                            @{roleName(id)} ✕
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs text-gray-400">
+                        Pomijane kanały
+                      </label>
+                      <ChannelSelect
+                        value=""
+                        onChange={(v) =>
+                          v &&
+                          !am.exemptChannelIds.includes(v) &&
+                          setAm({ exemptChannelIds: [...am.exemptChannelIds, v] })
+                        }
+                        channels={channels.filter(
+                          (c) => !am.exemptChannelIds.includes(c.id),
+                        )}
+                        placeholder="+ Dodaj kanał"
+                        className="w-full px-3 py-2"
+                      />
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {am.exemptChannelIds.map((id) => (
+                          <button
+                            key={id}
+                            onClick={() =>
+                              setAm({
+                                exemptChannelIds: am.exemptChannelIds.filter(
+                                  (x) => x !== id,
+                                ),
+                              })
+                            }
+                            className="rounded-full bg-background px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
+                          >
+                            #{channelName(id)} ✕
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }

@@ -22,6 +22,14 @@ LICENSE
 
 # Testy — niepotrzebne w obrazie produkcyjnym
 **/*.test.ts
+**/*.spec.ts
+**/*.e2e.ts
+**/e2e
+**/playwright.config.ts
+**/lighthouserc.json
+**/playwright-report
+**/test-results
+**/.lighthouseci
 
 # Konfiguracja dev / narzędzia (nieużywane w runtime ani przy buildzie apek)
 eslint.config.*
