@@ -31,6 +31,7 @@ export function EmbedEditor({
   variables?: string[];
 }) {
   const set = (patch: Partial<EmbedConfig>) => onChange({ ...value, ...patch });
+  const colorHex = numberToHex(value.color ?? DEFAULT_EMBED_COLOR);
 
   // Prefiks unikalny per instancja edytora (na stronie bywa ich kilka, np. welcome + goodbye).
   const uid = useId();
@@ -74,29 +75,37 @@ export function EmbedEditor({
             className={`${INPUT} resize-y`}
           />
           {variables && variables.length > 0 && (
-            <p className="mt-1 text-xs text-gray-400">
-              Zmienne:{" "}
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <span className="text-xs text-gray-400">Zmienne:</span>
               {variables.map((v) => (
-                <span key={v} className="mr-1 font-mono text-primary">
+                <span
+                  key={v}
+                  className="rounded bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] text-primary"
+                >
                   {v}
                 </span>
               ))}
-            </p>
+            </div>
           )}
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-end gap-3">
           <div>
             <label className={LABEL} htmlFor={fieldId("color")}>
               Kolor
             </label>
-            <input
-              id={fieldId("color")}
-              name="embedColor"
-              type="color"
-              value={numberToHex(value.color ?? DEFAULT_EMBED_COLOR)}
-              onChange={(e) => set({ color: hexToNumber(e.target.value) })}
-              className="h-9 w-14 cursor-pointer rounded bg-transparent"
-            />
+            <div className="flex items-center gap-2">
+              <input
+                id={fieldId("color")}
+                name="embedColor"
+                type="color"
+                value={colorHex}
+                onChange={(e) => set({ color: hexToNumber(e.target.value) })}
+                className="h-9 w-9 shrink-0 cursor-pointer rounded-lg border border-border bg-transparent p-0.5"
+              />
+              <span className="rounded-lg bg-background px-2.5 py-2 font-mono text-xs uppercase tracking-wide text-gray-300">
+                {colorHex}
+              </span>
+            </div>
           </div>
           <div className="flex-1">
             <label className={LABEL} htmlFor={fieldId("url")}>

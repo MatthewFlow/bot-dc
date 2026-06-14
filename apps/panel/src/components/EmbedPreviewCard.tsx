@@ -14,6 +14,9 @@ export function EmbedPreviewCard({
   replace,
   buttonLabel,
   buttonEmoji,
+  author,
+  title = "Podgląd",
+  description,
   className = "",
   children,
 }: {
@@ -21,16 +24,25 @@ export function EmbedPreviewCard({
   replace?: (s: string) => string;
   buttonLabel?: string;
   buttonEmoji?: string;
+  author?: { name: string; avatar?: string | null };
+  title?: ReactNode;
+  description?: ReactNode;
   className?: string;
   children?: ReactNode;
 }) {
   return (
-    <PanelCard title="Podgląd" bodyClassName="p-6" className={className}>
+    <PanelCard
+      title={title}
+      description={description}
+      bodyClassName="p-6"
+      className={className}
+    >
       <EmbedPreview
         embed={embed}
         replace={replace}
         buttonLabel={buttonLabel}
         buttonEmoji={buttonEmoji}
+        author={author}
       />
       {children}
     </PanelCard>

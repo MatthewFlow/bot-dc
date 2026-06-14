@@ -23,6 +23,9 @@ export type {
   AddFeedbackOpts,
   Feedback,
   FeedbackCategory,
+  FeedbackIdentityPatch,
+  FeedbackReply,
+  FeedbackStatus,
 } from "./repositories/feedbackRepository";
 export type {
   AutoModConfig,

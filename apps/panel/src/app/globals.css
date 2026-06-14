@@ -200,6 +200,51 @@ body {
   }
 }
 
+/* `jh-cta-aura` — miękka, pulsująca poświata pod przyciskiem logowania (blurple → złoto).
+   Animowane wyłącznie opacity + transform (kompozytowane przez GPU); blur liczony raz.
+   Efekt „wow" bez kosztu na klatkę. Element dekoracyjny (aria-hidden) pod przyciskiem. */
+.jh-cta-aura {
+  position: absolute;
+  inset: -7px;
+  z-index: 0;
+  border-radius: 1rem;
+  background: linear-gradient(100deg, var(--discord), var(--primary) 55%, var(--discord));
+  filter: blur(18px);
+  opacity: 0.5;
+  animation: jh-aura-pulse 3.2s var(--ease-out) infinite;
+}
+@keyframes jh-aura-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.985);
+  }
+  50% {
+    opacity: 0.72;
+    transform: scale(1.025);
+  }
+}
+
+/* `jh-brand-text` — tytuł hero z subtelnym przelewem złota (shimmer).
+   Animowana tylko pozycja tła na małej powierzchni tekstu — tani, ale efektowny. */
+.jh-brand-text {
+  background: linear-gradient(100deg, #fff 30%, var(--primary) 50%, #fff 70%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: jh-shimmer 6s var(--ease-out) infinite;
+}
+@keyframes jh-shimmer {
+  0%,
+  100% {
+    background-position: 130% 0;
+  }
+  50% {
+    background-position: -30% 0;
+  }
+}
+
 /* `jh-glow` — statyczna, miękka złota poświata logotypu marki.
    WAŻNE dla INP: świadomie BEZ animacji. Wcześniej animowany `box-shadow` przemalowywał
    się co klatkę w nieskończoność (box-shadow nie jest kompozytowany przez GPU), co podbijało
@@ -222,7 +267,9 @@ body {
     transform: none;
   }
   .jh-sheen::after,
-  .jh-glow {
+  .jh-glow,
+  .jh-cta-aura,
+  .jh-brand-text {
     animation: none;
   }
   .jh-sheen::after {

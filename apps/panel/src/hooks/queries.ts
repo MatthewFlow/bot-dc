@@ -82,5 +82,9 @@ export function useGuildFeedback(guildId: string) {
   return useQuery({
     queryKey: queryKeys.guildFeedback(guildId),
     queryFn: () => getGuildFeedback(guildId),
+    // Lista feedbacku potrafi odpalić enrichment z Discorda po stronie API — nie
+    // refetchuj jej przy każdym powrocie/refocusie. 30 s świeżości + jawny „Odśwież".
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
   });
 }

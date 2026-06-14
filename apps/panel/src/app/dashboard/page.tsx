@@ -44,7 +44,12 @@ function GuildCard({
         onClick={onSelect}
         className="jh-tilt group flex w-full items-center gap-4 surface-raised rounded-xl border border-border bg-card p-4 text-left outline-none hover:bg-elevated focus-visible:ring-2 focus-visible:ring-primary/40"
       >
-        <Avatar src={guildIconUrl(guild)} name={guild.name} size="lg" />
+        <Avatar
+          src={guildIconUrl(guild)}
+          name={guild.name}
+          size="lg"
+          className="ring-2 ring-transparent transition group-hover:ring-primary/50"
+        />
         <span className="min-w-0 flex-1 truncate font-medium text-white">
           {guild.name}
         </span>
@@ -92,7 +97,7 @@ export default function DashboardPage() {
             <div className="jh-glow flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-card text-lg font-bold text-primary">
               JH
             </div>
-            <h1 className="text-xl font-bold text-white">Jurassic Haven</h1>
+            <h1 className="jh-brand-text text-xl font-bold">Jurassic Haven</h1>
           </div>
 
           {loading ? (

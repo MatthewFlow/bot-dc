@@ -14,11 +14,14 @@ export function EmbedPreview({
   replace = (s) => s,
   buttonLabel,
   buttonEmoji,
+  author,
 }: {
   embed: EmbedConfig;
   replace?: (s: string) => string;
   buttonLabel?: string;
   buttonEmoji?: string;
+  /** Autor wiadomości (bot serwera) — gdy podany, nad embedem pojawia się avatar + nazwa + „BOT". */
+  author?: { name: string; avatar?: string | null };
 }) {
   const barColor = typeof embed.color === "number" ? numberToHex(embed.color) : "#4f545c";
 
@@ -38,6 +41,21 @@ export function EmbedPreview({
 
   return (
     <div className="rounded-lg bg-[#313338] p-4">
+      {author && (
+        <div className="mb-2 flex items-center gap-2">
+          {author.avatar ? (
+            <img src={author.avatar} alt="" className="h-10 w-10 rounded-full" />
+          ) : (
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-discord text-sm font-bold text-white">
+              {author.name.slice(0, 1).toUpperCase()}
+            </span>
+          )}
+          <span className="text-sm font-semibold text-white">{author.name}</span>
+          <span className="rounded bg-discord px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-white">
+            BOT
+          </span>
+        </div>
+      )}
       <div
         className="overflow-hidden rounded border-l-4 bg-[#2b2d31] pl-3"
         style={{ borderColor: barColor }}

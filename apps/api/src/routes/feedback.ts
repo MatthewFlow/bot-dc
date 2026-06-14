@@ -18,16 +18,23 @@ feedbackRoutes.post("/", async (c) => {
   if (!parsed.ok) return parsed.res;
   const { message, category, rating, guildId } = parsed.data;
 
+  const avatarHash = c.get("avatar");
   const fb = await feedbackRepository.add({
     userId,
     username,
+    displayName: username,
+    avatar: avatarHash
+      ? `https://cdn.discordapp.com/avatars/${userId}/${avatarHash}.png`
+      : null,
     guildId,
     category,
     message,
     rating,
   });
 
-  return c.json(fb, 201);
+  // Kształt jak w liście panelu (głosy jako liczba; bez listy userId-ów).
+  const { upvotedBy, ...rest } = fb;
+  return c.json({ ...rest, upvotes: upvotedBy.length, upvotedByMe: false }, 201);
 });
 
 // Lista własnych zgłoszeń zalogowanego użytkownika.

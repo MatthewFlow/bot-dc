@@ -51,6 +51,8 @@ export async function submitFeedback(opts: {
   await feedbackRepository.add({
     userId: user.id,
     username: user.username,
+    displayName: user.globalName ?? user.username,
+    avatar: user.displayAvatarURL(),
     guildId: guild.id,
     category,
     message,

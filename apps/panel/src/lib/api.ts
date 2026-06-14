@@ -244,14 +244,33 @@ export type LeaderboardEntry = {
 
 export type FeedbackCategory = "bug" | "suggestion" | "other";
 
+export type FeedbackStatus = "new" | "in_progress" | "resolved";
+
+export type FeedbackReply = {
+  authorId: string;
+  authorName: string;
+  message: string;
+  createdAt: string;
+};
+
 export type Feedback = {
   id: string;
   userId: string;
   username: string;
+  /** Pseudonim (nick/global) rozwiązany z Discorda; null gdy nieznany. */
+  displayName?: string | null;
+  /** Avatar autora (URL CDN); null gdy brak/nie rozwiązano. */
+  avatar?: string | null;
   guildId?: string;
   category: FeedbackCategory;
   message: string;
   rating?: number;
+  status: FeedbackStatus;
+  /** Liczba głosów. */
+  upvotes: number;
+  /** Czy bieżący admin zagłosował. */
+  upvotedByMe: boolean;
+  replies: FeedbackReply[];
   createdAt: string;
 };
 
@@ -709,4 +728,44 @@ export async function deleteGuildFeedback(guildId: string, id: string): Promise<
     method: "DELETE",
   });
   if (!res.ok) throw new Error("Failed to delete feedback");
+}
+
+/** Zmienia status zgłoszenia; zwraca zaktualizowany rekord. */
+export async function setGuildFeedbackStatus(
+  guildId: string,
+  id: string,
+  status: FeedbackStatus,
+): Promise<Feedback> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/feedback/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) throw new Error("Failed to update status");
+  return res.json();
+}
+
+/** Przełącza głos bieżącego admina; zwraca zaktualizowany rekord. */
+export async function toggleGuildFeedbackUpvote(
+  guildId: string,
+  id: string,
+): Promise<Feedback> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/feedback/${id}/upvote`, {
+    method: "POST",
+  });
+  if (!res.ok) throw new Error("Failed to toggle upvote");
+  return res.json();
+}
+
+/** Dodaje odpowiedź ekipy; zwraca zaktualizowany rekord. */
+export async function addGuildFeedbackReply(
+  guildId: string,
+  id: string,
+  message: string,
+): Promise<Feedback> {
+  const res = await fetchWithRetry(
+    `${API_URL}/guilds/${guildId}/feedback/${id}/replies`,
+    { method: "POST", body: JSON.stringify({ message }) },
+  );
+  if (!res.ok) throw new Error("Failed to add reply");
+  return res.json();
 }

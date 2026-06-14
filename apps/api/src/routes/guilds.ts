@@ -1,3 +1,4 @@
+import type { Feedback, FeedbackIdentityPatch, FeedbackStatus } from "@jurassic-haven/db";
 import {
   feedbackRepository,
   guildConfigRepository,
@@ -363,16 +364,116 @@ guildRoutes.post("/:guildId/feedback-panel", async (c) => {
   }
 });
 
+// Mapuje rekord z bazy na kształt dla panelu: liczba głosów + czy bieżący
+// admin zagłosował (lista userId-ów głosujących nie wychodzi na zewnątrz).
+function toClientFeedback(f: Feedback, userId: string) {
+  const { upvotedBy, ...rest } = f;
+  return {
+    ...rest,
+    upvotes: upvotedBy.length,
+    upvotedByMe: upvotedBy.includes(userId),
+  };
+}
+
 // Lista feedbacków serwera + liczba nieprzeczytanych dla bieżącego admina.
+// Pseudonim + avatar są zapisane przy wysyłce (denormalizacja) → dla nowych rekordów
+// to czysty odczyt z bazy. Tylko stare rekordy bez zapisanej tożsamości dociągamy
+// z Discorda (resolver cache'uje per żądanie), więc koszt z czasem znika.
 guildRoutes.get("/:guildId/feedback", async (c) => {
   const guildId = c.req.param("guildId");
   const userId = c.get("userId");
-  const [items, seenAt] = await Promise.all([
+  // seenAt warunkuje licznik nieprzeczytanych — najpierw on, potem lista + count równolegle.
+  const seenAt = await feedbackRepository.getSeenAt(userId, guildId);
+  const [items, unread] = await Promise.all([
     feedbackRepository.getByGuild(guildId, 50),
-    feedbackRepository.getSeenAt(userId, guildId),
+    feedbackRepository.countByGuildSince(guildId, seenAt),
   ]);
-  const unread = await feedbackRepository.countByGuildSince(guildId, seenAt);
-  return c.json({ items, unread, seenAt });
+
+  const botToken = requireBotToken(c);
+  const resolve = createMemberResolver(
+    guildId,
+    botToken instanceof Response ? undefined : botToken,
+  );
+  // Tożsamości rozwiązane z Discorda zapisujemy z powrotem na rekord (denormalizacja),
+  // więc kolejne odczyty są czyste z bazy — koszt resolve z czasem znika.
+  const backfill: FeedbackIdentityPatch[] = [];
+  const enriched = await Promise.all(
+    items.map(async (f) => {
+      const base = toClientFeedback(f, userId);
+      // Zdenormalizowane (nowe rekordy) → bez zapytania do Discorda.
+      if (f.displayName && f.avatar) return base;
+      const m = await resolve(f.userId);
+      const displayName = f.displayName ?? m.displayName ?? f.username;
+      const avatar = f.avatar ?? m.avatar;
+      const username = m.username ?? f.username;
+      // Zapisz tylko to, czego naprawdę brakuje na rekordzie i co udało się rozwiązać.
+      if ((m.displayName && !f.displayName) || (m.avatar && !f.avatar)) {
+        backfill.push({
+          id: f.id,
+          displayName: f.displayName ? undefined : m.displayName,
+          avatar: f.avatar ? undefined : m.avatar,
+          username: m.username ?? undefined,
+        });
+      }
+      return { ...base, displayName, avatar, username };
+    }),
+  );
+
+  // Fire-and-forget — nie blokuje odpowiedzi, błąd nie wywraca listy.
+  if (backfill.length) void feedbackRepository.backfillIdentity(backfill);
+
+  return c.json({ items: enriched, unread, seenAt });
+});
+
+const FEEDBACK_STATUSES: FeedbackStatus[] = ["new", "in_progress", "resolved"];
+const feedbackStatusSchema = z.object({ status: z.enum(FEEDBACK_STATUSES) });
+const feedbackReplySchema = z.object({
+  message: z.string().trim().min(1, "Reply required").max(1000, "Reply too long"),
+});
+
+// Zmień status zgłoszenia (nowe / w trakcie / rozwiązane).
+guildRoutes.patch("/:guildId/feedback/:feedbackId/status", async (c) => {
+  const body = await parseBody(c, feedbackStatusSchema);
+  if (!body.ok) return body.res;
+  const guildId = c.req.param("guildId");
+  const updated = await feedbackRepository.setStatus(
+    c.req.param("feedbackId"),
+    guildId,
+    body.data.status,
+  );
+  if (!updated) return c.json({ error: "Not found" }, 404);
+  return c.json(toClientFeedback(updated, c.get("userId")));
+});
+
+// Przełącz głos bieżącego admina na zgłoszeniu.
+guildRoutes.post("/:guildId/feedback/:feedbackId/upvote", async (c) => {
+  const userId = c.get("userId");
+  const updated = await feedbackRepository.toggleUpvote(
+    c.req.param("feedbackId"),
+    c.req.param("guildId"),
+    userId,
+  );
+  if (!updated) return c.json({ error: "Not found" }, 404);
+  return c.json(toClientFeedback(updated, userId));
+});
+
+// Dodaj odpowiedź ekipy do zgłoszenia.
+guildRoutes.post("/:guildId/feedback/:feedbackId/replies", async (c) => {
+  const body = await parseBody(c, feedbackReplySchema);
+  if (!body.ok) return body.res;
+  const userId = c.get("userId");
+  const updated = await feedbackRepository.addReply(
+    c.req.param("feedbackId"),
+    c.req.param("guildId"),
+    {
+      authorId: userId,
+      authorName: c.get("username"),
+      message: body.data.message,
+      createdAt: new Date(),
+    },
+  );
+  if (!updated) return c.json({ error: "Not found" }, 404);
+  return c.json(toClientFeedback(updated, userId));
 });
 
 // Oznacz feedbacki serwera jako przeczytane (przez bieżącego admina) do teraz.
