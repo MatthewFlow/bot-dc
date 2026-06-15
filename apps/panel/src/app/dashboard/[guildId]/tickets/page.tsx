@@ -60,6 +60,17 @@ const FILTER_LABELS: Record<StatusFilter, string> = {
   closed: "Zamknięte",
 };
 
+/** Data + godzina w formacie PL (dd.mm.rrrr, gg:mm) — wspólny format dla wierszy ticketów. */
+function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString("pl-PL", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 /** Szkielet tylko kart z danymi — nagłówek i „Jak to działa" renderują się od razu. */
 function TicketsSkeleton() {
   return (
@@ -488,9 +499,8 @@ export default function TicketsPage() {
                       className="jh-stagger flex flex-col gap-3 border-b border-border px-6 py-4 last:border-0 sm:flex-row sm:items-start sm:justify-between"
                     >
                       <div className="min-w-0 flex-1">
-                        {/* Nagłówek: status + autor */}
+                        {/* Nagłówek: autor (status przeniesiony na stronę daty) */}
                         <div className="flex flex-wrap items-center gap-2">
-                          <TicketStatusBadge status={ticket.status} />
                           <Avatar
                             src={ticket.avatar}
                             name={ticket.username ?? ticket.userId}
@@ -534,14 +544,11 @@ export default function TicketsPage() {
                       </div>
 
                       <div className="flex shrink-0 items-center justify-between gap-3 sm:flex-col sm:items-end">
-                        <div className="text-xs text-gray-400 sm:text-right">
-                          {new Date(ticket.createdAt).toLocaleString("pl-PL", {
-                            day: "2-digit",
-                            month: "2-digit",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                        <div className="flex flex-col items-start gap-1.5 sm:items-end">
+                          <TicketStatusBadge status={ticket.status} />
+                          <div className="text-xs text-gray-400 sm:text-right">
+                            {formatDateTime(ticket.createdAt)}
+                          </div>
                         </div>
                         <div className="flex items-center gap-2">
                           {ticket.status === "closed" ? (
