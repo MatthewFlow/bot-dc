@@ -1,6 +1,8 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { Ticket as TicketIcon, Trash2 } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { type CSSProperties, useState } from "react";
 
@@ -9,17 +11,16 @@ import { TicketStatusBadge } from "@/components/badges";
 import { ChannelField } from "@/components/ChannelField";
 import { ConfirmModal } from "@/components/confirmModal";
 import { CreateRoleButton } from "@/components/CreateRoleButton";
-import { EmbedEditor } from "@/components/EmbedEditor";
 import { EmbedPreviewCard } from "@/components/EmbedPreviewCard";
-import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
 import { PanelCard } from "@/components/PanelCard";
 import { RoleSelect } from "@/components/RoleSelect";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton, SkeletonRow } from "@/components/Skeleton";
+import { TicketsGuide } from "@/components/TicketsGuide";
 import { useToast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
-import { VariablesList } from "@/components/VariablesList";
+import { VariablesCard } from "@/components/VariablesCard";
 import { useChannels, useGuildConfig, useRoles, useTickets } from "@/hooks/queries";
 import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
@@ -27,12 +28,20 @@ import type { Channel, GuildConfig, Role, TicketStatus } from "@/lib/api";
 import {
   closeTicket,
   deleteTicket,
+  getBotStatus,
+  queryKeys,
   reopenTicket,
   sendTicketPanel,
   updateGuildConfig,
 } from "@/lib/api";
 import { previewReplacer, TICKET_VARS, VARIABLE_INFO } from "@/lib/embed";
 import { waitingSince } from "@/lib/time";
+
+// Ciężki edytor embeda schodzi z initial bundle — montuje się dopiero po załadowaniu.
+const EmbedEditor = dynamic(
+  () => import("@/components/EmbedEditor").then((m) => m.EmbedEditor),
+  { loading: () => <Skeleton className="h-72 w-full rounded-lg" /> },
+);
 
 const DEFAULT_TICKET_PANEL_EMBED = {
   title: "📩 Złóż ticket",
@@ -93,6 +102,12 @@ export default function TicketsPage() {
   const configQ = useGuildConfig(guildId);
   const rolesQ = useRoles(guildId);
   const channelsQ = useChannels(guildId);
+  // Tożsamość bota (avatar + nazwa) do podglądu „jak wystawi to bot serwera".
+  const botStatusQ = useQuery({
+    queryKey: queryKeys.botStatus(),
+    queryFn: getBotStatus,
+    staleTime: 60_000,
+  });
   // Zawsze pobieramy WSZYSTKIE tickety — liczniki liczone z pełnego zbioru,
   // filtrowanie zakładką odbywa się po stronie klienta (poniżej).
   const ticketsQ = useTickets(guildId);
@@ -209,14 +224,7 @@ export default function TicketsPage() {
         className="mb-0"
       />
 
-      <HowItWorks
-        steps={[
-          "Ustaw rolę obsługi i wyślij panel na kanał (lub użyj /ticket_setup).",
-          "Użytkownik klika „Złóż ticket” i opisuje sprawę — powstaje prywatny wątek.",
-          "Ekipa dostaje ping i przejmuje zgłoszenie przyciskiem „Przejmij”.",
-          "Po rozwiązaniu /ticket_close zamyka wątek; tu masz podgląd i historię.",
-        ]}
-      />
+      <TicketsGuide />
 
       {loading ? (
         <TicketsSkeleton />
@@ -322,22 +330,28 @@ export default function TicketsPage() {
             </PanelCard>
 
             {/* Podgląd */}
-            <EmbedPreviewCard
-              embed={config.ticketPanelEmbed ?? DEFAULT_TICKET_PANEL_EMBED}
-              replace={previewReplacer}
-              buttonLabel={config.ticketPanelButton?.label || "Złóż ticket"}
-              buttonEmoji={config.ticketPanelButton?.emoji || "📩"}
-              className="lg:sticky lg:top-20"
-            >
+            <div className="flex flex-col gap-6 lg:sticky lg:top-20">
+              <EmbedPreviewCard
+                title="Podgląd na żywo"
+                description="Tak zobaczą to członkowie"
+                embed={config.ticketPanelEmbed ?? DEFAULT_TICKET_PANEL_EMBED}
+                replace={previewReplacer}
+                buttonLabel={config.ticketPanelButton?.label || "Złóż ticket"}
+                buttonEmoji={config.ticketPanelButton?.emoji || "📩"}
+                author={{
+                  name: botStatusQ.data?.username ?? "Jurassic Haven",
+                  avatar: botStatusQ.data?.avatar ?? null,
+                }}
+              />
+
               {/* Dostępne zmienne — panel jest statyczny, więc tylko kontekst serwera */}
-              <VariablesList
-                className="mt-4"
+              <VariablesCard
                 items={TICKET_VARS.map((v) => ({
                   label: v,
                   desc: VARIABLE_INFO[v] ?? "",
                 }))}
               />
-            </EmbedPreviewCard>
+            </div>
           </div>
 
           <div className="flex flex-col gap-6 lg:flex-row">

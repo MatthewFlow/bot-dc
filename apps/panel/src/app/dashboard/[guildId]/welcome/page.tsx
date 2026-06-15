@@ -1,25 +1,36 @@
 "use client";
 
+// Podgląd renderuje avatar bota z URL-a Discorda — next/image wymagałby whitelisty,
+// więc świadomie używamy zwykłego <img> (jak w EmbedPreview).
+/* eslint-disable @next/next/no-img-element */
+
+import { useQuery } from "@tanstack/react-query";
 import { DoorClosed, DoorOpen, type LucideIcon } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { useRef, useState } from "react";
 
 import { ChannelField } from "@/components/ChannelField";
-import { EmbedEditor } from "@/components/EmbedEditor";
 import { EmbedPreview } from "@/components/EmbedPreview";
-import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
 import { PanelCard } from "@/components/PanelCard";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
-import { VariablesList } from "@/components/VariablesList";
+import { VariablesCard } from "@/components/VariablesCard";
+import { WelcomeGuide } from "@/components/WelcomeGuide";
 import { useChannels, useGuildConfig } from "@/hooks/queries";
 import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import type { Channel, EmbedConfig, GuildConfig } from "@/lib/api";
-import { updateGuildConfig } from "@/lib/api";
+import { getBotStatus, queryKeys, updateGuildConfig } from "@/lib/api";
 import { previewReplacer, WELCOME_VARS } from "@/lib/embed";
+
+// Ciężki edytor embeda schodzi z initial bundle — montuje się dopiero w trybie embed.
+const EmbedEditor = dynamic(
+  () => import("@/components/EmbedEditor").then((m) => m.EmbedEditor),
+  { loading: () => <Skeleton className="h-72 w-full rounded-lg" /> },
+);
 
 type Tab = "welcome" | "goodbye";
 
@@ -30,24 +41,15 @@ const TABS: { id: Tab; label: string; Icon: LucideIcon }[] = [
 ];
 
 const VARIABLES = [
-  { label: "{user}", desc: "Oznaczenie użytkownika" },
+  { label: "{user}", desc: "Oznaczenie użytkownika (@nick)" },
   { label: "{username}", desc: "Nazwa użytkownika" },
   { label: "{server}", desc: "Nazwa serwera" },
   { label: "{member_count}", desc: "Liczba członków" },
-  { label: "{avatar}", desc: "Awatar użytkownika (URL — np. w miniaturze embeda)" },
+  { label: "{avatar}", desc: "Avatar użytkownika (URL — np. w miniaturze embeda)" },
 ];
 
 const DEFAULT_WELCOME = "Siema {user}, miło że jesteś 😄";
 const DEFAULT_GOODBYE = "{username} wyszedł z serwera.";
-
-function resolvePreview(template: string): string {
-  return template
-    .replace(/{user}/g, "@nowy_użytkownik")
-    .replace(/{username}/g, "nowy_użytkownik")
-    .replace(/{server}/g, "Jurassic Haven")
-    .replace(/{member_count}/g, "1,337")
-    .replace(/{avatar}/g, "https://cdn.discordapp.com/embed/avatars/0.png");
-}
 
 /** Domyślny embed seedowany treścią z trybu tekstowego (przy włączeniu trybu embed). */
 function seedEmbed(tab: Tab, message: string): EmbedConfig {
@@ -96,6 +98,12 @@ export default function WelcomePage() {
 
   const configQ = useGuildConfig(guildId);
   const channelsQ = useChannels(guildId);
+  // Tożsamość bota (avatar + nazwa) do podglądu „jak wystawi to bot serwera".
+  const botStatusQ = useQuery({
+    queryKey: queryKeys.botStatus(),
+    queryFn: getBotStatus,
+    staleTime: 60_000,
+  });
   // Bramka tylko na config (nasza baza, szybko). Kanały (proxy do Discorda, wolniej)
   // dopełnią się w selektach w tle — formularz nie czeka na nie.
   const loading = configQ.isLoading;
@@ -170,6 +178,9 @@ export default function WelcomePage() {
     configReady,
   );
 
+  const botName = botStatusQ.data?.username ?? "Jurassic Haven";
+  const botAvatar = botStatusQ.data?.avatar ?? null;
+
   return (
     <div className="jh-in flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <PageHeader
@@ -184,20 +195,17 @@ export default function WelcomePage() {
         className="mb-0"
       />
 
-      <HowItWorks
-        steps={[
-          "Wybierz kanał powitań i napisz treść — prosty tekst albo bogaty embed.",
-          "Wstaw zmienne ({user}, {server}, {member_count}, {avatar}), by spersonalizować wiadomość.",
-          "Zakładka Goodbye działa tak samo, ale wysyła się przy wyjściu z serwera.",
-          "Zmiany zapisują się automatycznie — bot reaguje od razu, bez restartu.",
-        ]}
-      />
+      <WelcomeGuide />
+
       {loading ? (
         <WelcomeSkeleton />
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
           <div className="w-full">
-            <PanelCard title="Wiadomość">
+            <PanelCard
+              title="Wiadomość"
+              description="Treść wysyłana, gdy ktoś dołączy lub opuści serwer"
+            >
               {/* Welcome / Goodbye */}
               <div className="flex gap-1 rounded-lg bg-background p-1">
                 {TABS.map(({ id, label, Icon }) => (
@@ -214,7 +222,7 @@ export default function WelcomePage() {
 
               {/* Kanał */}
               <ChannelField
-                label="Kanał"
+                label={tab === "welcome" ? "Kanał powitań" : "Kanał pożegnań"}
                 value={channelId ?? ""}
                 onChange={(val) =>
                   setConfig((c) =>
@@ -297,41 +305,42 @@ export default function WelcomePage() {
             </PanelCard>
           </div>
 
-          <PanelCard title="Podgląd" bodyClassName="p-6" className="lg:sticky lg:top-20">
-            {useEmbed && activeEmbed ? (
-              <EmbedPreview embed={activeEmbed} replace={previewReplacer} />
-            ) : (
-              <div className="rounded-lg bg-sidebar p-4">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-black">
-                    JH
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-semibold text-white">
-                        Jurassic Haven
+          <div className="flex flex-col gap-6 lg:sticky lg:top-20">
+            <PanelCard
+              title="Podgląd na żywo"
+              description="Tak zobaczą to członkowie"
+              bodyClassName="p-6"
+            >
+              {useEmbed && activeEmbed ? (
+                <EmbedPreview
+                  embed={activeEmbed}
+                  replace={previewReplacer}
+                  author={{ name: botName, avatar: botAvatar }}
+                />
+              ) : (
+                <div className="rounded-lg bg-[#313338] p-4">
+                  <div className="mb-2 flex items-center gap-2">
+                    {botAvatar ? (
+                      <img src={botAvatar} alt="" className="h-10 w-10 rounded-full" />
+                    ) : (
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-discord text-sm font-bold text-white">
+                        {botName.slice(0, 1).toUpperCase()}
                       </span>
-                      <span className="rounded bg-discord px-1 py-0.5 text-xs text-white">
-                        APP
-                      </span>
-                      <span className="text-xs text-gray-400">— dziś</span>
-                    </div>
-                    <div className="mt-2 rounded-lg border-l-4 border-primary bg-card p-3">
-                      <p className="text-sm font-semibold text-white">
-                        {tab === "welcome"
-                          ? "🎉 Witamy na serwerze!"
-                          : "👋 Do zobaczenia!"}
-                      </p>
-                      <p className="mt-1 whitespace-pre-wrap break-words text-sm text-gray-300">
-                        {resolvePreview(message)}
-                      </p>
-                    </div>
+                    )}
+                    <span className="text-sm font-semibold text-white">{botName}</span>
+                    <span className="rounded bg-discord px-1.5 py-0.5 text-[10px] font-semibold tracking-wide text-white">
+                      BOT
+                    </span>
                   </div>
+                  <p className="whitespace-pre-wrap break-words text-sm text-[#dbdee1]">
+                    {previewReplacer(message)}
+                  </p>
                 </div>
-              </div>
-            )}
-            <VariablesList items={VARIABLES} className="mt-6" />
-          </PanelCard>
+              )}
+            </PanelCard>
+
+            <VariablesCard items={VARIABLES} />
+          </div>
         </div>
       )}
     </div>

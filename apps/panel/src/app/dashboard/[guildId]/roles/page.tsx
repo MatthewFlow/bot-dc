@@ -1,18 +1,20 @@
 "use client";
 
+import { useQuery } from "@tanstack/react-query";
 import { MousePointerClick, SmilePlus } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { type CSSProperties, useState } from "react";
 
 import { ChannelSelect } from "@/components/ChannelSelect";
 import { ConfirmModal } from "@/components/confirmModal";
-import { EmbedEditor } from "@/components/EmbedEditor";
 import { EmbedPreviewCard } from "@/components/EmbedPreviewCard";
-import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
 import { PanelCard } from "@/components/PanelCard";
 import { RoleSelect } from "@/components/RoleSelect";
+import { SelfRolesGuide } from "@/components/SelfRolesGuide";
 import { Skeleton, SkeletonForm, SkeletonTable } from "@/components/Skeleton";
+import { TipsCard } from "@/components/TipsCard";
 import { useToast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
 import { useButtonRoles, useChannels, useReactionRoles, useRoles } from "@/hooks/queries";
@@ -21,10 +23,28 @@ import type { ButtonRole, Channel, EmbedConfig, ReactionRole, Role } from "@/lib
 import {
   deleteButtonRole,
   deleteReactionRole,
+  getBotStatus,
   publishButtonRole,
   publishReactionRole,
+  queryKeys,
 } from "@/lib/api";
 import { hexToNumber, isEmbedEmpty } from "@/lib/embed";
+
+// Ciężki edytor embeda schodzi z initial bundle — montuje się dopiero po załadowaniu.
+const EmbedEditor = dynamic(
+  () => import("@/components/EmbedEditor").then((m) => m.EmbedEditor),
+  { loading: () => <Skeleton className="h-72 w-full rounded-lg" /> },
+);
+
+/** Wskazówki dla buildera self-roles (brak zmiennych szablonu — zamiast nich porady). */
+const SELF_ROLE_TIPS: React.ReactNode[] = [
+  "Przyciski: klik nadaje lub zdejmuje rolę. Reakcje: dodanie emoji nadaje rolę.",
+  <>
+    Custom emoji z serwera podaj jako <code>{"<:nazwa:id>"}</code>.
+  </>,
+  "Limit pozycji: 25 przycisków lub 20 reakcji na jedną wiadomość.",
+  "Każda rola może mieć tylko jeden przycisk — duplikaty blokują publikację.",
+];
 
 type RoleType = "button" | "reaction";
 
@@ -95,6 +115,12 @@ export default function RolesPage() {
   const reactionRolesQ = useReactionRoles(guildId);
   const channelsQ = useChannels(guildId);
   const rolesQ = useRoles(guildId);
+  // Tożsamość bota (avatar + nazwa) do podglądu „jak wystawi to bot serwera".
+  const botStatusQ = useQuery({
+    queryKey: queryKeys.botStatus(),
+    queryFn: getBotStatus,
+    staleTime: 60_000,
+  });
   // Bramka tylko na opublikowane listy (nasza baza); kanały/role dopełnią selekty w tle.
   const loading = buttonRolesQ.isLoading || reactionRolesQ.isLoading;
   useRedirectOnError(buttonRolesQ.isError, buttonRolesQ.error);
@@ -270,15 +296,9 @@ export default function RolesPage() {
         description="Jedna wiadomość, role do samodzielnego wzięcia — przyciskiem lub reakcją."
       />
 
-      <HowItWorks
-        className="mb-8"
-        steps={[
-          "Wybierz typ: Przyciski (klik nadaje/zdejmuje rolę) lub Reakcje (emoji nadaje rolę).",
-          "Zbuduj embed i dodaj pozycje: rola + etykieta (przyciski) lub rola + emoji (reakcje).",
-          "Kliknij Opublikuj — bot wyśle wiadomość gotową do użycia.",
-          "Wszystkie opublikowane wiadomości — obu typów — widzisz po prawej.",
-        ]}
-      />
+      <div className="mb-8">
+        <SelfRolesGuide />
+      </div>
 
       {loading ? (
         <RolesSkeleton />
@@ -288,6 +308,11 @@ export default function RolesPage() {
             {/* Form */}
             <PanelCard
               title={editing ? "Edytuj wiadomość" : "Nowa wiadomość"}
+              description={
+                editing
+                  ? "Zmieniasz opublikowaną wiadomość — zapis nadpisze ją na Discordzie"
+                  : "Zbuduj embed i dodaj role do wzięcia kliknięciem lub reakcją"
+              }
               action={
                 editing ? (
                   <button
@@ -404,33 +429,45 @@ export default function RolesPage() {
             </PanelCard>
 
             {/* Podgląd */}
-            <EmbedPreviewCard embed={form.embed} className="lg:sticky lg:top-20">
-              {filled.length > 0 &&
-                (form.type === "button" ? (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {filled.map((e, i) => (
-                      <span
-                        key={i}
-                        className="inline-flex items-center gap-1.5 rounded-md bg-[#4e5058] px-3 py-1.5 text-sm font-medium text-white"
-                      >
-                        {e.emoji && <span>{e.emoji}</span>}
-                        <span>{e.label || "Przycisk"}</span>
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {filled.map((e, i) => (
-                      <span
-                        key={i}
-                        className="inline-flex items-center rounded-full bg-white/5 px-2 py-0.5 text-sm"
-                      >
-                        {e.emoji || "❔"}
-                      </span>
-                    ))}
-                  </div>
-                ))}
-            </EmbedPreviewCard>
+            <div className="flex flex-col gap-6 lg:sticky lg:top-20">
+              <EmbedPreviewCard
+                title="Podgląd na żywo"
+                description="Tak zobaczą to członkowie"
+                embed={form.embed}
+                author={{
+                  name: botStatusQ.data?.username ?? "Jurassic Haven",
+                  avatar: botStatusQ.data?.avatar ?? null,
+                }}
+              >
+                {filled.length > 0 &&
+                  (form.type === "button" ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {filled.map((e, i) => (
+                        <span
+                          key={i}
+                          className="inline-flex items-center gap-1.5 rounded-md bg-[#4e5058] px-3 py-1.5 text-sm font-medium text-white"
+                        >
+                          {e.emoji && <span>{e.emoji}</span>}
+                          <span>{e.label || "Przycisk"}</span>
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="mt-3 flex flex-wrap gap-1.5">
+                      {filled.map((e, i) => (
+                        <span
+                          key={i}
+                          className="inline-flex items-center rounded-full bg-white/5 px-2 py-0.5 text-sm"
+                        >
+                          {e.emoji || "❔"}
+                        </span>
+                      ))}
+                    </div>
+                  ))}
+              </EmbedPreviewCard>
+
+              <TipsCard items={SELF_ROLE_TIPS} />
+            </div>
           </div>
 
           {/* Opublikowane wiadomości — pełna szerokość, osobny wiersz pod spodem */}

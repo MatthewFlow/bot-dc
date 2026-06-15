@@ -1,4 +1,3 @@
-import { Sparkles, Zap } from "lucide-react";
 import type { Dispatch, SetStateAction } from "react";
 
 import { ChannelField } from "@/components/ChannelField";
@@ -6,10 +5,15 @@ import { EmbedEditor } from "@/components/EmbedEditor";
 import { EmbedPreviewCard } from "@/components/EmbedPreviewCard";
 import { PanelCard } from "@/components/PanelCard";
 import { Button } from "@/components/ui/button";
+import { VariablesCard } from "@/components/VariablesCard";
 import type { Channel, EmbedConfig, GuildConfig } from "@/lib/api";
 import { TICKET_VARS } from "@/lib/embed";
 
-const CARD = "surface-raised rounded-xl border border-border bg-card";
+/** Zmienne dostępne w panelu feedbacku (kontekst serwera — `TICKET_VARS`). */
+const PANEL_VARIABLES = [
+  { label: "{server}", desc: "Nazwa serwera" },
+  { label: "{member_count}", desc: "Liczba członków" },
+];
 
 export const DEFAULT_FEEDBACK_PANEL_EMBED: EmbedConfig = {
   title: "💡 Podziel się opinią",
@@ -104,34 +108,7 @@ export function FeedbackPanelSection({
           embed={config.feedbackPanelEmbed ?? DEFAULT_FEEDBACK_PANEL_EMBED}
         />
 
-        {/* Wskazówki */}
-        <div className={`${CARD} p-5`}>
-          <p className="mb-3 flex items-center gap-2 text-sm font-semibold text-white">
-            <Sparkles size={16} className="shrink-0 text-primary" />
-            Wskazówki
-          </p>
-          <ul className="flex flex-col gap-2.5 text-xs leading-snug text-gray-300">
-            <li className="flex gap-2">
-              <Zap className="mt-0.5 size-3.5 shrink-0 text-primary" />
-              <span>
-                Użyj zmiennych <code>{"{server}"}</code> i <code>{"{member_count}"}</code>
-                , by spersonalizować opis.
-              </span>
-            </li>
-            <li className="flex gap-2">
-              <Zap className="mt-0.5 size-3.5 shrink-0 text-primary" />
-              <span>
-                Kolor embeda dopasuj do akcentu serwera — bursztyn buduje spójność marki.
-              </span>
-            </li>
-            <li className="flex gap-2">
-              <Zap className="mt-0.5 size-3.5 shrink-0 text-primary" />
-              <span>
-                Podgląd aktualizuje się na żywo — zobacz efekt przed publikacją.
-              </span>
-            </li>
-          </ul>
-        </div>
+        <VariablesCard items={PANEL_VARIABLES} />
       </div>
     </div>
   );
