@@ -363,7 +363,6 @@ export default function FeedbackPage() {
   const [category, setCategory] = useState<FeedbackCategory | null>(null);
   const [message, setMessage] = useState("");
   const [rating, setRating] = useState(0);
-  const [hover, setHover] = useState(0);
   const [saving, setSaving] = useState(false);
 
   // Wszystkie zgłoszenia z tego serwera (widoczne dla całej ekipy).
@@ -686,28 +685,22 @@ export default function FeedbackPage() {
                     key={n}
                     type="button"
                     onClick={() => setRating(n)}
-                    onMouseEnter={() => setHover(n)}
-                    onMouseLeave={() => setHover(0)}
                     className="p-0.5 transition-transform hover:scale-110 active:scale-90"
                     aria-label={`Ocena ${n} z 5`}
                     aria-pressed={rating === n}
                   >
                     <Star
                       className={`h-7 w-7 transition ${
-                        n <= (hover || rating)
-                          ? "fill-primary text-primary"
-                          : "text-gray-500"
+                        n <= rating ? "fill-primary text-primary" : "text-gray-500"
                       }`}
                     />
                   </button>
                 ))}
                 <span className="ml-3 text-sm font-medium">
-                  {hover || rating ? (
+                  {rating ? (
                     <span className="text-gray-200">
-                      {hover || rating}/5 —{" "}
-                      <span className="text-primary">
-                        {RATING_WORDS[(hover || rating) - 1]}
-                      </span>
+                      {rating}/5 —{" "}
+                      <span className="text-primary">{RATING_WORDS[rating - 1]}</span>
                     </span>
                   ) : (
                     <span className="text-gray-500">Wybierz ocenę</span>
