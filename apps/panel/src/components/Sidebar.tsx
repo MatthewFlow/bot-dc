@@ -33,14 +33,27 @@ export function Sidebar({
   const initial =
     guildName && guildName !== "..." ? guildName.trim().charAt(0).toUpperCase() : "JH";
 
-  // Wczytaj zapamiętany stan zwiniętych sekcji.
+  // Wczytaj zapamiętany stan zwiniętych sekcji. Gdy brak zapisanej preferencji,
+  // na telefonie zwijamy wszystkie sekcje domyślnie (oszczędza miejsce na małym
+  // ekranie) — na desktopie zostają rozwinięte. Drawer mobilny startuje poza
+  // ekranem, więc to dosianie po montażu nie powoduje widocznego mignięcia.
   useEffect(() => {
+    let saved: string[] | null = null;
     try {
       const raw = localStorage.getItem(COLLAPSED_KEY);
-      if (raw) setCollapsed(new Set(JSON.parse(raw) as string[]));
+      if (raw) saved = JSON.parse(raw) as string[];
     } catch {
       /* ignore */
     }
+
+    if (saved) {
+      setCollapsed(new Set(saved));
+      return;
+    }
+
+    const isMobile =
+      typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
+    if (isMobile) setCollapsed(new Set(NAV_GROUPS.map((g) => g.id)));
   }, []);
 
   function toggleGroup(id: string) {
@@ -164,7 +177,7 @@ export function Sidebar({
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden md:flex h-screen w-56 flex-col border-r border-border bg-sidebar">
+      <aside className="hidden h-full w-56 flex-col border-r border-border bg-sidebar md:flex">
         {navContent}
       </aside>
 
@@ -197,7 +210,7 @@ export function Sidebar({
 
       {/* Mobile — drawer */}
       <aside
-        className={`fixed left-0 top-0 z-50 flex h-screen w-56 flex-col border-r border-border bg-sidebar transition-transform duration-200 md:hidden ${
+        className={`fixed left-0 top-0 z-50 flex h-dvh w-56 flex-col border-r border-border bg-sidebar transition-transform duration-200 md:hidden ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >

@@ -36,7 +36,7 @@ export function TopBar({ guildName }: { guildName: string }) {
   }
 
   return (
-    <header className="sticky top-0 z-30 flex items-center justify-between gap-4 border-b border-border bg-background/80 px-4 py-3 backdrop-blur sm:px-6 lg:px-8">
+    <header className="relative z-30 flex shrink-0 items-center justify-between gap-4 border-b border-border bg-background px-4 py-3 sm:px-6 lg:px-8">
       {/* Breadcrumb (pl-9 na mobile robi miejsce na przycisk hamburger) */}
       <nav className="flex min-w-0 items-center gap-1.5 pl-9 text-sm md:pl-0">
         <button
