@@ -1,6 +1,7 @@
 "use client";
 
-import { Crown, TrendingUp } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { TrendingUp } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useId, useState } from "react";
 
@@ -8,10 +9,11 @@ import { ChannelSelect } from "@/components/ChannelSelect";
 import { ConfirmModal } from "@/components/confirmModal";
 import { CreateRoleButton } from "@/components/CreateRoleButton";
 import { EmbedEditor } from "@/components/EmbedEditor";
-import { EmbedPreview } from "@/components/EmbedPreview";
-import { HowItWorks } from "@/components/HowItWorks";
+import { EmbedPreviewCard } from "@/components/EmbedPreviewCard";
 import { LeaderboardRows } from "@/components/Leaderboard";
+import { LevelsGuide } from "@/components/LevelsGuide";
 import { PageHeader } from "@/components/PageHeader";
+import { PanelCard } from "@/components/PanelCard";
 import { RefreshButton } from "@/components/RefreshButton";
 import { RoleSelect } from "@/components/RoleSelect";
 import { SaveButton } from "@/components/SaveButton";
@@ -19,12 +21,13 @@ import { Skeleton, SkeletonRow } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { VariablesCard } from "@/components/VariablesCard";
 import { useChannels, useGuildConfig, useLeaderboard, useRoles } from "@/hooks/queries";
 import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import type { Channel, EmbedConfig, GuildConfig, LevelingConfig, Role } from "@/lib/api";
-import { updateGuildConfig } from "@/lib/api";
-import { LEVEL_VARS, previewReplacer } from "@/lib/embed";
+import { getBotStatus, queryKeys, updateGuildConfig } from "@/lib/api";
+import { LEVEL_VARS, previewReplacer, VARIABLE_INFO } from "@/lib/embed";
 
 const DEFAULT_LEVELING: LevelingConfig = {
   messageXp: 5,
@@ -174,6 +177,12 @@ export default function LevelsPage() {
   const configQ = useGuildConfig(guildId);
   const rolesQ = useRoles(guildId);
   const channelsQ = useChannels(guildId);
+  // Tożsamość bota (avatar + nazwa) do podglądu „jak wystawi to bot serwera".
+  const botStatusQ = useQuery({
+    queryKey: queryKeys.botStatus(),
+    queryFn: getBotStatus,
+    staleTime: 60_000,
+  });
   const lbQ = useLeaderboard(guildId, 10);
   const leaderboard = lbQ.data ?? [];
   const leaderboardLoading = lbQ.isLoading;
@@ -259,38 +268,29 @@ export default function LevelsPage() {
         className="mb-0"
       />
 
-      <HowItWorks
-        steps={[
-          "Za pisanie na czacie i obecność na kanałach głosowych członkowie zdobywają XP.",
-          "Po przekroczeniu progu levela bot automatycznie nadaje przypisaną rolę.",
-          "Wyższy level = wyższy tier z listy; opcjonalnie powiadomienie o awansie.",
-          "Leaderboard pokazuje ranking najaktywniejszych członków serwera.",
-        ]}
-      />
+      <LevelsGuide />
 
       {loading ? (
         <LevelsSkeleton />
       ) : (
         <>
           <div className="flex flex-col gap-6 lg:flex-row">
-            <div className="flex-1 surface-raised rounded-xl bg-card">
-              <div className="flex items-center justify-between border-b border-border px-6 py-4">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                    Mapowanie progu XP na istniejącą rolę Discord
-                  </p>
-                  <p className="text-base font-semibold text-white">Tiery → Role</p>
-                </div>
+            <PanelCard
+              title="Tiery → Role"
+              description="Mapowanie progu XP na istniejącą rolę Discord"
+              action={
                 <SaveButton
                   onClick={handleSave}
                   saving={saving}
                   autoSaveStatus={autoSaveStatus}
                   className="px-4 py-2"
                 />
-              </div>
-
+              }
+              bodyClassName=""
+              className="flex-1"
+            >
               <div className="grid grid-cols-3 border-b border-border px-6 py-2">
-                {["Lv.", "Tier", "Discord rola"].map((h) => (
+                {["Lv.", "Tier", "Rola Discord"].map((h) => (
                   <span
                     key={h}
                     className="text-xs font-semibold uppercase tracking-wider text-gray-400"
@@ -331,184 +331,182 @@ export default function LevelsPage() {
                   </div>
                 ))
               )}
-            </div>
+            </PanelCard>
 
-            <div className="flex w-full flex-col gap-4 lg:w-72">
-              <div className="surface-raised rounded-xl bg-card p-6">
-                <p className="mb-4 text-sm font-semibold text-white">Dodaj próg</p>
-                <div className="flex flex-col gap-3">
-                  <div>
-                    <label
-                      className="mb-1 block text-xs text-gray-400"
-                      htmlFor="newLevel"
-                    >
-                      Level
-                    </label>
-                    <input
-                      id="newLevel"
-                      name="newLevel"
-                      type="number"
-                      min={1}
-                      value={newLevel}
-                      onChange={(e) => setNewLevel(e.target.value)}
-                      placeholder="np. 10"
-                      className="w-full rounded-lg bg-background px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-xs text-gray-400">
-                      Rola Discord
-                    </label>
-                    <RoleSelect
-                      value={newRoleId}
-                      onChange={setNewRoleId}
-                      roles={roles}
-                      className="w-full px-3 py-2"
-                    />
-                    <div className="mt-2">
-                      <CreateRoleButton
-                        guildId={guildId}
-                        onCreated={(role) => {
-                          setRoles((prev) =>
-                            [...prev, role].sort((a, b) => b.position - a.position),
-                          );
-                          setNewRoleId(role.id);
-                        }}
-                      />
-                    </div>
-                  </div>
-                  <Button
-                    onClick={addReward}
-                    disabled={!newLevel || !newRoleId}
-                    className="mt-1"
-                  >
-                    + Dodaj tier
-                  </Button>
+            <PanelCard
+              title="Dodaj próg"
+              bodyClassName="flex flex-col gap-3 p-6"
+              className="w-full shrink-0 lg:w-72"
+            >
+              <div>
+                <label className="mb-1 block text-xs text-gray-400" htmlFor="newLevel">
+                  Level
+                </label>
+                <input
+                  id="newLevel"
+                  name="newLevel"
+                  type="number"
+                  min={1}
+                  value={newLevel}
+                  onChange={(e) => setNewLevel(e.target.value)}
+                  placeholder="np. 10"
+                  className="w-full rounded-lg bg-background px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs text-gray-400">Rola Discord</label>
+                <RoleSelect
+                  value={newRoleId}
+                  onChange={setNewRoleId}
+                  roles={roles}
+                  className="w-full px-3 py-2"
+                />
+                <div className="mt-2">
+                  <CreateRoleButton
+                    guildId={guildId}
+                    onCreated={(role) => {
+                      setRoles((prev) =>
+                        [...prev, role].sort((a, b) => b.position - a.position),
+                      );
+                      setNewRoleId(role.id);
+                    }}
+                  />
                 </div>
               </div>
-            </div>
+              <Button
+                onClick={addReward}
+                disabled={!newLevel || !newRoleId}
+                className="mt-1"
+              >
+                + Dodaj tier
+              </Button>
+            </PanelCard>
           </div>
 
           {/* Ustawienia XP */}
-          <div className="surface-raised rounded-xl border border-border bg-card">
-            <div className="flex items-center justify-between border-b border-border px-6 py-4">
-              <p className="text-sm font-semibold text-white">Ustawienia XP</p>
+          <PanelCard
+            title="Ustawienia XP"
+            description="Ile i gdzie naliczać punkty doświadczenia"
+            action={
               <SaveButton
                 onClick={handleSave}
                 saving={saving}
-                className="px-4 py-1.5 text-xs"
+                autoSaveStatus={autoSaveStatus}
+                className="px-4 py-2"
               />
-            </div>
-            <div className="grid grid-cols-1 gap-6 p-6 lg:grid-cols-2">
-              <div className="flex flex-col gap-5">
-                <XpSlider
-                  label="XP za wiadomość"
-                  desc="Ile XP członek dostaje za wiadomość (z cooldownem antyspamowym). 0 = wyłączone."
-                  value={lv.messageXp ?? 0}
-                  onChange={(v) => setLv({ messageXp: v })}
+            }
+            bodyClassName="grid grid-cols-1 gap-6 p-6 lg:grid-cols-2"
+          >
+            <div className="flex flex-col gap-5">
+              <XpSlider
+                label="XP za wiadomość"
+                desc="Ile XP członek dostaje za wiadomość (z cooldownem antyspamowym). 0 = wyłączone."
+                value={lv.messageXp ?? 0}
+                onChange={(v) => setLv({ messageXp: v })}
+              />
+              <XpSlider
+                label="XP za minutę na kanale głosowym"
+                desc="Naliczane co minutę po przekroczeniu 1 min na głosówce (poza AFK / wyciszonymi). 0 = wyłączone."
+                value={lv.voiceXp ?? 0}
+                onChange={(v) => setLv({ voiceXp: v })}
+              />
+              <div className="flex flex-col gap-4 border-t border-border pt-4">
+                <LvToggle
+                  checked={lv.levelUpEnabled}
+                  onChange={(v) => setLv({ levelUpEnabled: v })}
+                  label="Powiadomienia o awansie na kanale"
+                  desc="Wysyłaj wiadomość o nowym levelu na kanał level-up."
                 />
-                <XpSlider
-                  label="XP za minutę na kanale głosowym"
-                  desc="Naliczane co minutę po przekroczeniu 1 min na głosówce (poza AFK / wyciszonymi). 0 = wyłączone."
-                  value={lv.voiceXp ?? 0}
-                  onChange={(v) => setLv({ voiceXp: v })}
+                <LvToggle
+                  checked={lv.levelUpDm}
+                  onChange={(v) => setLv({ levelUpDm: v })}
+                  label="Powiadomienia w DM"
+                  desc="Dodatkowo wyślij informację o awansie w prywatnej wiadomości."
                 />
-                <div className="flex flex-col gap-4 border-t border-border pt-4">
-                  <LvToggle
-                    checked={lv.levelUpEnabled}
-                    onChange={(v) => setLv({ levelUpEnabled: v })}
-                    label="Powiadomienia o awansie na kanale"
-                    desc="Wysyłaj wiadomość o nowym levelu na kanał level-up."
-                  />
-                  <LvToggle
-                    checked={lv.levelUpDm}
-                    onChange={(v) => setLv({ levelUpDm: v })}
-                    label="Powiadomienia w DM"
-                    desc="Dodatkowo wyślij informację o awansie w prywatnej wiadomości."
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-5">
-                <div>
-                  <label className="mb-1 block text-xs text-gray-400">
-                    Kanały bez XP
-                  </label>
-                  <ChannelSelect
-                    value=""
-                    onChange={(v) =>
-                      v &&
-                      !lv.noXpChannelIds.includes(v) &&
-                      setLv({ noXpChannelIds: [...lv.noXpChannelIds, v] })
-                    }
-                    channels={channels.filter((c) => !lv.noXpChannelIds.includes(c.id))}
-                    placeholder="+ Dodaj kanał"
-                    className="w-full px-3 py-2"
-                  />
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {lv.noXpChannelIds.map((id) => (
-                      <button
-                        key={id}
-                        onClick={() =>
-                          setLv({
-                            noXpChannelIds: lv.noXpChannelIds.filter((x) => x !== id),
-                          })
-                        }
-                        className="rounded-full bg-background px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
-                      >
-                        #{channelName(id)} ✕
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs text-gray-400">Role bez XP</label>
-                  <RoleSelect
-                    value=""
-                    onChange={(v) =>
-                      v &&
-                      !lv.noXpRoleIds.includes(v) &&
-                      setLv({ noXpRoleIds: [...lv.noXpRoleIds, v] })
-                    }
-                    roles={roles.filter((r) => !lv.noXpRoleIds.includes(r.id))}
-                    placeholder="+ Dodaj rolę"
-                    className="w-full px-3 py-2"
-                  />
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {lv.noXpRoleIds.map((id) => (
-                      <button
-                        key={id}
-                        onClick={() =>
-                          setLv({ noXpRoleIds: lv.noXpRoleIds.filter((x) => x !== id) })
-                        }
-                        className="rounded-full bg-background px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
-                      >
-                        @{roleName(id)} ✕
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </div>
             </div>
-          </div>
 
-          {/* Wiadomość o awansie (embed) */}
-          <div className="surface-raised rounded-xl border border-border bg-card">
-            <div className="flex items-center justify-between border-b border-border px-6 py-4">
+            <div className="flex flex-col gap-5">
               <div>
-                <p className="text-sm font-semibold text-white">Wiadomość o awansie</p>
-                <p className="text-xs text-gray-400">
-                  Embed wysyłany przy zdobyciu nowego poziomu.
-                </p>
+                <label className="mb-1 block text-xs text-gray-400">Kanały bez XP</label>
+                <ChannelSelect
+                  value=""
+                  onChange={(v) =>
+                    v &&
+                    !lv.noXpChannelIds.includes(v) &&
+                    setLv({ noXpChannelIds: [...lv.noXpChannelIds, v] })
+                  }
+                  channels={channels.filter((c) => !lv.noXpChannelIds.includes(c.id))}
+                  placeholder="+ Dodaj kanał"
+                  className="w-full px-3 py-2"
+                />
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {lv.noXpChannelIds.map((id) => (
+                    <button
+                      key={id}
+                      onClick={() =>
+                        setLv({
+                          noXpChannelIds: lv.noXpChannelIds.filter((x) => x !== id),
+                        })
+                      }
+                      className="rounded-full bg-background px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
+                    >
+                      #{channelName(id)} ✕
+                    </button>
+                  ))}
+                </div>
               </div>
-              <SaveButton
-                onClick={handleSave}
-                saving={saving}
-                className="px-4 py-1.5 text-xs"
-              />
+              <div>
+                <label className="mb-1 block text-xs text-gray-400">Role bez XP</label>
+                <RoleSelect
+                  value=""
+                  onChange={(v) =>
+                    v &&
+                    !lv.noXpRoleIds.includes(v) &&
+                    setLv({ noXpRoleIds: [...lv.noXpRoleIds, v] })
+                  }
+                  roles={roles.filter((r) => !lv.noXpRoleIds.includes(r.id))}
+                  placeholder="+ Dodaj rolę"
+                  className="w-full px-3 py-2"
+                />
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {lv.noXpRoleIds.map((id) => (
+                    <button
+                      key={id}
+                      onClick={() =>
+                        setLv({ noXpRoleIds: lv.noXpRoleIds.filter((x) => x !== id) })
+                      }
+                      className="rounded-full bg-background px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
+                    >
+                      @{roleName(id)} ✕
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
-            <div className="p-6">
-              <div className="mb-4 max-w-xs">
+          </PanelCard>
+
+          {/* Wiadomość o awansie — edytor i podgląd po 50% w jednej linii (jak panel ticketów) */}
+          <div
+            className={
+              config.levelUpEmbed
+                ? "grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start"
+                : ""
+            }
+          >
+            <PanelCard
+              title="Wiadomość o awansie"
+              description="Embed wysyłany przy zdobyciu nowego poziomu."
+              action={
+                <SaveButton
+                  onClick={handleSave}
+                  saving={saving}
+                  autoSaveStatus={autoSaveStatus}
+                  className="px-4 py-2"
+                />
+              }
+            >
+              <div className="max-w-xs">
                 <LvToggle
                   checked={Boolean(config.levelUpEmbed)}
                   onChange={(v) =>
@@ -521,47 +519,57 @@ export default function LevelsPage() {
                   desc="Wyłączone = wbudowany domyślny embed."
                 />
               </div>
-              {config.levelUpEmbed && (
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                  <EmbedEditor
-                    value={config.levelUpEmbed}
-                    onChange={(embed) =>
-                      setConfig((c) => ({ ...c, levelUpEmbed: embed }))
-                    }
-                    variables={LEVEL_VARS}
-                  />
-                  <div className="lg:sticky lg:top-20 lg:self-start">
-                    <p className="mb-2 text-xs text-gray-400">Podgląd</p>
-                    <EmbedPreview embed={config.levelUpEmbed} replace={previewReplacer} />
-                  </div>
-                </div>
+              {config.levelUpEmbed ? (
+                <EmbedEditor
+                  value={config.levelUpEmbed}
+                  onChange={(embed) => setConfig((c) => ({ ...c, levelUpEmbed: embed }))}
+                  variables={LEVEL_VARS}
+                />
+              ) : (
+                <p className="text-sm text-gray-400">
+                  Używany jest wbudowany domyślny embed awansu. Włącz „Własny embed”, aby
+                  dostosować treść i wygląd.
+                </p>
               )}
-            </div>
+            </PanelCard>
+
+            {config.levelUpEmbed && (
+              <div className="flex flex-col gap-6 lg:sticky lg:top-20">
+                <EmbedPreviewCard
+                  title="Podgląd na żywo"
+                  description="Tak zobaczą to członkowie"
+                  embed={config.levelUpEmbed}
+                  replace={previewReplacer}
+                  author={{
+                    name: botStatusQ.data?.username ?? "Jurassic Haven",
+                    avatar: botStatusQ.data?.avatar ?? null,
+                  }}
+                />
+                <VariablesCard
+                  items={LEVEL_VARS.map((v) => ({
+                    label: v,
+                    desc: VARIABLE_INFO[v] ?? "",
+                  }))}
+                />
+              </div>
+            )}
           </div>
 
           {/* Leaderboard — ten sam komponent rankingu co na przeglądzie */}
-          <div className="surface-raised rounded-xl border border-border bg-card">
-            <div className="flex items-center justify-between border-b border-border px-5 py-4">
-              <div className="flex items-center gap-2.5">
-                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/5 text-primary">
-                  <Crown size={15} />
-                </span>
-                <div>
-                  <p className="text-sm font-semibold text-white">Leaderboard</p>
-                  <p className="text-xs text-gray-400">
-                    Najaktywniejsi członkowie serwera
-                  </p>
-                </div>
-              </div>
+          <PanelCard
+            title="Leaderboard"
+            description="Najaktywniejsi członkowie serwera"
+            action={
               <RefreshButton onClick={() => lbQ.refetch()} loading={lbQ.isFetching} />
-            </div>
-
+            }
+            bodyClassName=""
+          >
             <LeaderboardRows
               entries={leaderboard}
               loading={leaderboardLoading}
               rows={10}
             />
-          </div>
+          </PanelCard>
         </>
       )}
 
