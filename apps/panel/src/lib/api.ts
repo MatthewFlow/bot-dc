@@ -1,35 +1,13 @@
-// Współdzielone atomy konfiguracji ciągniemy z czystego `@jurassic-haven/db/types`
-// (bez mongoose) WYŁĄCZNIE jako `import type` — przy kompilacji jest wymazywany,
-// więc runtime db (a z nim mongoose) nie trafia do bundla Next. Patrz notatka
-// panel-no-db-import: zabroniony jest import wartości, nie typów z tego subpath.
-import type {
-  AutoModAction,
-  AutoModConfig,
-  EmbedConfig,
-  EmbedFieldConfig,
-  LevelingConfig,
-  ServerLogConfig,
-  TicketPanelButton,
-} from "@jurassic-haven/db/types";
-
 import { queryClient } from "./queryClient";
 import { botStatusSchema, feedbackInputSchema, userSchema } from "./schemas";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3002";
 
-// Re-eksport współdzielonych atomów, żeby reszta panelu mogła dalej importować je
-// z `@/lib/api` (jeden punkt wejścia dla typów panelu).
-export type {
-  AutoModAction,
-  AutoModConfig,
-  EmbedConfig,
-  EmbedFieldConfig,
-  LevelingConfig,
-  ServerLogConfig,
-  TicketPanelButton,
-};
-
-// Kształty specyficzne dla panelu (różne od db lub z odpowiedzi API) zostają lokalnie.
+// Typy konfiguracji panel trzyma lokalnie (mirror typów z @jurassic-haven/db).
+// NIE importujemy ich z paczki db — jej barrel ciąga runtime mongoose do grafu
+// modułów (rozdyma `next dev`), a subpath `@jurassic-haven/db/types` resolver
+// builda Next rozwiązuje inaczej niż `tsc` i wywala type-check. Źródłem prawdy po
+// stronie db jest packages/db/types.ts; tu trzymamy jego świadomy mirror.
 export type Guild = {
   id: string;
   name: string;
@@ -37,8 +15,75 @@ export type Guild = {
   permissions: string;
 };
 
-// GuildConfig panelu celowo różni się od wersji db (bez `guildId`, opcjonalne
-// `roleRewards`) — to kształt odczytu/edycji z dashboardu, nie dokument bazy.
+export type EmbedFieldConfig = {
+  name: string;
+  value: string;
+  inline?: boolean;
+};
+
+export type EmbedConfig = {
+  title?: string;
+  description?: string;
+  /** Kolor jako liczba dziesiętna (0xRRGGBB). */
+  color?: number;
+  url?: string;
+  authorName?: string;
+  authorIconUrl?: string;
+  thumbnailUrl?: string;
+  imageUrl?: string;
+  footerText?: string;
+  footerIconUrl?: string;
+  timestamp?: boolean;
+  fields?: EmbedFieldConfig[];
+};
+
+export type TicketPanelButton = {
+  label?: string;
+  emoji?: string;
+};
+
+export type AutoModAction = "delete" | "warn" | "mute";
+
+export type AutoModConfig = {
+  enabled: boolean;
+  blockInvites: boolean;
+  blockLinks: boolean;
+  bannedWords: string[];
+  spamEnabled: boolean;
+  spamMaxMessages: number;
+  spamWindowSeconds: number;
+  exemptRoleIds: string[];
+  exemptChannelIds: string[];
+  action: AutoModAction;
+  muteDurationSeconds: number;
+};
+
+export type ServerLogConfig = {
+  enabled: boolean;
+  channelId?: string;
+  messageDelete: boolean;
+  messageEdit: boolean;
+  memberJoin: boolean;
+  memberLeave: boolean;
+  roleChanges: boolean;
+  nicknameChanges: boolean;
+  exemptRoleIds: string[];
+  exemptChannelIds: string[];
+};
+
+export type LevelingConfig = {
+  /** Płaskie XP za wiadomość (0–8). */
+  messageXp?: number;
+  /** Płaskie XP za każdą minutę na kanale głosowym powyżej 1. minuty (0–8). */
+  voiceXp?: number;
+  /** Legacy mnożnik bazowego XP — zastąpiony przez `messageXp`. */
+  xpMultiplier?: number;
+  noXpChannelIds: string[];
+  noXpRoleIds: string[];
+  levelUpEnabled: boolean;
+  levelUpDm: boolean;
+};
+
 export type GuildConfig = {
   welcomeChannelId?: string;
   goodbyeChannelId?: string;
