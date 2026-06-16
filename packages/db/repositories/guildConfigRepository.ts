@@ -1,11 +1,11 @@
-import type { EmbedConfig } from "../embed";
 import type {
   AutoModConfig,
+  EmbedConfig,
   LevelingConfig,
   RoleReward,
   ServerLogConfig,
   TicketPanelButton,
-} from "../providers/mongoose/schemas/guildConfig.schema";
+} from "../types";
 
 export type { AutoModConfig, LevelingConfig, ServerLogConfig, TicketPanelButton };
 

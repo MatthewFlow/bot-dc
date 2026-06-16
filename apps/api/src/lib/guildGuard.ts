@@ -141,9 +141,11 @@ export async function fetchAccessibleGuilds(
   const botIds = await fetchBotGuildIds();
   const candidates = guilds.filter((g) => !managedIds.has(g.id) && botIds.has(g.id));
 
-  const roleBased: GuildEntry[] = [];
-  for (const g of candidates) {
-    if (await hasBotAdminRole(userId, g.id)) roleBased.push(g);
-  }
+  // Sprawdzenia roli równolegle — każde to osobne zapytanie do Discorda, więc
+  // seryjne `await` w pętli niepotrzebnie sumowało latencję dla wielu serwerów.
+  const checks = await Promise.all(
+    candidates.map(async (g) => ((await hasBotAdminRole(userId, g.id)) ? g : null)),
+  );
+  const roleBased = checks.filter((g): g is GuildEntry => g !== null);
   return [...managed, ...roleBased];
 }

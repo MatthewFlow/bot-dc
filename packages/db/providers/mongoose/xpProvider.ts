@@ -38,31 +38,46 @@ export class XpProvider implements IXpRepository {
   async addXpWithCooldown(opts: AddXpWithCooldownOpts): Promise<AddXpResult> {
     const { guildId, userId, now, amount, cooldownMs } = opts;
     const threshold = now - cooldownMs;
+    const skipped = { gained: 0, oldLevel: 0, newLevel: 0 };
 
-    // Atomic + race-free: the cooldown lives in the filter, so the $inc only
-    // applies when enough time has passed. If the doc exists but the cooldown is
-    // still active the filter misses, upsert tries to insert, and the unique
-    // {guildId,userId} index rejects it (E11000) — which we read as "no XP".
-    try {
-      const updated = await XpModel.findOneAndUpdate(
-        {
-          guildId,
-          userId,
-          $or: [{ lastMsgAt: { $exists: false } }, { lastMsgAt: { $lte: threshold } }],
-        },
-        { $inc: { xp: amount }, $set: { lastMsgAt: now } },
-        { upsert: true, new: true },
-      ).lean();
+    // 1) Conditional increment (no upsert): the cooldown lives in the filter, so
+    //    the $inc only applies when enough time has passed. A match means XP was
+    //    granted — the hot path is a single write with no exceptions.
+    const updated = await XpModel.findOneAndUpdate(
+      {
+        guildId,
+        userId,
+        $or: [{ lastMsgAt: { $exists: false } }, { lastMsgAt: { $lte: threshold } }],
+      },
+      { $inc: { xp: amount }, $set: { lastMsgAt: now } },
+      { new: true },
+    ).lean();
 
-      const newXp = updated?.xp ?? amount;
+    if (updated) {
+      const newXp = updated.xp;
       return {
         gained: amount,
         oldLevel: levelFromXp(newXp - amount),
         newLevel: levelFromXp(newXp),
       };
+    }
+
+    // 2) No match: either the doc doesn't exist yet, or the cooldown is still
+    //    active. A cheap indexed `exists` tells the two apart WITHOUT provoking a
+    //    duplicate-key error per message during a burst (the old upsert did).
+    if (await XpModel.exists({ guildId, userId })) return skipped;
+
+    // 3) First message for this member → insert. A concurrent first message can
+    //    still race here; the unique index rejects the loser (E11000) → no XP.
+    try {
+      await XpModel.create({ guildId, userId, xp: amount, lastMsgAt: now });
+      return {
+        gained: amount,
+        oldLevel: levelFromXp(0),
+        newLevel: levelFromXp(amount),
+      };
     } catch (e) {
-      // Cooldown still active — caller skips on gained <= 0, so levels are unused.
-      if (isDuplicateKeyError(e)) return { gained: 0, oldLevel: 0, newLevel: 0 };
+      if (isDuplicateKeyError(e)) return skipped;
       throw e;
     }
   }

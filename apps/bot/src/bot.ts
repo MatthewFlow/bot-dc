@@ -93,7 +93,8 @@ export function createBot() {
         })
         .catch(() => {});
     await beat();
-    setInterval(beat, HEARTBEAT_MS);
+    // unref — nie blokuje zamknięcia procesu (połączenie gatewaya i tak trzyma go żywym).
+    setInterval(beat, HEARTBEAT_MS).unref?.();
 
     // Naliczanie XP za obecność na kanałach głosowych (co minutę powyżej 1. min).
     startVoiceXp(client);

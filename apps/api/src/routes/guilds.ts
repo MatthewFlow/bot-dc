@@ -15,8 +15,8 @@ import { channelInGuild } from "../lib/channelGuard";
 import { sanitizeConfigPatch } from "../lib/configSanitize";
 import {
   botHeaders,
-  DISCORD_API,
   discordJson,
+  discordProxy,
   fetchGuildCounts,
   requireBotToken,
   serverVarReplacer,
@@ -143,40 +143,24 @@ guildRoutes.get("/:guildId/channels", async (c) => {
   const botToken = requireBotToken(c);
   if (botToken instanceof Response) return botToken;
 
-  try {
-    const res = await fetch(`${DISCORD_API}/guilds/${guildId}/channels`, {
-      headers: botHeaders(botToken),
-    });
+  const channels = await discordProxy(
+    c,
+    `/guilds/${guildId}/channels`,
+    z.array(discordChannelSchema),
+    { headers: botHeaders(botToken) },
+    "fetch channels",
+  );
+  if (channels instanceof Response) return channels;
 
-    if (res.status === 429) {
-      const data = (await res.json()) as { retry_after: number };
-      return c.json(
-        { error: "Rate limited by Discord", retry_after: data.retry_after },
-        429,
-      );
-    }
+  const textChannels = channels
+    .filter(
+      (ch) =>
+        ch.type === DISCORD_CHANNEL_TYPES.GuildText ||
+        ch.type === DISCORD_CHANNEL_TYPES.GuildAnnouncement,
+    )
+    .sort((a, b) => a.name.localeCompare(b.name));
 
-    if (!res.ok) {
-      const body = await res.text();
-      console.error(`[guilds] Discord channels error ${res.status}:`, body);
-      return c.json({ error: "Failed to fetch channels" }, 502);
-    }
-
-    const channels = z.array(discordChannelSchema).parse(await res.json());
-
-    const textChannels = channels
-      .filter(
-        (ch) =>
-          ch.type === DISCORD_CHANNEL_TYPES.GuildText ||
-          ch.type === DISCORD_CHANNEL_TYPES.GuildAnnouncement,
-      )
-      .sort((a, b) => a.name.localeCompare(b.name));
-
-    return c.json(textChannels);
-  } catch (e) {
-    console.error(`[guilds] Błąd pobierania kanałów dla ${guildId}:`, e);
-    return c.json({ error: "Failed to fetch channels" }, 502);
-  }
+  return c.json(textChannels);
 });
 
 guildRoutes.post("/:guildId/channels", async (c) => {
@@ -186,35 +170,23 @@ guildRoutes.post("/:guildId/channels", async (c) => {
 
   const parsed = await parseBody(c, nameSchema);
   if (!parsed.ok) return parsed.res;
-  const name = parsed.data.name;
 
-  try {
-    const res = await fetch(`${DISCORD_API}/guilds/${guildId}/channels`, {
+  const ch = await discordProxy(
+    c,
+    `/guilds/${guildId}/channels`,
+    discordChannelSchema,
+    {
       method: "POST",
       headers: botHeaders(botToken, { "Content-Type": "application/json" }),
-      body: JSON.stringify({ name, type: DISCORD_CHANNEL_TYPES.GuildText }),
-    });
-
-    if (res.status === 429) {
-      const data = (await res.json()) as { retry_after: number };
-      return c.json(
-        { error: "Rate limited by Discord", retry_after: data.retry_after },
-        429,
-      );
-    }
-
-    if (!res.ok) {
-      const errBody = await res.text();
-      console.error(`[guilds] Discord create channel error ${res.status}:`, errBody);
-      return c.json({ error: "Failed to create channel" }, 502);
-    }
-
-    const ch = discordChannelSchema.parse(await res.json());
-    return c.json({ id: ch.id, name: ch.name, type: ch.type }, 201);
-  } catch (e) {
-    console.error(`[guilds] Błąd tworzenia kanału dla ${guildId}:`, e);
-    return c.json({ error: "Failed to create channel" }, 502);
-  }
+      body: JSON.stringify({
+        name: parsed.data.name,
+        type: DISCORD_CHANNEL_TYPES.GuildText,
+      }),
+    },
+    "create channel",
+  );
+  if (ch instanceof Response) return ch;
+  return c.json({ id: ch.id, name: ch.name, type: ch.type }, 201);
 });
 
 guildRoutes.post("/:guildId/ticket-panel", async (c) => {
@@ -264,32 +236,19 @@ guildRoutes.post("/:guildId/ticket-panel", async (c) => {
     ],
   };
 
-  try {
-    const res = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
+  const sent = await discordProxy(
+    c,
+    `/channels/${channelId}/messages`,
+    z.unknown(),
+    {
       method: "POST",
       headers: botHeaders(botToken, { "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
-    });
-
-    if (res.status === 429) {
-      const data = (await res.json()) as { retry_after: number };
-      return c.json(
-        { error: "Rate limited by Discord", retry_after: data.retry_after },
-        429,
-      );
-    }
-
-    if (!res.ok) {
-      const errBody = await res.text();
-      console.error(`[guilds] Discord ticket-panel error ${res.status}:`, errBody);
-      return c.json({ error: "Failed to send ticket panel" }, 502);
-    }
-
-    return c.json({ ok: true });
-  } catch (e) {
-    console.error("[guilds] Błąd wysyłania panelu ticketów:", e);
-    return c.json({ error: "Failed to send ticket panel" }, 502);
-  }
+    },
+    "send ticket panel",
+  );
+  if (sent instanceof Response) return sent;
+  return c.json({ ok: true });
 });
 
 guildRoutes.post("/:guildId/feedback-panel", async (c) => {
@@ -336,32 +295,19 @@ guildRoutes.post("/:guildId/feedback-panel", async (c) => {
     ],
   };
 
-  try {
-    const res = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
+  const sent = await discordProxy(
+    c,
+    `/channels/${channelId}/messages`,
+    z.unknown(),
+    {
       method: "POST",
       headers: botHeaders(botToken, { "Content-Type": "application/json" }),
       body: JSON.stringify(payload),
-    });
-
-    if (res.status === 429) {
-      const data = (await res.json()) as { retry_after: number };
-      return c.json(
-        { error: "Rate limited by Discord", retry_after: data.retry_after },
-        429,
-      );
-    }
-
-    if (!res.ok) {
-      const errBody = await res.text();
-      console.error(`[guilds] Discord feedback-panel error ${res.status}:`, errBody);
-      return c.json({ error: "Failed to send feedback panel" }, 502);
-    }
-
-    return c.json({ ok: true });
-  } catch (e) {
-    console.error("[guilds] Błąd wysyłania panelu feedbacku:", e);
-    return c.json({ error: "Failed to send feedback panel" }, 502);
-  }
+    },
+    "send feedback panel",
+  );
+  if (sent instanceof Response) return sent;
+  return c.json({ ok: true });
 });
 
 // Mapuje rekord z bazy na kształt dla panelu: liczba głosów + czy bieżący
@@ -497,35 +443,20 @@ guildRoutes.get("/:guildId/roles", async (c) => {
   const botToken = requireBotToken(c);
   if (botToken instanceof Response) return botToken;
 
-  try {
-    const res = await fetch(`${DISCORD_API}/guilds/${guildId}/roles`, {
-      headers: botHeaders(botToken),
-    });
+  const roles = await discordProxy(
+    c,
+    `/guilds/${guildId}/roles`,
+    z.array(discordRoleSchema),
+    { headers: botHeaders(botToken) },
+    "fetch roles",
+  );
+  if (roles instanceof Response) return roles;
 
-    if (res.status === 429) {
-      const data = (await res.json()) as { retry_after: number };
-      return c.json(
-        { error: "Rate limited by Discord", retry_after: data.retry_after },
-        429,
-      );
-    }
+  const filtered = roles
+    .filter((r) => !r.managed && r.name !== "@everyone")
+    .sort((a, b) => b.position - a.position);
 
-    if (!res.ok) {
-      const body = await res.text();
-      console.error(`[guilds] Discord roles error ${res.status}:`, body);
-      return c.json({ error: "Failed to fetch roles" }, 502);
-    }
-
-    const roles = z.array(discordRoleSchema).parse(await res.json());
-
-    const filtered = roles
-      .filter((r) => !r.managed && r.name !== "@everyone")
-      .sort((a, b) => b.position - a.position);
-
-    return c.json(filtered);
-  } catch {
-    return c.json({ error: "Failed to fetch roles" }, 502);
-  }
+  return c.json(filtered);
 });
 
 guildRoutes.post("/:guildId/roles", async (c) => {
@@ -535,35 +466,20 @@ guildRoutes.post("/:guildId/roles", async (c) => {
 
   const parsed = await parseBody(c, nameSchema);
   if (!parsed.ok) return parsed.res;
-  const name = parsed.data.name;
 
-  try {
-    const res = await fetch(`${DISCORD_API}/guilds/${guildId}/roles`, {
+  const role = await discordProxy(
+    c,
+    `/guilds/${guildId}/roles`,
+    discordRoleSchema,
+    {
       method: "POST",
       headers: botHeaders(botToken, { "Content-Type": "application/json" }),
-      body: JSON.stringify({ name }),
-    });
-
-    if (res.status === 429) {
-      const data = (await res.json()) as { retry_after: number };
-      return c.json(
-        { error: "Rate limited by Discord", retry_after: data.retry_after },
-        429,
-      );
-    }
-
-    if (!res.ok) {
-      const errBody = await res.text();
-      console.error(`[guilds] Discord create role error ${res.status}:`, errBody);
-      return c.json({ error: "Failed to create role" }, 502);
-    }
-
-    const role = discordRoleSchema.parse(await res.json());
-    return c.json({ id: role.id, name: role.name, position: role.position }, 201);
-  } catch (e) {
-    console.error(`[guilds] Błąd tworzenia roli dla ${guildId}:`, e);
-    return c.json({ error: "Failed to create role" }, 502);
-  }
+      body: JSON.stringify({ name: parsed.data.name }),
+    },
+    "create role",
+  );
+  if (role instanceof Response) return role;
+  return c.json({ id: role.id, name: role.name, position: role.position }, 201);
 });
 
 guildRoutes.get("/:guildId/leaderboard", async (c) => {

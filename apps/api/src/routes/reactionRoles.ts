@@ -12,8 +12,8 @@ import {
   botHeaders,
   DISCORD_API,
   discordJson,
-  messageIdSchema,
   requireBotToken,
+  sendDiscordMessage,
 } from "../lib/discord";
 import { canAccessGuild } from "../lib/guildGuard";
 import { authMiddleware } from "../middleware/authMiddleware";
@@ -181,25 +181,18 @@ reactionRoleRoutes.post("/:guildId/reaction-roles", async (c) => {
     };
   }
 
-  const msgRes = await fetch(`${DISCORD_API}/channels/${body.channelId}/messages`, {
-    method: "POST",
-    headers: botHeaders(botToken, { "Content-Type": "application/json" }),
-    body: JSON.stringify({ embeds: [embed] }),
-  });
-
-  if (!msgRes.ok) {
-    const err = await msgRes.text();
-    console.error("[reaction-roles] Błąd wysyłania wiadomości:", err);
-    return c.json({ error: "Failed to send message" }, 502);
-  }
-
-  const msg = messageIdSchema.safeParse(await msgRes.json());
-  if (!msg.success) return c.json({ error: "Failed to send message" }, 502);
+  const msg = await sendDiscordMessage(
+    body.channelId,
+    botToken,
+    { embeds: [embed] },
+    "reaction-roles",
+  );
+  if (!msg) return c.json({ error: "Failed to send message" }, 502);
 
   for (const entry of resolvedEntries) {
     const emoji = encodeURIComponent(entry.reaction);
     const res = await fetch(
-      `${DISCORD_API}/channels/${body.channelId}/messages/${msg.data.id}/reactions/${emoji}/@me`,
+      `${DISCORD_API}/channels/${body.channelId}/messages/${msg.id}/reactions/${emoji}/@me`,
       {
         method: "PUT",
         headers: botHeaders(botToken),
@@ -217,7 +210,7 @@ reactionRoleRoutes.post("/:guildId/reaction-roles", async (c) => {
   const created = await reactionRoleRepository.create({
     guildId,
     channelId: body.channelId,
-    messageId: msg.data.id,
+    messageId: msg.id,
     title,
     content,
     color: colorHex,

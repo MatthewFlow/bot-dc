@@ -10,8 +10,8 @@ import { channelInGuild } from "../lib/channelGuard";
 import {
   botHeaders,
   DISCORD_API,
-  messageIdSchema,
   requireBotToken,
+  sendDiscordMessage,
 } from "../lib/discord";
 import { canAccessGuild } from "../lib/guildGuard";
 import { buttonRolesSchema, parseBody } from "../lib/validation";
@@ -88,25 +88,13 @@ buttonRoleRoutes.post("/:guildId/button-roles", async (c) => {
 
   const payload = { embeds: [embed], components: buildComponents(entries) };
 
-  const msgRes = await fetch(`${DISCORD_API}/channels/${channelId}/messages`, {
-    method: "POST",
-    headers: botHeaders(botToken, { "Content-Type": "application/json" }),
-    body: JSON.stringify(payload),
-  });
-
-  if (!msgRes.ok) {
-    const err = await msgRes.text();
-    console.error("[button-roles] Błąd wysyłania wiadomości:", err);
-    return c.json({ error: "Failed to send message" }, 502);
-  }
-
-  const msg = messageIdSchema.safeParse(await msgRes.json());
-  if (!msg.success) return c.json({ error: "Failed to send message" }, 502);
+  const msg = await sendDiscordMessage(channelId, botToken, payload, "button-roles");
+  if (!msg) return c.json({ error: "Failed to send message" }, 502);
 
   const created = await buttonRoleRepository.create({
     guildId,
     channelId,
-    messageId: msg.data.id,
+    messageId: msg.id,
     embed: rawEmbed as EmbedConfig,
     entries,
   });

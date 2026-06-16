@@ -1,62 +1,25 @@
 import { type Model, model, Schema } from "mongoose";
 
-import type { EmbedConfig } from "../../../embed";
+// Współdzielone typy konfiguracji żyją w czystym `../../../types` (bez mongoose),
+// żeby panel mógł je importować bez wciągania runtime'u. Re-eksportujemy je tu,
+// bo część importerów sięga po nie z poziomu schematu.
+import type {
+  AutoModConfig,
+  EmbedConfig,
+  LevelingConfig,
+  RoleReward,
+  ServerLogConfig,
+  TicketPanelButton,
+} from "../../../types";
 
-export type RoleReward = {
-  level: number;
-  roleId: string;
-};
-
-/** Personalizacja przycisku pod embedem panelu ticketów. */
-export type TicketPanelButton = {
-  label?: string;
-  emoji?: string;
-};
-
-/** Konfiguracja logów serwera (kanał + przełączniki kategorii). Brak obiektu = wyłączone. */
-export type ServerLogConfig = {
-  enabled: boolean;
-  channelId?: string;
-  messageDelete: boolean;
-  messageEdit: boolean;
-  memberJoin: boolean;
-  memberLeave: boolean;
-  roleChanges: boolean;
-  nicknameChanges: boolean;
-  exemptRoleIds: string[];
-  exemptChannelIds: string[];
-};
-
-/** Dodatkowe ustawienia systemu poziomów. Brak obiektu = wartości domyślne. */
-export type LevelingConfig = {
-  /** Płaskie XP za wiadomość (0–8). */
-  messageXp?: number;
-  /** Płaskie XP za każdą minutę na kanale głosowym powyżej 1. minuty (0–8). */
-  voiceXp?: number;
-  /** Legacy: mnożnik bazowego XP (15/wiadomość). Używany tylko gdy `messageXp` nieustawione. */
-  xpMultiplier?: number;
-  noXpChannelIds: string[];
-  noXpRoleIds: string[];
-  levelUpEnabled: boolean;
-  levelUpDm: boolean;
-};
-
-export type AutoModAction = "delete" | "warn" | "mute";
-
-/** Konfiguracja auto-moderacji (filtry + akcja). Brak obiektu = wyłączone. */
-export type AutoModConfig = {
-  enabled: boolean;
-  blockInvites: boolean;
-  blockLinks: boolean;
-  bannedWords: string[];
-  spamEnabled: boolean;
-  spamMaxMessages: number;
-  spamWindowSeconds: number;
-  exemptRoleIds: string[];
-  exemptChannelIds: string[];
-  action: AutoModAction;
-  muteDurationSeconds: number;
-};
+export type {
+  AutoModAction,
+  AutoModConfig,
+  LevelingConfig,
+  RoleReward,
+  ServerLogConfig,
+  TicketPanelButton,
+} from "../../../types";
 
 export type GuildConfigDocument = {
   guildId: string;

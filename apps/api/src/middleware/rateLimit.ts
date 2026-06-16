@@ -27,6 +27,17 @@ const TRUST_PROXY = process.env.TRUST_PROXY === "true";
 export function rateLimit({ windowMs, max, key }: RateLimitOptions) {
   const store = new Map<string, Bucket>();
 
+  // Okresowe czyszczenie wygasłych kubełków — unref, by nie blokować zamknięcia
+  // procesu. Spójne z pozostałymi sweeperami (automod, guildGuard, voiceXp).
+  const sweep = setInterval(
+    () => {
+      const now = Date.now();
+      for (const [k, b] of store) if (b.resetAt <= now) store.delete(k);
+    },
+    Math.max(windowMs, 30_000),
+  );
+  sweep.unref?.();
+
   function resolveKey(c: Context): string {
     if (key) return key(c);
     if (TRUST_PROXY) {
@@ -42,11 +53,6 @@ export function rateLimit({ windowMs, max, key }: RateLimitOptions) {
 
   return async (c: Context, next: Next) => {
     const now = Date.now();
-
-    // Opportunistic cleanup so the map doesn't grow unbounded.
-    if (store.size > 5000 && Math.random() < 0.02) {
-      for (const [k, b] of store) if (b.resetAt <= now) store.delete(k);
-    }
 
     const id = resolveKey(c);
     let bucket = store.get(id);

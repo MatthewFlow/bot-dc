@@ -70,6 +70,77 @@ export async function discordJson<T>(
 }
 
 /**
+ * Proxies a Discord REST call on behalf of a route. Forwards a 429 to the client
+ * (with `retry_after`), maps every other failure (network / non-2xx / a body that
+ * doesn't match `schema`) to a logged 502, and otherwise returns the validated
+ * body. Routes consume it in two lines:
+ *
+ *   const data = await discordProxy(c, path, schema, init, "fetch channels");
+ *   if (data instanceof Response) return data;
+ *
+ * `label` doubles as the log tag and the client error ("Failed to <label>").
+ */
+export async function discordProxy<T>(
+  c: Context,
+  path: string,
+  schema: ZodType<T>,
+  init: DiscordFetchInit,
+  label: string,
+): Promise<T | Response> {
+  const res = await discordFetch(path, init);
+
+  if (res?.status === 429) {
+    const body = (await res.json().catch(() => null)) as { retry_after?: number } | null;
+    return c.json(
+      { error: "Rate limited by Discord", retry_after: body?.retry_after ?? 1 },
+      429,
+    );
+  }
+
+  if (!res || !res.ok) {
+    const detail = res
+      ? `${res.status}: ${await res.text().catch(() => "")}`
+      : "network error";
+    console.error(`[discord] ${label} → ${detail}`);
+    return c.json({ error: `Failed to ${label}` }, 502);
+  }
+
+  const parsed = schema.safeParse(await res.json().catch(() => null));
+  if (!parsed.success) {
+    console.error(`[discord] ${label}: invalid response shape`);
+    return c.json({ error: `Failed to ${label}` }, 502);
+  }
+  return parsed.data;
+}
+
+/**
+ * Posts a message to a channel as the bot and returns its id (the only field
+ * callers need), or `null` on any failure. Shared by the reaction/button-role
+ * publish paths, which map `null` to their own 502.
+ */
+export async function sendDiscordMessage(
+  channelId: string,
+  token: string,
+  payload: unknown,
+  logTag: string,
+): Promise<{ id: string } | null> {
+  const res = await discordFetch(`/channels/${channelId}/messages`, {
+    method: "POST",
+    headers: botHeaders(token, { "Content-Type": "application/json" }),
+    body: JSON.stringify(payload),
+  });
+  if (!res || !res.ok) {
+    console.error(
+      `[${logTag}] Błąd wysyłania wiadomości:`,
+      res ? await res.text().catch(() => "") : "network error",
+    );
+    return null;
+  }
+  const msg = messageIdSchema.safeParse(await res.json().catch(() => null));
+  return msg.success ? msg.data : null;
+}
+
+/**
  * Returns the configured bot token, or a ready 500 JSON `Response` when it's
  * missing — so routes guard with one line: `if (t instanceof Response) return t`.
  */

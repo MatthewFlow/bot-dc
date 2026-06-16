@@ -51,6 +51,10 @@ async function grantVoiceXp(
 
 /** Jeden przebieg: przyznaje XP wszystkim kwalifikującym się członkom na kanałach głosowych. */
 async function sweep(client: Client) {
+  // Zbieramy zapisy XP z całego przebiegu i odpalamy je równolegle na końcu —
+  // seryjne `await` per członek serializowało zapisy do DB co minutę.
+  const grants: Promise<void>[] = [];
+
   for (const guild of client.guilds.cache.values()) {
     const cfg = await getCachedGuildConfig(guild.id);
     const voiceXp = clampSliderXp(cfg?.leveling?.voiceXp);
@@ -70,7 +74,7 @@ async function sweep(client: Client) {
 
         // count === 1 → pierwsza minuta (bez XP); od count >= 2 → powyżej 1 min.
         if (count >= 2 && voiceXp > 0) {
-          await grantVoiceXp(member, voiceXp, cfg).catch(() => {});
+          grants.push(grantVoiceXp(member, voiceXp, cfg).catch(() => {}));
         }
       }
     }
@@ -80,6 +84,8 @@ async function sweep(client: Client) {
       if (k.startsWith(`${guild.id}:`) && !present.has(k)) ticks.delete(k);
     }
   }
+
+  await Promise.all(grants);
 }
 
 /**
