@@ -120,14 +120,15 @@ guildRoutes.get("/:guildId/config", async (c) => {
 
 guildRoutes.put("/:guildId/config", async (c) => {
   const guildId = c.req.param("guildId");
-  const raw = await c.req.json().catch(() => null);
+  const raw: unknown = await c.req.json().catch(() => null);
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
     return c.json({ error: "Invalid JSON body" }, 400);
   }
+  const body = raw as Record<string, unknown>;
 
   // Allowlist — only known config fields reach the DB — then validate/clamp each value.
   const allowlisted = Object.fromEntries(
-    CONFIG_ALLOWED_FIELDS.filter((k) => k in raw).map((k) => [k, raw[k]]),
+    CONFIG_ALLOWED_FIELDS.filter((k) => k in body).map((k) => [k, body[k]]),
   );
   const patch = sanitizeConfigPatch(allowlisted);
 
