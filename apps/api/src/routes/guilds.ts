@@ -57,6 +57,7 @@ const CONFIG_ALLOWED_FIELDS = [
   "serverLog",
   "leveling",
   "disabledCommands",
+  "prefix",
 ] as const;
 
 // Domyślny embed panelu ticketów, gdy guild nie skonfigurował własnego.

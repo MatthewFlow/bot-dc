@@ -13,7 +13,14 @@ import { useEffect } from "react";
  * efekt tylko podczas hovera (zero kosztu w spoczynku, neutralny dla INP). Pomijany przy
  * `prefers-reduced-motion` oraz na urządzeniach bez kursora (dotyk).
  */
-const INTENSITY = 4; // stopnie przechyłu — subtelnie (powyżej ~10° wygląda tandetnie)
+// Maksymalny kąt przechyłu (małe karty). Przy stałym kącie róg dużej karty „odpływa"
+// o ~kąt × rozmiar, więc na większych elementach skalujemy kąt w dół, by trzymać
+// ZBLIŻONE przesunięcie rogu w pikselach (REF = rozmiar karty, przy którym dajemy pełny kąt).
+const MAX_DEG = 2;
+const MIN_DEG = 0.6; // dolny limit — duże karty wciąż lekko reagują
+const REF = 340; // px — „bazowa" mała karta
+
+const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
 
 export function TiltProvider() {
   useEffect(() => {
@@ -33,10 +40,16 @@ export function TiltProvider() {
       const r = card.getBoundingClientRect();
       const px = (x - r.left) / r.width;
       const py = (y - r.top) / r.height;
-      // Tylko przechył (--rx/--ry) zależny od pozycji kursora. Poświata jest stała (CSS),
-      // więc nie ustawiamy już --mx/--my. Odejmujemy 0.5, by środek karty = 0°.
-      card.style.setProperty("--rx", `${((0.5 - py) * INTENSITY).toFixed(2)}deg`);
-      card.style.setProperty("--ry", `${((px - 0.5) * INTENSITY).toFixed(2)}deg`);
+      // Kąt skalowany rozmiarem: rotateX zależy od wysokości, rotateY od szerokości.
+      // Dzięki temu róg karty przesuwa się o zbliżoną liczbę px niezależnie od wielkości.
+      const intX = clamp((MAX_DEG * REF) / r.height, MIN_DEG, MAX_DEG);
+      const intY = clamp((MAX_DEG * REF) / r.width, MIN_DEG, MAX_DEG);
+      // Perspektywa rośnie z rozmiarem → duże karty mniej się deformują (płaszczą).
+      const persp = clamp(Math.max(r.width, r.height) * 1.8, 900, 2600);
+      // Odejmujemy 0.5, by środek karty = 0°.
+      card.style.setProperty("--rx", `${((0.5 - py) * intX).toFixed(2)}deg`);
+      card.style.setProperty("--ry", `${((px - 0.5) * intY).toFixed(2)}deg`);
+      card.style.setProperty("--persp", `${persp.toFixed(0)}px`);
     };
 
     const onMove = (e: PointerEvent) => {

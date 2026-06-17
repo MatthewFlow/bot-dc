@@ -60,6 +60,7 @@ export class GuildConfigProvider implements IGuildConfigRepository {
       serverLog: doc.serverLog,
       leveling: doc.leveling,
       disabledCommands: doc.disabledCommands,
+      prefix: doc.prefix ?? undefined,
     };
   }
 

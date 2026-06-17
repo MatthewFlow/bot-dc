@@ -110,6 +110,8 @@ export type GuildConfig = {
   leveling?: LevelingConfig;
   /** Nazwy komend wyłączonych na tym serwerze. */
   disabledCommands?: string[];
+  /** Prefiks komend klasycznych (np. `!`). Slash-komendy działają niezależnie. */
+  prefix?: string;
 };
 
 export type ModActionType = "warn" | "mute" | "unmute" | "kick" | "ban" | "clearwarns";
@@ -417,6 +419,7 @@ export type GuildConfigUpdate = Partial<
     | "feedbackPanelEmbed"
     | "ticketPanelButton"
     | "levelUpEmbed"
+    | "prefix"
   >
 > & {
   welcomeEmbed?: EmbedConfig | null;
@@ -425,6 +428,8 @@ export type GuildConfigUpdate = Partial<
   feedbackPanelEmbed?: EmbedConfig | null;
   ticketPanelButton?: TicketPanelButton | null;
   levelUpEmbed?: EmbedConfig | null;
+  /** Pusty prefiks czyścimy przez `null`. */
+  prefix?: string | null;
 };
 
 export async function updateGuildConfig(

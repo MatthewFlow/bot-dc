@@ -226,6 +226,12 @@ export function sanitizeConfigPatch(
     } else if (key === "disabledCommands") {
       // Lista nazw wyłączonych komend; nazwy slash-komend to [a-z0-9_], do 32 znaków.
       out[key] = strArray(value, 100, 32);
+    } else if (key === "prefix") {
+      // Prefiks komend klasycznych: 1–5 znaków, bez białych znaków.
+      if (typeof value === "string") {
+        const p = value.trim().slice(0, 5);
+        if (p && !/\s/.test(p)) out[key] = p;
+      }
     }
   }
 

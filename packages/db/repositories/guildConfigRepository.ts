@@ -35,6 +35,8 @@ export type GuildConfig = {
   serverLog?: ServerLogConfig;
   leveling?: LevelingConfig;
   disabledCommands?: string[];
+  /** Prefiks komend klasycznych (np. `!`). Slash-komendy działają niezależnie. */
+  prefix?: string;
 };
 
 export type GuildConfigPatch = Partial<Omit<GuildConfig, "guildId">>;

@@ -292,7 +292,8 @@ body {
 }
 .jh-tilt:hover,
 .surface-raised:hover {
-  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transform: perspective(var(--persp, 900px)) rotateX(var(--rx, 0deg))
+    rotateY(var(--ry, 0deg));
   border-color: color-mix(in srgb, var(--primary) 30%, transparent);
   box-shadow: var(--shadow-elevated);
 }

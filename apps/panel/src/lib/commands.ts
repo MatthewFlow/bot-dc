@@ -9,6 +9,10 @@ export type CommandMeta = {
   desc: string;
   /** Syntax hint shown in the panel. <required> [optional] */
   usage?: string;
+  /** Etykieta wymaganych uprawnień (informacyjnie w panelu). */
+  permission?: string;
+  /** Dostępna również jako komenda klasyczna (prefiksowa). */
+  prefix?: boolean;
 };
 
 export type CommandCategory = {
@@ -17,7 +21,19 @@ export type CommandCategory = {
   commands: CommandMeta[];
 };
 
-export const COMMAND_CATALOG: CommandCategory[] = [
+/** Domyślna etykieta uprawnień dla kategorii (gdy komenda nie nadpisuje własnej). */
+const PERMISSION_BY_CATEGORY: Record<string, string> = {
+  user: "Wszyscy",
+  config: "Administrator",
+  moderation: "Administrator",
+  tickets: "Administrator",
+  tests: "Administrator",
+};
+
+/** Komendy dostępne także jako klasyczne (prefiksowe) — patrz apps/bot/src/commands/prefix.ts. */
+const PREFIX_COMMANDS = new Set(["level", "leaderboard", "profile"]);
+
+const RAW_CATALOG: CommandCategory[] = [
   {
     key: "user",
     label: "Użytkownik",
@@ -159,11 +175,13 @@ export const COMMAND_CATALOG: CommandCategory[] = [
         name: "ticket_close",
         desc: "Zamknij bieżący ticket",
         usage: "/ticket_close",
+        permission: "Wątek ticketu",
       },
       {
         name: "ticket_add",
         desc: "Dodaj użytkownika do ticketu",
         usage: "/ticket_add <user>",
+        permission: "Wątek ticketu",
       },
       {
         name: "ticket_delete",
@@ -189,6 +207,19 @@ export const COMMAND_CATALOG: CommandCategory[] = [
     ],
   },
 ];
+
+/**
+ * Katalog z uzupełnionymi metadanymi: domyślne uprawnienia per kategoria oraz
+ * znacznik komend prefiksowych. Trzymane osobno, żeby surowe wpisy zostały zwięzłe.
+ */
+export const COMMAND_CATALOG: CommandCategory[] = RAW_CATALOG.map((cat) => ({
+  ...cat,
+  commands: cat.commands.map((cmd) => ({
+    ...cmd,
+    permission: cmd.permission ?? PERMISSION_BY_CATEGORY[cat.key] ?? "Wszyscy",
+    prefix: cmd.prefix ?? PREFIX_COMMANDS.has(cmd.name),
+  })),
+}));
 
 /** Wszystkie nazwy komend z katalogu (do walidacji / liczenia). */
 export const ALL_COMMAND_NAMES: string[] = COMMAND_CATALOG.flatMap((cat) =>

@@ -2,6 +2,7 @@ import { messageXpFor, XP_COOLDOWN_MS, xpRepository } from "@jurassic-haven/db";
 import type { Message } from "discord.js";
 
 import { runAutoMod } from "../automod/automod";
+import { handlePrefixCommand } from "../commands/prefix";
 import { applyLevelProgress } from "../levels/award";
 import { getCachedGuildConfig } from "../utils/configCache";
 
@@ -19,6 +20,9 @@ export async function onMessageCreate(message: Message) {
     const handled = await runAutoMod(message, cfg.autoMod);
     if (handled) return;
   }
+
+  // Komendy prefiksowe (klasyczne) — gdy obsłużone, nie naliczamy XP za nie.
+  if (cfg && (await handlePrefixCommand(message, cfg))) return;
 
   const lvl = cfg?.leveling;
 

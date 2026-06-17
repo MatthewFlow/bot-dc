@@ -74,6 +74,14 @@ describe("sanitizeConfigPatch", () => {
     expect(out.disabledCommands).toEqual(["level", "profile", "leaderboard"]);
   });
 
+  test("trims and clamps the prefix, dropping whitespace-containing values", () => {
+    expect(sanitizeConfigPatch({ prefix: "  !  " })).toEqual({ prefix: "!" });
+    expect(sanitizeConfigPatch({ prefix: "!!!!!!!!" })).toEqual({ prefix: "!!!!!" });
+    expect(sanitizeConfigPatch({ prefix: "a b" })).toEqual({});
+    expect(sanitizeConfigPatch({ prefix: "   " })).toEqual({});
+    expect(sanitizeConfigPatch({ prefix: null })).toEqual({ prefix: null });
+  });
+
   test("clamps the xp multiplier and filters leveling arrays", () => {
     const out = sanitizeConfigPatch({
       leveling: { xpMultiplier: 99, levelUpEnabled: false, noXpRoleIds: ["a", 5, "b"] },

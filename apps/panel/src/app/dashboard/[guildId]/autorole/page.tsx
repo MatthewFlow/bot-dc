@@ -1,6 +1,16 @@
 "use client";
 
-import { UserPlus } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronsUp,
+  DoorOpen,
+  Eye,
+  Lightbulb,
+  RefreshCw,
+  Settings,
+  Sparkles,
+  UserPlus,
+} from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 
@@ -39,6 +49,25 @@ function AutoRoleSkeleton() {
         <Skeleton className="h-52 w-full rounded-xl" />
       </div>
     </div>
+  );
+}
+
+/** Pigułka roli w osi weryfikacji — kolor wg stanu, nazwa z realnie wybranej roli. */
+function RolePill({ name, tone }: { name?: string; tone: "unverified" | "verified" }) {
+  const unverified = tone === "unverified";
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[11px] font-medium ${
+        unverified
+          ? "border-rose-500/20 bg-rose-500/10 text-rose-300"
+          : "border-emerald-500/20 bg-emerald-500/10 text-emerald-300"
+      }`}
+    >
+      <span
+        className={`h-1.5 w-1.5 rounded-full ${unverified ? "bg-rose-400" : "bg-emerald-400"}`}
+      />
+      @{name ?? (unverified ? "Niezweryfikowany" : "Zweryfikowany")}
+    </span>
   );
 }
 
@@ -100,6 +129,9 @@ export default function AutoRolePage() {
     config.joinRoleId !== savedRoleId || config.verifiedRoleId !== savedVerifiedRoleId;
   const activeRole = roles.find((r) => r.id === savedRoleId);
   const activeVerifiedRole = roles.find((r) => r.id === savedVerifiedRoleId);
+  // Żywe nazwy (z aktualnego wyboru) do osi weryfikacji w prawej kolumnie.
+  const joinRoleName = roles.find((r) => r.id === config.joinRoleId)?.name;
+  const verifiedRoleName = roles.find((r) => r.id === config.verifiedRoleId)?.name;
 
   return (
     <div className="jh-in flex flex-col p-4 sm:p-6 lg:p-8">
@@ -116,11 +148,28 @@ export default function AutoRolePage() {
 
       <HowItWorks
         className="mb-6"
-        steps={[
-          "Nowy członek dostaje rolę „niezweryfikowanego” zaraz po wejściu.",
-          "Z tą rolą widzi ograniczony zestaw kanałów (np. tylko regulamin).",
-          "Po weryfikacji przez Reaction Roles bot nadaje rolę „zweryfikowanego”.",
-          "Wtedy bot automatycznie zdejmuje rolę niezweryfikowanego.",
+        subtitle="Przepływ weryfikacji w czterech krokach"
+        cards={[
+          {
+            icon: UserPlus,
+            title: "Nowy członek",
+            text: "Dostaje rolę „niezweryfikowanego” zaraz po wejściu na serwer.",
+          },
+          {
+            icon: Eye,
+            title: "Ograniczony dostęp",
+            text: "Z tą rolą widzi tylko wybrane kanały (np. sam regulamin).",
+          },
+          {
+            icon: Sparkles,
+            title: "Weryfikacja reakcją",
+            text: "Po reakcji w Reaction Roles bot nadaje rolę „zweryfikowanego”.",
+          },
+          {
+            icon: RefreshCw,
+            title: "Zdjęcie roli",
+            text: "Wtedy bot automatycznie zdejmuje rolę niezweryfikowanego.",
+          },
         ]}
       />
 
@@ -129,14 +178,19 @@ export default function AutoRolePage() {
       ) : (
         <div className="flex flex-col gap-6 lg:flex-row">
           <div className="flex-1 surface-raised rounded-xl bg-card">
-            <div className="flex items-center justify-between border-b border-border px-6 py-4">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Nadawane automatycznie nowym członkom
-                </p>
-                <p className="text-base font-semibold text-white">
-                  Auto-role przy dołączeniu
-                </p>
+            <div className="flex items-center justify-between gap-3 border-b border-border px-6 py-4">
+              <div className="flex items-center gap-3">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <UserPlus size={18} />
+                </span>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                    Nadawane automatycznie nowym członkom
+                  </p>
+                  <p className="text-base font-semibold text-white">
+                    Auto-role przy dołączeniu
+                  </p>
+                </div>
               </div>
               <Switch
                 checked={!!config.joinRoleId}
@@ -241,6 +295,119 @@ export default function AutoRolePage() {
                 />
                 {error && <p className="text-xs text-red-400">{error}</p>}
               </div>
+            </div>
+          </div>
+
+          {/* Prawa kolumna — oś weryfikacji + wskazówki (informacyjnie). */}
+          <div className="flex w-full shrink-0 flex-col gap-6 lg:sticky lg:top-6 lg:w-96">
+            <div className="surface-raised rounded-xl border border-border bg-card p-5">
+              <div className="mb-4 flex items-center gap-2">
+                <Sparkles size={16} className="mt-0.5 shrink-0 self-start text-primary" />
+                <div>
+                  <p className="text-sm font-semibold text-white">Przepływ weryfikacji</p>
+                  <p className="text-xs text-gray-400">Droga nowego członka</p>
+                </div>
+              </div>
+              <ol className="flex flex-col gap-1">
+                {[
+                  {
+                    icon: DoorOpen,
+                    title: "Dołącza na serwer",
+                    text: "Bot natychmiast przypisuje rolę startową.",
+                    pill: <RolePill name={joinRoleName} tone="unverified" />,
+                  },
+                  {
+                    icon: Eye,
+                    title: "Widzi tylko regulamin",
+                    text: "Dostęp ograniczony do kanału weryfikacji.",
+                  },
+                  {
+                    icon: Sparkles,
+                    title: "Reaguje emoji ✅",
+                    text: "Reaction Roles nadaje rolę docelową.",
+                  },
+                  {
+                    icon: CheckCircle2,
+                    title: "Pełny dostęp",
+                    text: "Rola startowa zdjęta automatycznie.",
+                    pill: <RolePill name={verifiedRoleName} tone="verified" />,
+                  },
+                ].map((step, i, arr) => {
+                  const Icon = step.icon;
+                  return (
+                    <li key={i} className="flex gap-3">
+                      <div className="flex flex-col items-center">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                          <Icon size={16} />
+                        </span>
+                        {i < arr.length - 1 && (
+                          <span className="my-1 w-px flex-1 bg-border" aria-hidden />
+                        )}
+                      </div>
+                      <div className="min-w-0 pb-4">
+                        <p className="text-sm font-medium text-white">{step.title}</p>
+                        <p className="mt-0.5 text-xs leading-snug text-gray-400">
+                          {step.text}
+                        </p>
+                        {step.pill && <div className="mt-1.5">{step.pill}</div>}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
+            </div>
+
+            <div className="surface-raised rounded-xl border border-border bg-card p-5">
+              <div className="mb-4 flex items-center gap-2">
+                <Lightbulb size={16} className="shrink-0 text-primary" />
+                <p className="text-sm font-semibold text-white">Wskazówki</p>
+              </div>
+              <ul className="flex flex-col gap-3">
+                {[
+                  {
+                    icon: Sparkles,
+                    node: (
+                      <>
+                        Najpierw skonfiguruj panel w{" "}
+                        <span className="font-medium text-white">
+                          Self-Roles / Reaction Roles
+                        </span>{" "}
+                        — auto-role korzysta z tej samej reakcji.
+                      </>
+                    ),
+                  },
+                  {
+                    icon: Settings,
+                    node: (
+                      <>
+                        Ustaw uprawnienia kanałów tak, by{" "}
+                        <span className="font-medium text-white">@Niezweryfikowany</span>{" "}
+                        widział wyłącznie regulamin.
+                      </>
+                    ),
+                  },
+                  {
+                    icon: ChevronsUp,
+                    node: (
+                      <>
+                        Rola bota musi być{" "}
+                        <span className="font-medium text-white">wyżej</span> niż obie
+                        role, by mógł je nadawać i zdejmować.
+                      </>
+                    ),
+                  },
+                ].map((tip, i) => {
+                  const Icon = tip.icon;
+                  return (
+                    <li key={i} className="flex gap-2.5">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-white/5 text-primary">
+                        <Icon size={13} />
+                      </span>
+                      <p className="text-xs leading-relaxed text-gray-300">{tip.node}</p>
+                    </li>
+                  );
+                })}
+              </ul>
             </div>
           </div>
         </div>
