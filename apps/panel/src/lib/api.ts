@@ -94,6 +94,10 @@ export type GuildConfig = {
   goodbyeMessage?: string;
   roleRewards?: Array<{ level: number; roleId: string }>;
   modLogChannelId?: string;
+  /** Czy bot wysyła karanemu DM z informacją o nałożonej karze. */
+  dmOnPunish?: boolean;
+  /** Auto-ban po osiągnięciu tylu ostrzeżeń (`0` = wyłączone). */
+  autoBanThreshold?: number;
   feedbackChannelId?: string;
   adminRoleId?: string;
   ticketSupportRoleId?: string;
@@ -114,7 +118,14 @@ export type GuildConfig = {
   prefix?: string;
 };
 
-export type ModActionType = "warn" | "mute" | "unmute" | "kick" | "ban" | "clearwarns";
+export type ModActionType =
+  | "warn"
+  | "mute"
+  | "unmute"
+  | "kick"
+  | "ban"
+  | "unban"
+  | "clearwarns";
 
 export type ModAction = {
   id: string;
@@ -142,6 +153,50 @@ export type Warn = {
   createdAt: string;
 };
 
+/** Statystyki paska Centrum moderacji (czysto-bazowe — szybkie). */
+export type ModStats = {
+  activeWarnings: number;
+  bansThisWeek: number;
+  /** Akcje wykonane przez automod w ostatnich 7 dniach. */
+  automodActions: number;
+};
+
+/** Aktywne wyciszenie (timeout) w „Aktywnych karach". */
+export type MutePunishment = {
+  userId: string;
+  displayName: string | null;
+  username: string | null;
+  avatar: string | null;
+  /** ISO — kiedy timeout wygasa. */
+  until: string;
+  reason: string | null;
+};
+
+/** Aktywny ban w „Aktywnych karach". */
+export type BanPunishment = {
+  userId: string;
+  displayName: string | null;
+  username: string | null;
+  avatar: string | null;
+  reason: string | null;
+};
+
+export type ActivePunishments = {
+  mutes: MutePunishment[];
+  bans: BanPunishment[];
+};
+
+/** Wynik wyszukiwania członka (Karta członka). */
+export type MemberSearchResult = {
+  userId: string;
+  displayName: string | null;
+  username: string | null;
+  avatar: string | null;
+};
+
+/** Wpis historii akcji użytkownika — `ModAction` wzbogacony o nazwę moderatora. */
+export type ModActionHistory = ModAction & { moderatorName: string | null };
+
 export type GuildStats = {
   /** Przybliżona liczba członków (z Discorda); null gdy niedostępna. */
   memberCount: number | null;
@@ -154,6 +209,26 @@ export type GuildStats = {
   /** Łączna liczba ostrzeżeń w bazie. */
   warnCount: number;
   tickets: { total: number; pending: number; open: number; closed: number };
+  /** Przyrost „w tym tygodniu" (z dat utworzenia); brak dla starszego API. */
+  trends?: { bans: number; warns: number; tickets: number };
+};
+
+/** Wpis feedu „Aktywność na żywo" — moderacja, level-up albo nadanie roli. */
+export type ActivityItem = {
+  id: string;
+  kind: "mod" | "levelup" | "role";
+  userId: string;
+  displayName: string | null;
+  username: string | null;
+  avatar: string | null;
+  createdAt: string;
+  /** kind="mod" */
+  modType?: ModActionType;
+  reason?: string;
+  /** kind="levelup" */
+  level?: number;
+  /** kind="role" */
+  roleName?: string | null;
 };
 
 export type TicketStatus = "pending" | "open" | "closed";
@@ -340,6 +415,11 @@ export const queryKeys = {
   buttonRoles: (g: string) => ["button-roles", g] as const,
   tickets: (g: string, status?: TicketStatus) => ["tickets", g, status ?? "all"] as const,
   modActions: (g: string, limit: number) => ["mod-actions", g, limit] as const,
+  activity: (g: string, limit: number) => ["activity", g, limit] as const,
+  modStats: (g: string) => ["mod-stats", g] as const,
+  activePunishments: (g: string) => ["active-punishments", g] as const,
+  memberHistory: (g: string, userId: string) => ["member-history", g, userId] as const,
+  memberSearch: (g: string, q: string) => ["member-search", g, q] as const,
   warnings: (g: string, userId: string) => ["warnings", g, userId] as const,
   botStatus: () => ["bot-status"] as const,
   guildFeedback: (g: string) => ["guild-feedback", g] as const,
@@ -619,6 +699,112 @@ export async function getModActions(guildId: string, limit = 25): Promise<ModAct
   return res.json();
 }
 
+export async function getActivity(guildId: string, limit = 8): Promise<ActivityItem[]> {
+  const res = await fetchWithRetry(
+    `${API_URL}/guilds/${guildId}/activity?limit=${limit}`,
+  );
+  if (!res.ok) throw new Error("Failed to fetch activity");
+  return res.json();
+}
+
+export async function getModStats(guildId: string): Promise<ModStats> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/mod-stats`);
+  if (!res.ok) throw new Error("Failed to fetch mod stats");
+  return res.json();
+}
+
+export async function getActivePunishments(guildId: string): Promise<ActivePunishments> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/active-punishments`);
+  if (!res.ok) throw new Error("Failed to fetch active punishments");
+  return res.json();
+}
+
+export async function searchMembers(
+  guildId: string,
+  q: string,
+): Promise<MemberSearchResult[]> {
+  const res = await fetchWithRetry(
+    `${API_URL}/guilds/${guildId}/members/search?q=${encodeURIComponent(q)}`,
+  );
+  if (!res.ok) throw new Error("Failed to search members");
+  return res.json();
+}
+
+export async function getMemberHistory(
+  guildId: string,
+  userId: string,
+): Promise<ModActionHistory[]> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/mod-actions/${userId}`);
+  if (!res.ok) throw new Error("Failed to fetch member history");
+  return res.json();
+}
+
+// ── Akcje moderacyjne wykonywane z panelu ────────────────────────────────────
+// Wspólna ścieżka: przy błędzie (np. 502 z hierarchii ról) rzuca Error z
+// komunikatem serwera, więc strona pokaże go wprost w toaście.
+async function postModAction<T>(url: string, body: unknown, method = "POST"): Promise<T> {
+  const res = await fetchWithRetry(url, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: body == null ? undefined : JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const data = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(data?.error ?? "Akcja nie powiodła się.");
+  }
+  return res.json();
+}
+
+export function warnUser(
+  guildId: string,
+  userId: string,
+  reason?: string,
+): Promise<{ warnCount: number; autoBanned: boolean }> {
+  return postModAction(`${API_URL}/guilds/${guildId}/actions/warn`, { userId, reason });
+}
+
+export function muteUser(
+  guildId: string,
+  userId: string,
+  minutes: number,
+  reason?: string,
+): Promise<{ ok: true }> {
+  return postModAction(`${API_URL}/guilds/${guildId}/actions/mute`, {
+    userId,
+    minutes,
+    reason,
+  });
+}
+
+export function kickUser(
+  guildId: string,
+  userId: string,
+  reason?: string,
+): Promise<{ ok: true }> {
+  return postModAction(`${API_URL}/guilds/${guildId}/actions/kick`, { userId, reason });
+}
+
+export function banUser(
+  guildId: string,
+  userId: string,
+  reason?: string,
+  deleteDays?: number,
+): Promise<{ ok: true }> {
+  return postModAction(`${API_URL}/guilds/${guildId}/actions/ban`, {
+    userId,
+    reason,
+    deleteDays,
+  });
+}
+
+export function unmuteUser(guildId: string, userId: string): Promise<{ ok: true }> {
+  return postModAction(`${API_URL}/guilds/${guildId}/actions/unmute`, { userId });
+}
+
+export function unbanUser(guildId: string, userId: string): Promise<{ ok: true }> {
+  return postModAction(`${API_URL}/guilds/${guildId}/bans/${userId}`, null, "DELETE");
+}
+
 export async function sendTicketPanel(guildId: string, channelId: string): Promise<void> {
   const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/ticket-panel`, {
     method: "POST",
@@ -669,6 +855,12 @@ export type BotStatus = {
   username: string | null;
   avatar: string | null;
   guildCount: number;
+  /** Wersja bota (np. „2.4.1"); null gdy bot jej jeszcze nie zapisał. */
+  version: string | null;
+  /** Ping gatewaya w ms; null gdy niedostępny. */
+  ping: number | null;
+  /** ISO startu bota — panel liczy z tego żywy uptime; null gdy nieznany. */
+  startedAt: string | null;
   lastSeen: string | null;
 };
 

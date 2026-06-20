@@ -1,13 +1,10 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { Ticket as TicketIcon, Trash2 } from "lucide-react";
+import { Ticket as TicketIcon } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
-import { type CSSProperties, useState } from "react";
+import { useState } from "react";
 
-import { Avatar } from "@/components/Avatar";
-import { TicketStatusBadge } from "@/components/badges";
 import { ChannelField } from "@/components/ChannelField";
 import { ConfirmModal } from "@/components/confirmModal";
 import { CreateRoleButton } from "@/components/CreateRoleButton";
@@ -17,25 +14,29 @@ import { PanelCard } from "@/components/PanelCard";
 import { RoleSelect } from "@/components/RoleSelect";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton, SkeletonRow } from "@/components/Skeleton";
+import { TicketCard } from "@/components/TicketCard";
 import { TicketsGuide } from "@/components/TicketsGuide";
 import { useToast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
 import { VariablesCard } from "@/components/VariablesCard";
-import { useChannels, useGuildConfig, useRoles, useTickets } from "@/hooks/queries";
+import {
+  useBotStatus,
+  useChannels,
+  useGuildConfig,
+  useRoles,
+  useTickets,
+} from "@/hooks/queries";
 import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import type { Channel, GuildConfig, Role, TicketStatus } from "@/lib/api";
 import {
   closeTicket,
   deleteTicket,
-  getBotStatus,
-  queryKeys,
   reopenTicket,
   sendTicketPanel,
   updateGuildConfig,
 } from "@/lib/api";
 import { previewReplacer, TICKET_VARS, VARIABLE_INFO } from "@/lib/embed";
-import { waitingSince } from "@/lib/time";
 
 // Ciężki edytor embeda schodzi z initial bundle — montuje się dopiero po załadowaniu.
 const EmbedEditor = dynamic(
@@ -60,17 +61,6 @@ const FILTER_LABELS: Record<StatusFilter, string> = {
   closed: "Zamknięte",
 };
 
-/** Data + godzina w formacie PL (dd.mm.rrrr, gg:mm) — wspólny format dla wierszy ticketów. */
-function formatDateTime(iso: string): string {
-  return new Date(iso).toLocaleString("pl-PL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 /** Szkielet tylko kart z danymi — nagłówek i „Jak to działa" renderują się od razu. */
 function TicketsSkeleton() {
   return (
@@ -85,12 +75,6 @@ function TicketsSkeleton() {
       </div>
     </>
   );
-}
-
-/** Pokazuje nazwę użytkownika (z Discorda); gdy brak — fallback na ID w monospace. */
-function UserName({ name, id }: { name?: string | null; id?: string }) {
-  if (name) return <span className="font-medium text-gray-300">{name}</span>;
-  return <span className="font-mono text-gray-400">{id ?? "—"}</span>;
 }
 
 export default function TicketsPage() {
@@ -114,11 +98,7 @@ export default function TicketsPage() {
   const rolesQ = useRoles(guildId);
   const channelsQ = useChannels(guildId);
   // Tożsamość bota (avatar + nazwa) do podglądu „jak wystawi to bot serwera".
-  const botStatusQ = useQuery({
-    queryKey: queryKeys.botStatus(),
-    queryFn: getBotStatus,
-    staleTime: 60_000,
-  });
+  const botStatusQ = useBotStatus();
   // Zawsze pobieramy WSZYSTKIE tickety — liczniki liczone z pełnego zbioru,
   // filtrowanie zakładką odbywa się po stronie klienta (poniżej).
   const ticketsQ = useTickets(guildId);
@@ -480,107 +460,34 @@ export default function TicketsPage() {
                   </div>
                 </div>
 
-                {ticketsLoading ? (
-                  Array.from({ length: 3 }).map((_, i) => (
-                    <div key={i} className="border-b border-border last:border-0">
-                      <SkeletonRow />
+                <div className="flex flex-col gap-2.5 p-4">
+                  {ticketsLoading ? (
+                    Array.from({ length: 3 }).map((_, i) => (
+                      <Skeleton key={i} className="h-28 w-full rounded-lg" />
+                    ))
+                  ) : visibleTickets.length === 0 ? (
+                    <div className="py-10 text-center text-sm text-gray-400">
+                      Brak ticketów
+                      {filter !== "all"
+                        ? ` (${FILTER_LABELS[filter].toLowerCase()})`
+                        : ""}
+                      .
                     </div>
-                  ))
-                ) : visibleTickets.length === 0 ? (
-                  <div className="px-6 py-10 text-center text-sm text-gray-400">
-                    Brak ticketów
-                    {filter !== "all" ? ` (${FILTER_LABELS[filter].toLowerCase()})` : ""}.
-                  </div>
-                ) : (
-                  visibleTickets.map((ticket, i) => (
-                    <div
-                      key={ticket.id}
-                      style={{ "--i": i } as CSSProperties}
-                      className="jh-stagger flex flex-col gap-3 border-b border-border px-6 py-4 last:border-0 sm:flex-row sm:items-start sm:justify-between"
-                    >
-                      <div className="min-w-0 flex-1">
-                        {/* Nagłówek: autor (status przeniesiony na stronę daty) */}
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Avatar
-                            src={ticket.avatar}
-                            name={ticket.username ?? ticket.userId}
-                          />
-                          <span className="text-sm">
-                            <UserName name={ticket.username} id={ticket.userId} />
-                          </span>
-                        </div>
-
-                        {/* Temat zgłoszenia */}
-                        {ticket.subject && (
-                          <p className="mt-2 truncate text-sm text-white">
-                            {ticket.subject}
-                          </p>
-                        )}
-
-                        {/* Meta: przejęcie + link do wątku */}
-                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-400">
-                          {ticket.assignedTo ? (
-                            <span>
-                              Przejął:{" "}
-                              <UserName
-                                name={ticket.assignedToUsername}
-                                id={ticket.assignedTo}
-                              />
-                            </span>
-                          ) : ticket.status === "pending" ? (
-                            <span className="text-yellow-500/80">
-                              czeka na przejęcie · {waitingSince(ticket.createdAt)}
-                            </span>
-                          ) : null}
-                          <a
-                            href={`https://discord.com/channels/${guildId}/${ticket.threadId}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-discord hover:underline"
-                          >
-                            Otwórz wątek ↗
-                          </a>
-                        </div>
-                      </div>
-
-                      <div className="flex shrink-0 items-center justify-between gap-3 sm:flex-col sm:items-end">
-                        <div className="flex flex-col items-start gap-1.5 sm:items-end">
-                          <TicketStatusBadge status={ticket.status} />
-                          <div className="text-xs text-gray-400 sm:text-right">
-                            {formatDateTime(ticket.createdAt)}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {ticket.status === "closed" ? (
-                            <button
-                              onClick={() => handleReopenTicket(ticket.threadId)}
-                              disabled={actionBusy === ticket.threadId}
-                              className="rounded-lg bg-background px-3 py-1 text-xs text-green-400 transition hover:bg-green-500/10 disabled:opacity-40"
-                            >
-                              {actionBusy === ticket.threadId ? "…" : "Otwórz ponownie"}
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleCloseTicket(ticket.threadId)}
-                              disabled={actionBusy === ticket.threadId}
-                              className="rounded-lg bg-background px-3 py-1 text-xs text-red-400 transition hover:bg-red-500/10 disabled:opacity-40"
-                            >
-                              {actionBusy === ticket.threadId ? "…" : "Zamknij"}
-                            </button>
-                          )}
-                          <button
-                            onClick={() => setConfirmDelete(ticket.threadId)}
-                            disabled={actionBusy === ticket.threadId}
-                            title="Usuń ticket z bazy (i wątek na Discordzie)"
-                            className="rounded-lg bg-background p-1.5 text-gray-400 transition-all hover:bg-red-500/10 hover:text-red-400 active:scale-90 disabled:opacity-40"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
+                  ) : (
+                    visibleTickets.map((ticket, i) => (
+                      <TicketCard
+                        key={ticket.id}
+                        ticket={ticket}
+                        index={i}
+                        guildId={guildId}
+                        busy={actionBusy === ticket.threadId}
+                        onClose={() => handleCloseTicket(ticket.threadId)}
+                        onReopen={() => handleReopenTicket(ticket.threadId)}
+                        onDelete={() => setConfirmDelete(ticket.threadId)}
+                      />
+                    ))
+                  )}
+                </div>
               </div>
             </div>
           </div>

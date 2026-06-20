@@ -37,6 +37,8 @@ export interface ITicketRepository {
   getAll(guildId: string, status?: TicketStatus): Promise<Ticket[]>;
   /** Liczby ticketów wg statusu na serwerze (do statystyk dashboardu). */
   counts(guildId: string): Promise<TicketCounts>;
+  /** Liczba ticketów utworzonych od `since` (trend „w tym tygodniu"). */
+  countSince(guildId: string, since: Date): Promise<number>;
   /** Przejęcie zgłoszenia przez moderatora/admina — pending → open. */
   claim(threadId: string, moderatorId: string): Promise<void>;
   close(threadId: string): Promise<void>;

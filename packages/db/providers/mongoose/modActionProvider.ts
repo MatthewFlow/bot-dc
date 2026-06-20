@@ -1,5 +1,6 @@
 import type {
   AddModActionOpts,
+  CountSinceFilter,
   IModActionRepository,
   ModAction,
 } from "../../repositories/modActionRepository";
@@ -48,5 +49,35 @@ export class ModActionProvider implements IModActionRepository {
       .sort({ createdAt: -1 })
       .lean<LeanModAction[]>();
     return docs.map(toModAction);
+  }
+
+  async countSince(
+    guildId: string,
+    since: Date,
+    filter: CountSinceFilter = {},
+  ): Promise<number> {
+    const query: Record<string, unknown> = { guildId, createdAt: { $gte: since } };
+    if (filter.type) query.type = filter.type;
+    if (filter.moderatorId) query.moderatorId = filter.moderatorId;
+    return ModActionModel.countDocuments(query);
+  }
+
+  async latestByUsers(
+    guildId: string,
+    type: ModAction["type"],
+    userIds: string[],
+  ): Promise<Map<string, ModAction>> {
+    const map = new Map<string, ModAction>();
+    if (userIds.length === 0) return map;
+
+    const docs = await ModActionModel.find({ guildId, type, userId: { $in: userIds } })
+      .sort({ createdAt: -1 })
+      .lean<LeanModAction[]>();
+
+    // Posortowane malejąco po dacie — pierwszy wpis per userId jest najświeższy.
+    for (const doc of docs) {
+      if (!map.has(doc.userId)) map.set(doc.userId, toModAction(doc));
+    }
+    return map;
   }
 }

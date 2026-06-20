@@ -82,6 +82,21 @@ describe("sanitizeConfigPatch", () => {
     expect(sanitizeConfigPatch({ prefix: null })).toEqual({ prefix: null });
   });
 
+  test("coerces dmOnPunish to a boolean", () => {
+    expect(sanitizeConfigPatch({ dmOnPunish: true })).toEqual({ dmOnPunish: true });
+    expect(sanitizeConfigPatch({ dmOnPunish: "yes" })).toEqual({ dmOnPunish: false });
+  });
+
+  test("clamps autoBanThreshold to 0..20", () => {
+    expect(sanitizeConfigPatch({ autoBanThreshold: 5 })).toEqual({ autoBanThreshold: 5 });
+    expect(sanitizeConfigPatch({ autoBanThreshold: 999 })).toEqual({
+      autoBanThreshold: 20,
+    });
+    expect(sanitizeConfigPatch({ autoBanThreshold: -3 })).toEqual({
+      autoBanThreshold: 0,
+    });
+  });
+
   test("clamps the xp multiplier and filters leveling arrays", () => {
     const out = sanitizeConfigPatch({
       leveling: { xpMultiplier: 99, levelUpEnabled: false, noXpRoleIds: ["a", 5, "b"] },

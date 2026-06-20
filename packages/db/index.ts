@@ -2,6 +2,7 @@ export { connectDb } from "./client";
 export type { DiscordEmbed, EmbedConfig, EmbedFieldConfig } from "./embed";
 export { isEmbedEmpty, toDiscordEmbed } from "./embed";
 export {
+  activityEventRepository,
   botStatusRepository,
   buttonRoleRepository,
   feedbackRepository,
@@ -13,6 +14,11 @@ export {
   warnRepository,
   xpRepository,
 } from "./providers/mongoose/providers";
+export type {
+  ActivityEvent,
+  ActivityEventType,
+  AddActivityEventOpts,
+} from "./repositories/activityEventRepository";
 export type {
   BotHeartbeat,
   BotStatusSnapshot,

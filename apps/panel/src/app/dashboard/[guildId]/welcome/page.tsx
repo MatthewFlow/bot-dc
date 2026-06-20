@@ -4,7 +4,6 @@
 // więc świadomie używamy zwykłego <img> (jak w EmbedPreview).
 /* eslint-disable @next/next/no-img-element */
 
-import { useQuery } from "@tanstack/react-query";
 import { DoorClosed, DoorOpen, type LucideIcon } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
@@ -19,11 +18,11 @@ import { Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { VariablesCard } from "@/components/VariablesCard";
 import { WelcomeGuide } from "@/components/WelcomeGuide";
-import { useChannels, useGuildConfig } from "@/hooks/queries";
+import { useBotStatus, useChannels, useGuildConfig } from "@/hooks/queries";
 import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import type { Channel, EmbedConfig, GuildConfig } from "@/lib/api";
-import { getBotStatus, queryKeys, updateGuildConfig } from "@/lib/api";
+import { updateGuildConfig } from "@/lib/api";
 import { previewReplacer, WELCOME_VARS } from "@/lib/embed";
 
 // Ciężki edytor embeda schodzi z initial bundle — montuje się dopiero w trybie embed.
@@ -99,11 +98,7 @@ export default function WelcomePage() {
   const configQ = useGuildConfig(guildId);
   const channelsQ = useChannels(guildId);
   // Tożsamość bota (avatar + nazwa) do podglądu „jak wystawi to bot serwera".
-  const botStatusQ = useQuery({
-    queryKey: queryKeys.botStatus(),
-    queryFn: getBotStatus,
-    staleTime: 60_000,
-  });
+  const botStatusQ = useBotStatus();
   // Bramka tylko na config (nasza baza, szybko). Kanały (proxy do Discorda, wolniej)
   // dopełnią się w selektach w tle — formularz nie czeka na nie.
   const loading = configQ.isLoading;

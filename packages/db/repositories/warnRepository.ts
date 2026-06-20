@@ -20,4 +20,6 @@ export interface IWarnRepository {
   clear(guildId: string, userId: string): Promise<number>;
   /** Łączna liczba ostrzeżeń na całym serwerze (do statystyk dashboardu). */
   countByGuild(guildId: string): Promise<number>;
+  /** Liczba ostrzeżeń dodanych od `since` (trend „w tym tygodniu"). */
+  countSince(guildId: string, since: Date): Promise<number>;
 }

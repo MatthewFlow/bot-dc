@@ -21,6 +21,9 @@ statusRoutes.get("/status", async (c) => {
     username: snap.username,
     avatar: snap.avatar,
     guildCount: snap.guildCount,
+    version: snap.version,
+    ping: snap.ping,
+    startedAt: snap.startedAt ? snap.startedAt.toISOString() : null,
     lastSeen: snap.lastHeartbeat ? snap.lastHeartbeat.toISOString() : null,
   });
 });

@@ -34,5 +34,9 @@ export const botStatusSchema = z.object({
   username: z.string().nullable(),
   avatar: z.string().nullable(),
   guildCount: z.number(),
+  // Domyślnie null — starszy heartbeat (sprzed wdrożenia) może ich nie mieć.
+  version: z.string().nullable().default(null),
+  ping: z.number().nullable().default(null),
+  startedAt: z.string().nullable().default(null),
   lastSeen: z.string().nullable(),
 });

@@ -1,9 +1,23 @@
 "use client";
 
-import { Settings } from "lucide-react";
+import {
+  Bot,
+  Clock,
+  Hash,
+  type LucideIcon,
+  Server,
+  Settings,
+  ShieldCheck,
+  UserPlus,
+  Users,
+  Wifi,
+  Zap,
+} from "lucide-react";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 
+import { Avatar } from "@/components/Avatar";
+import { CardHead } from "@/components/CardHead";
 import { ChannelField } from "@/components/ChannelField";
 import { CreateRoleButton } from "@/components/CreateRoleButton";
 import { HowItWorks } from "@/components/HowItWorks";
@@ -11,16 +25,127 @@ import { PageHeader } from "@/components/PageHeader";
 import { RoleSelect } from "@/components/RoleSelect";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
+import { TipsCard } from "@/components/TipsCard";
 import { useToast } from "@/components/toast";
-import { useChannels, useGuildConfig, useRoles } from "@/hooks/queries";
+import {
+  useBotStatus,
+  useChannels,
+  useGuildConfig,
+  useGuildStats,
+  useRoles,
+} from "@/hooks/queries";
 import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import type { Channel, GuildConfig, Role } from "@/lib/api";
 import { updateGuildConfig } from "@/lib/api";
 
+const CARD = "surface-raised rounded-xl border border-border bg-card";
+
+/** Formatuje uptime ze startedAt: „14d 06:21" lub „06:21". */
+function formatUptime(startedAt: string | null | undefined): string {
+  if (!startedAt) return "—";
+  const ms = Date.now() - new Date(startedAt).getTime();
+  if (ms < 0) return "—";
+  const totalMin = Math.floor(ms / 60_000);
+  const days = Math.floor(totalMin / 1440);
+  const hours = Math.floor((totalMin % 1440) / 60);
+  const mins = totalMin % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return days > 0 ? `${days}d ${pad(hours)}:${pad(mins)}` : `${pad(hours)}:${pad(mins)}`;
+}
+
+function StatRow({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="flex items-center justify-between border-b border-border px-5 py-3 last:border-0">
+      <span className="flex items-center gap-2 text-sm text-gray-400">
+        <Icon className="h-4 w-4 text-gray-500" />
+        {label}
+      </span>
+      <span className="font-mono text-sm font-semibold text-white">{value}</span>
+    </div>
+  );
+}
+
+/** Karta „Informacje o bocie" — status + uptime/ping/wersja (z heartbeatu) i liczba członków. */
+function BotInfoCard({ guildId }: { guildId: string }) {
+  const statusQ = useBotStatus(true);
+  const statsQ = useGuildStats(guildId);
+
+  const s = statusQ.data;
+  // Trójstan: null = jeszcze nie wiemy (nie pokazujemy fałszywego „Offline").
+  const online = statusQ.isLoading ? null : (s?.online ?? false);
+  const memberCount = statsQ.data?.memberCount;
+
+  return (
+    <div className={CARD}>
+      <CardHead icon={Bot} title="Informacje o bocie" />
+
+      <div className="flex items-center gap-3 border-b border-border p-5">
+        <Avatar src={s?.avatar ?? null} name={s?.username ?? "Bot"} size="lg" />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <p className="truncate text-sm font-semibold text-white">
+              {s?.username ?? "Bot"}
+            </p>
+            <span className="rounded bg-primary/15 px-1.5 py-0.5 text-[10px] font-bold uppercase text-primary">
+              Bot
+            </span>
+          </div>
+          <p className="mt-0.5 flex items-center gap-1.5 text-xs">
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                online === null ? "bg-gray-500" : online ? "bg-green-500" : "bg-red-500"
+              }`}
+            />
+            <span
+              className={
+                online === null
+                  ? "text-gray-400"
+                  : online
+                    ? "text-green-400"
+                    : "text-red-400"
+              }
+            >
+              {online === null ? "Sprawdzanie…" : online ? "Online" : "Offline"}
+            </span>
+            {s?.version && <span className="text-gray-500">· v{s.version}</span>}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex flex-col">
+        <StatRow icon={Clock} label="Uptime" value={formatUptime(s?.startedAt)} />
+        <StatRow
+          icon={Wifi}
+          label="Ping"
+          value={s?.ping != null ? `${s.ping} ms` : "—"}
+        />
+        <StatRow
+          icon={Users}
+          label="Członkowie"
+          value={memberCount != null ? String(memberCount) : "—"}
+        />
+        <StatRow
+          icon={Server}
+          label="Serwery"
+          value={s?.guildCount != null ? String(s.guildCount) : "—"}
+        />
+      </div>
+    </div>
+  );
+}
+
 /** Szkielet tylko karty z danymi — nagłówek i „Jak to działa" renderują się od razu. */
 function SettingsSkeleton() {
-  return <Skeleton className="h-64 w-full max-w-xl rounded-xl" />;
+  return <Skeleton className="h-64 w-full rounded-xl" />;
 }
 
 export default function SettingsPage() {
@@ -68,7 +193,7 @@ export default function SettingsPage() {
   );
 
   return (
-    <div className="jh-in flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
+    <div className="jh-in flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <PageHeader
         category="Konfiguracja serwera"
         icon={Settings}
@@ -82,78 +207,120 @@ export default function SettingsPage() {
       />
 
       <HowItWorks
-        steps={[
-          "Administrator i Zarządzanie serwerem zawsze mają dostęp do komend bota.",
-          "Opcjonalnie wskaż dodatkową rolę admina bota dla zaufanej ekipy.",
-          "Ustaw kanał logów moderacji, by śledzić wszystkie akcje w jednym miejscu.",
-          "Zmiany działają natychmiast — bez restartu bota.",
+        subtitle="Cztery kroki do skonfigurowanego bota"
+        cards={[
+          {
+            icon: ShieldCheck,
+            title: "Domyślny dostęp",
+            text: "Administrator i Zarządzanie serwerem zawsze mają dostęp do komend bota.",
+          },
+          {
+            icon: UserPlus,
+            title: "Dodatkowa rola",
+            text: "Opcjonalnie wskaż dodatkową rolę admina bota dla zaufanej ekipy.",
+          },
+          {
+            icon: Hash,
+            title: "Kanał logów",
+            text: "Ustaw kanał logów moderacji, by śledzić wszystkie akcje w jednym miejscu.",
+          },
+          {
+            icon: Zap,
+            title: "Bez restartu",
+            text: "Zmiany działają natychmiast — bez restartu bota.",
+          },
         ]}
       />
 
       {loading ? (
         <SettingsSkeleton />
       ) : (
-        <div className="flex flex-col gap-6 lg:flex-row">
-          <div className="flex-1 surface-raised rounded-xl border border-border bg-card">
-            <div className="flex items-center justify-between border-b border-border px-6 py-4">
-              <p className="text-sm font-semibold text-white">Ogólne</p>
-              <SaveButton
-                onClick={handleSave}
-                saving={saving}
-                autoSaveStatus={autoSaveStatus}
-                className="px-4 py-1.5 text-xs"
-              />
-            </div>
-
-            <div className="flex flex-col gap-5 p-6">
-              <div>
-                <label className="mb-1 block text-xs text-gray-400">
-                  Rola administratora bota
-                </label>
-                <div className="flex max-w-sm flex-wrap items-center gap-2">
-                  <RoleSelect
-                    value={config.adminRoleId ?? ""}
-                    onChange={(v) =>
-                      setConfig((c) => ({ ...c, adminRoleId: v || undefined }))
-                    }
-                    roles={roles}
-                    placeholder="— Nie ustawiono —"
-                    className="min-w-0 flex-1 px-3 py-2.5"
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+          {/* Ogólne */}
+          <div className="min-w-0 flex-1">
+            <div className={CARD}>
+              <CardHead
+                icon={Settings}
+                title="Ogólne"
+                subtitle="Uprawnienia i logi"
+                action={
+                  <SaveButton
+                    onClick={handleSave}
+                    saving={saving}
+                    autoSaveStatus={autoSaveStatus}
+                    className="px-4 py-1.5 text-xs"
                   />
-                  <CreateRoleButton
-                    guildId={guildId}
-                    defaultName="Bot Admin"
-                    onCreated={(role) => {
-                      setRoles((prev) =>
-                        [...prev, role].sort((a, b) => b.position - a.position),
-                      );
-                      setConfig((c) => ({ ...c, adminRoleId: role.id }));
-                    }}
-                  />
-                </div>
-                <p className="mt-1 text-xs text-gray-400">
-                  Dodatkowa rola dopuszczona do komend <code>/cfg_*</code> i{" "}
-                  <code>/mod_*</code>. Osoby z uprawnieniem Discord{" "}
-                  <strong>Administrator</strong> lub <strong>Zarządzanie serwerem</strong>{" "}
-                  i tak mają dostęp.
-                </p>
-              </div>
-
-              <ChannelField
-                className="max-w-sm"
-                label="Kanał logów moderacji"
-                value={config.modLogChannelId ?? ""}
-                onChange={(v) =>
-                  setConfig((c) => ({ ...c, modLogChannelId: v || undefined }))
                 }
-                channels={channels}
-                onChannelsChange={setChannels}
-                guildId={guildId}
-                defaultName="mod-logi"
-                placeholder="— Nie ustawiono —"
-                hint="Tu trafiają logi akcji moderacyjnych (ostrzeżenia, muty, kicki, bany)."
               />
+
+              <div className="flex flex-col gap-5 p-6">
+                <div>
+                  <label className="mb-1 block text-xs text-gray-400">
+                    Rola administratora bota
+                  </label>
+                  <div className="flex max-w-sm flex-wrap items-center gap-2">
+                    <RoleSelect
+                      value={config.adminRoleId ?? ""}
+                      onChange={(v) =>
+                        setConfig((c) => ({ ...c, adminRoleId: v || undefined }))
+                      }
+                      roles={roles}
+                      placeholder="— Nie ustawiono —"
+                      className="min-w-0 flex-1 px-3 py-2.5"
+                    />
+                    <CreateRoleButton
+                      guildId={guildId}
+                      defaultName="Bot Admin"
+                      onCreated={(role) => {
+                        setRoles((prev) =>
+                          [...prev, role].sort((a, b) => b.position - a.position),
+                        );
+                        setConfig((c) => ({ ...c, adminRoleId: role.id }));
+                      }}
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-gray-400">
+                    Dodatkowa rola dopuszczona do komend <code>/cfg_*</code> i{" "}
+                    <code>/mod_*</code>. Osoby z uprawnieniem Discord{" "}
+                    <strong>Administrator</strong> lub{" "}
+                    <strong>Zarządzanie serwerem</strong> i tak mają dostęp.
+                  </p>
+                </div>
+
+                <ChannelField
+                  className="max-w-sm"
+                  label="Kanał logów moderacji"
+                  value={config.modLogChannelId ?? ""}
+                  onChange={(v) =>
+                    setConfig((c) => ({ ...c, modLogChannelId: v || undefined }))
+                  }
+                  channels={channels}
+                  onChannelsChange={setChannels}
+                  guildId={guildId}
+                  defaultName="mod-logi"
+                  placeholder="— Nie ustawiono —"
+                  hint="Tu trafiają logi akcji moderacyjnych (ostrzeżenia, muty, kicki, bany)."
+                />
+              </div>
             </div>
+          </div>
+
+          {/* Informacje o bocie + Wskazówki */}
+          <div className="flex w-full flex-col gap-6 lg:w-96 lg:shrink-0">
+            <BotInfoCard guildId={guildId} />
+
+            <TipsCard
+              items={[
+                <>
+                  Trzymaj rolę bota <strong className="text-white">wysoko</strong> w
+                  hierarchii, by mógł zarządzać rolami.
+                </>,
+                <>
+                  Jeden <strong className="text-primary">#logi</strong> dla moderacji i
+                  audytu ułatwia ogarnięcie serwera.
+                </>,
+              ]}
+            />
           </div>
         </div>
       )}

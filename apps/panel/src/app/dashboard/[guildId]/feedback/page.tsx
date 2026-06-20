@@ -1,6 +1,5 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
   ArrowUp,
@@ -38,7 +37,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useChannels, useGuildConfig, useGuildFeedback } from "@/hooks/queries";
+import {
+  useBotStatus,
+  useChannels,
+  useGuildConfig,
+  useGuildFeedback,
+} from "@/hooks/queries";
 import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import type {
@@ -51,8 +55,6 @@ import type {
 import {
   addGuildFeedbackReply,
   deleteGuildFeedback,
-  getBotStatus,
-  queryKeys,
   sendFeedbackPanel,
   setGuildFeedbackStatus,
   submitFeedback,
@@ -383,11 +385,7 @@ export default function FeedbackPage() {
   const configQ = useGuildConfig(guildId);
   const channelsQ = useChannels(guildId);
   // Tożsamość bota (avatar + nazwa) do podglądu „jak wystawi to bot serwera".
-  const botStatusQ = useQuery({
-    queryKey: queryKeys.botStatus(),
-    queryFn: getBotStatus,
-    staleTime: 60_000,
-  });
+  const botStatusQ = useBotStatus();
   // Każda sekcja czeka tylko na swoje dane (ładowanie z góry na dół): statyczna część
   // (nagłówek, „Jak to działa", formularz) maluje się natychmiast, dane dochodzą sekcjami.
   useRedirectOnError(configQ.isError, configQ.error);

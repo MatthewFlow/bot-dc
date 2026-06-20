@@ -1,6 +1,13 @@
 import { type Model, model, Schema } from "mongoose";
 
-export type ModActionType = "warn" | "mute" | "unmute" | "kick" | "ban" | "clearwarns";
+export type ModActionType =
+  | "warn"
+  | "mute"
+  | "unmute"
+  | "kick"
+  | "ban"
+  | "unban"
+  | "clearwarns";
 
 export type ModActionDocument = {
   guildId: string;
@@ -17,7 +24,7 @@ const modActionSchema = new Schema<ModActionDocument>(
     guildId: { type: String, required: true },
     type: {
       type: String,
-      enum: ["warn", "mute", "unmute", "kick", "ban", "clearwarns"],
+      enum: ["warn", "mute", "unmute", "kick", "ban", "unban", "clearwarns"],
       required: true,
     },
     userId: { type: String, required: true },

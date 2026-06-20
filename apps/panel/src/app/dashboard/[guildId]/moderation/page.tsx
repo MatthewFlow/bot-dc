@@ -1,64 +1,84 @@
 "use client";
 
-import { Search, ShieldAlert, Trash2 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  AlertTriangle,
+  Ban,
+  Clock,
+  MicOff,
+  ScrollText,
+  Search,
+  ShieldAlert,
+  ShieldCheck,
+  Zap,
+} from "lucide-react";
 import { useParams } from "next/navigation";
-import { type CSSProperties, useState } from "react";
+import { useCallback, useState } from "react";
 
-import { MOD_ACTION, ModActionBadge } from "@/components/badges";
 import { ChannelField } from "@/components/ChannelField";
-import { ConfirmModal } from "@/components/confirmModal";
 import { HowItWorks } from "@/components/HowItWorks";
+import {
+  PUNISH_META,
+  PUNISH_ORDER,
+  type PunishKind,
+} from "@/components/moderation/actionMeta";
+import { ActivePunishments } from "@/components/moderation/ActivePunishments";
+import { MemberCard } from "@/components/moderation/MemberCard";
+import { ModActionDialog } from "@/components/moderation/ModActionDialog";
+import { ModLog } from "@/components/moderation/ModLog";
 import { PageHeader } from "@/components/PageHeader";
-import { RefreshButton } from "@/components/RefreshButton";
 import { SaveButton } from "@/components/SaveButton";
-import { Skeleton, SkeletonRow } from "@/components/Skeleton";
+import { Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
-import { useChannels, useGuildConfig, useModActions } from "@/hooks/queries";
+import { Switch } from "@/components/ui/switch";
+import {
+  useActivePunishments,
+  useChannels,
+  useGuildConfig,
+  useModStats,
+} from "@/hooks/queries";
 import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
-import type { Channel, GuildConfig, Warn } from "@/lib/api";
-import { clearWarnings, getWarnings, updateGuildConfig } from "@/lib/api";
+import { useAutoSave } from "@/hooks/useAutoSave";
+import type { Channel, GuildConfig, MemberSearchResult } from "@/lib/api";
+import { queryKeys, updateGuildConfig } from "@/lib/api";
 
-/** Szkielet tylko bloku konfiguracji/ostrzeżeń — nagłówek, „Jak to działa"
- *  i dziennik akcji (własny stan ładowania) renderują się od razu. */
-function ModSkeleton() {
-  return (
-    <div className="flex flex-col gap-6 lg:flex-row">
-      <Skeleton className="h-32 w-full rounded-xl lg:w-80" />
-      <Skeleton className="h-48 w-full flex-1 rounded-xl" />
-    </div>
-  );
-}
+type DialogState = { kind: PunishKind; member: MemberSearchResult | null };
 
 export default function ModerationPage() {
   const params = useParams();
   const guildId = params.guildId as string;
   const toast = useToast();
+  const qc = useQueryClient();
 
   const [config, setConfig] = useState<GuildConfig>({});
   const [channels, setChannels] = useState<Channel[]>([]);
   const [saving, setSaving] = useState(false);
-
-  const [searchId, setSearchId] = useState("");
-  const [searchedId, setSearchedId] = useState<string | null>(null);
-  const [warns, setWarns] = useState<Warn[]>([]);
-  const [warnsLoading, setWarnsLoading] = useState(false);
-  const [pendingClear, setPendingClear] = useState(false);
+  const [dialog, setDialog] = useState<DialogState | null>(null);
 
   const configQ = useGuildConfig(guildId);
   const channelsQ = useChannels(guildId);
-  const actionsQ = useModActions(guildId, 25);
-  const actions = actionsQ.data ?? [];
-  const actionsLoading = actionsQ.isLoading;
-  // Bramka tylko na config; kanały dopełnią selekt w tle, a dziennik akcji ma własny loader.
   const loading = configQ.isLoading;
   useRedirectOnError(configQ.isError, configQ.error);
-  useSeedOnce(configQ.data, setConfig);
+  const configReady = useSeedOnce(configQ.data, setConfig);
   useSeedOnce(channelsQ.data, setChannels);
+
+  /** Po każdej akcji odśwież statystyki, aktywne kary, dziennik i karty użytkowników. */
+  const refreshAll = useCallback(() => {
+    qc.invalidateQueries({ queryKey: queryKeys.modStats(guildId) });
+    qc.invalidateQueries({ queryKey: queryKeys.activePunishments(guildId) });
+    qc.invalidateQueries({ queryKey: ["mod-actions", guildId] });
+    qc.invalidateQueries({ queryKey: ["member-history", guildId] });
+    qc.invalidateQueries({ queryKey: ["warnings", guildId] });
+  }, [qc, guildId]);
 
   async function handleSave() {
     setSaving(true);
     try {
-      await updateGuildConfig(guildId, { modLogChannelId: config.modLogChannelId });
+      await updateGuildConfig(guildId, {
+        modLogChannelId: config.modLogChannelId,
+        dmOnPunish: config.dmOnPunish ?? false,
+        autoBanThreshold: config.autoBanThreshold ?? 0,
+      });
       toast("Zapisano zmiany.", "success");
     } catch {
       toast("Nie udało się zapisać.", "error");
@@ -67,74 +87,126 @@ export default function ModerationPage() {
     }
   }
 
-  async function handleSearch() {
-    const id = searchId.trim();
-    if (!id) return;
-    setWarnsLoading(true);
-    setSearchedId(id);
-    try {
-      setWarns(await getWarnings(guildId, id));
-    } catch {
-      toast("Nie udało się pobrać ostrzeżeń.", "error");
-    } finally {
-      setWarnsLoading(false);
-    }
-  }
-
-  async function handleClearWarns() {
-    if (!searchedId) return;
-    setPendingClear(false);
-    try {
-      await clearWarnings(guildId, searchedId);
-      setWarns([]);
-      toast("Ostrzeżenia usunięte.", "success");
-      actionsQ.refetch();
-    } catch {
-      toast("Nie udało się wyczyścić ostrzeżeń.", "error");
-    }
-  }
+  const { status: autoSaveStatus } = useAutoSave(
+    JSON.stringify({
+      modLogChannelId: config.modLogChannelId ?? "",
+      dmOnPunish: config.dmOnPunish ?? false,
+      autoBanThreshold: config.autoBanThreshold ?? 0,
+    }),
+    handleSave,
+    configReady,
+  );
 
   return (
-    <div className="jh-in flex flex-col gap-8 p-4 sm:p-6 lg:p-8">
+    <div className="jh-in flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <PageHeader
-        category="Server Safety"
+        category="Bezpieczeństwo"
         icon={ShieldAlert}
         title={
           <>
-            System <span className="italic text-primary">moderacji</span>
+            Centrum <span className="italic text-primary">moderacji</span>
           </>
         }
-        description="Kanał logów oraz zarządzanie ostrzeżeniami użytkowników."
+        description="Ostrzeżenia, wyciszenia, bany i pełna historia działań ekipy."
         className="mb-0"
       />
 
       <HowItWorks
-        steps={[
-          "Ustaw kanał logów — trafia tam każda akcja moderacyjna.",
-          "Moderatorzy używają komend /mod_warn, /mod_mute, /mod_kick i /mod_ban.",
-          "Każda akcja i ostrzeżenie zapisują się w bazie danych.",
-          "Ostrzeżenia przejrzysz i wyczyścisz wprost z tego panelu.",
+        subtitle="Cztery kroki do uporządkowanej moderacji"
+        cards={[
+          {
+            icon: Search,
+            title: "Znajdź członka",
+            text: "Wyszukaj użytkownika, by zobaczyć pełną historię ostrzeżeń, wyciszeń i banów.",
+          },
+          {
+            icon: ShieldAlert,
+            title: "Zastosuj karę",
+            text: "Ostrzeż, wycisz, wyrzuć lub zbanuj — jednym kliknięciem albo komendą.",
+          },
+          {
+            icon: Clock,
+            title: "Kary czasowe",
+            text: "Wyciszenia wygasają same; aktywne kary widzisz z odliczaniem czasu.",
+          },
+          {
+            icon: ScrollText,
+            title: "Pełny mod-log",
+            text: "Każda akcja trafia do logu z powodem, autorem i znacznikiem czasu.",
+          },
         ]}
       />
 
+      <ModStatsBar guildId={guildId} />
+
+      {/* Szybkie akcje */}
+      <div className="surface-raised rounded-xl border border-border bg-card p-5">
+        <div className="mb-4 flex items-center gap-2">
+          <Zap className="h-4 w-4 text-primary" />
+          <div>
+            <p className="text-sm font-semibold text-white">Szybkie akcje</p>
+            <p className="text-xs text-gray-400">Najczęstsze działania moderacyjne</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {PUNISH_ORDER.map((kind) => {
+            const meta = PUNISH_META[kind];
+            return (
+              <button
+                key={kind}
+                onClick={() => setDialog({ kind, member: null })}
+                className="surface-raised group flex items-center gap-3 rounded-xl border border-border bg-background/40 px-4 py-3 text-left transition hover:border-primary/40"
+              >
+                <span
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${meta.iconCls}`}
+                >
+                  <meta.icon className="size-4" />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-white">{meta.label}</p>
+                  <p className="truncate font-mono text-xs text-gray-400">
+                    {meta.command}
+                  </p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {loading ? (
-        <ModSkeleton />
+        <Skeleton className="h-80 w-full rounded-xl" />
       ) : (
-        <div className="flex flex-col gap-6 lg:flex-row">
-          {/* Config */}
-          <div className="flex flex-col gap-4 lg:w-80">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+          <div className="min-w-0 flex-1">
+            <MemberCard
+              guildId={guildId}
+              onAction={(kind, member) => setDialog({ kind, member })}
+              onChanged={refreshAll}
+            />
+          </div>
+
+          <div className="flex w-full flex-col gap-6 lg:w-96 lg:shrink-0">
+            <ActivePunishments guildId={guildId} onChanged={refreshAll} />
+
+            {/* Ustawienia */}
             <div className="surface-raised rounded-xl border border-border bg-card">
-              <div className="flex items-center justify-between border-b border-border px-6 py-4">
-                <p className="text-sm font-semibold text-white">Konfiguracja</p>
+              <div className="flex items-center justify-between border-b border-border px-5 py-4">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-primary" />
+                  <p className="text-sm font-semibold text-white">Ustawienia</p>
+                </div>
                 <SaveButton
                   onClick={handleSave}
                   saving={saving}
+                  autoSaveStatus={autoSaveStatus}
                   className="px-4 py-1.5 text-xs"
                 />
               </div>
-              <div className="flex flex-col gap-4 p-6">
+
+              <div className="flex flex-col gap-5 p-5">
                 <ChannelField
-                  label="Kanał logów moderacji"
+                  label="Kanał logów moderacyjnych"
                   value={config.modLogChannelId ?? ""}
                   onChange={(v) => setConfig((c) => ({ ...c, modLogChannelId: v }))}
                   channels={channels}
@@ -143,169 +215,161 @@ export default function ModerationPage() {
                   defaultName="mod-logi"
                   hint="Tutaj trafiają logi: warn, mute, kick, ban. Audyt zapisuje się też do bazy."
                 />
-              </div>
-            </div>
-          </div>
 
-          {/* Warnings */}
-          <div className="flex-1">
-            <div className="surface-raised rounded-xl border border-border bg-card">
-              <div className="border-b border-border px-6 py-4">
-                <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                  Wyszukaj po Discord User ID
-                </p>
-                <p className="text-sm font-semibold text-white">Ostrzeżenia</p>
-              </div>
+                <Toggle
+                  label="DM przy karze"
+                  desc="Informuj użytkownika o nałożonej karze."
+                  checked={config.dmOnPunish ?? false}
+                  onChange={(v) => setConfig((c) => ({ ...c, dmOnPunish: v }))}
+                />
 
-              <div className="p-6">
-                <div className="flex gap-2">
-                  <input
-                    name="warnUserId"
-                    aria-label="ID użytkownika"
-                    value={searchId}
-                    onChange={(e) => setSearchId(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                    placeholder="np. 123456789012345678"
-                    className="flex-1 rounded-lg bg-background px-3 py-2.5 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+                <div>
+                  <Toggle
+                    label="Auto-ban po ostrzeżeniach"
+                    desc="Eskaluj automatycznie po przekroczeniu progu."
+                    checked={(config.autoBanThreshold ?? 0) > 0}
+                    onChange={(v) =>
+                      setConfig((c) => ({ ...c, autoBanThreshold: v ? 5 : 0 }))
+                    }
                   />
-                  <button
-                    onClick={handleSearch}
-                    disabled={!searchId.trim() || warnsLoading}
-                    className="flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-primary-hover disabled:opacity-40"
-                  >
-                    <Search className="h-4 w-4" />
-                    <span className="hidden sm:inline">
-                      {warnsLoading ? "Szukam…" : "Szukaj"}
-                    </span>
-                  </button>
-                </div>
-
-                {searchedId && !warnsLoading && (
-                  <div className="mt-4">
-                    <div className="mb-3 flex items-center justify-between">
-                      <p className="text-xs text-gray-400">
-                        User <span className="font-mono text-gray-300">{searchedId}</span>{" "}
-                        · <span className="text-white">{warns.length}</span> ostrzeżeń
-                      </p>
-                      {warns.length > 0 && (
-                        <button
-                          onClick={() => setPendingClear(true)}
-                          className="flex shrink-0 items-center gap-1.5 rounded-lg bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-400 transition hover:bg-red-500/20"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          Wyczyść wszystkie
-                        </button>
-                      )}
+                  {(config.autoBanThreshold ?? 0) > 0 && (
+                    <div className="mt-3 flex items-center gap-2">
+                      <span className="text-xs text-gray-400">Próg:</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={20}
+                        value={config.autoBanThreshold ?? 5}
+                        onChange={(e) =>
+                          setConfig((c) => ({
+                            ...c,
+                            autoBanThreshold: Math.min(
+                              20,
+                              Math.max(1, Number(e.target.value) || 1),
+                            ),
+                          }))
+                        }
+                        className="w-20 rounded-lg bg-background px-2 py-1.5 text-center text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <span className="text-xs text-gray-400">ostrzeżeń</span>
                     </div>
-
-                    {warns.length === 0 ? (
-                      <p className="py-6 text-center text-sm text-gray-400">
-                        Brak ostrzeżeń dla tego użytkownika.
-                      </p>
-                    ) : (
-                      <div className="flex flex-col gap-2">
-                        {warns.map((w, i) => (
-                          <div
-                            key={w.id}
-                            style={{ "--i": i } as CSSProperties}
-                            className="jh-stagger flex items-start gap-3 rounded-lg bg-background px-4 py-3"
-                          >
-                            <span
-                              className={`mt-0.5 rounded px-1.5 py-0.5 text-xs font-bold ${MOD_ACTION.warn.cls}`}
-                            >
-                              #{i + 1}
-                            </span>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm text-white">{w.reason}</p>
-                              <p className="mt-0.5 text-xs text-gray-400">
-                                Przez <span className="font-mono">{w.moderatorId}</span> ·{" "}
-                                {new Date(w.createdAt).toLocaleString("pl-PL")}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {!searchedId && (
-                  <p className="mt-4 text-center text-sm text-gray-400">
-                    Wpisz Discord User ID i kliknij Szukaj.
-                  </p>
-                )}
+                  )}
+                </div>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Audit log — trwała historia wszystkich akcji moderacyjnych */}
-      <div className="surface-raised rounded-xl border border-border bg-card">
-        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-4 sm:px-6">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-              Trwały zapis w bazie · ostatnie 25
-            </p>
-            <p className="text-base font-semibold text-white">📋 Dziennik akcji</p>
-          </div>
-          <RefreshButton
-            onClick={() => actionsQ.refetch()}
-            loading={actionsQ.isFetching}
-          />
-        </div>
+      <ModLog guildId={guildId} />
 
-        {actionsLoading ? (
-          Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="border-b border-border last:border-0">
-              <SkeletonRow />
-            </div>
-          ))
-        ) : actions.length === 0 ? (
-          <div className="px-6 py-8 text-center text-sm text-gray-400">
-            Brak akcji moderacyjnych.
-          </div>
-        ) : (
-          actions.map((a, i) => {
-            return (
-              <div
-                key={a.id}
-                style={{ "--i": i } as CSSProperties}
-                className="jh-stagger flex flex-col gap-2 border-b border-border px-4 py-3 last:border-0 sm:flex-row sm:items-center sm:gap-3 sm:px-6"
-              >
-                <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <ModActionBadge
-                    type={a.type}
-                    variant="short"
-                    className="w-16 shrink-0 text-center font-bold"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm text-white">{a.reason}</p>
-                    <p className="truncate text-xs text-gray-400">
-                      <span className="font-mono">{a.userId}</span>
-                      {a.extra ? (
-                        <span className="text-gray-400"> · {a.extra}</span>
-                      ) : null}
-                    </p>
-                  </div>
-                </div>
-                <div className="shrink-0 pl-[4.75rem] text-xs text-gray-400 sm:pl-0 sm:text-right">
-                  <p className="truncate font-mono">{a.moderatorId}</p>
-                  <p>{new Date(a.createdAt).toLocaleString("pl-PL")}</p>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      {pendingClear && (
-        <ConfirmModal
-          message={`Czy na pewno chcesz usunąć wszystkie ostrzeżenia dla użytkownika ${searchedId}?`}
-          onConfirm={handleClearWarns}
-          onCancel={() => setPendingClear(false)}
+      {dialog && (
+        <ModActionDialog
+          guildId={guildId}
+          kind={dialog.kind}
+          presetMember={dialog.member}
+          onClose={() => setDialog(null)}
+          onDone={refreshAll}
         />
       )}
+    </div>
+  );
+}
+
+// ── Pasek statystyk ───────────────────────────────────────────────────────────
+
+function ModStatsBar({ guildId }: { guildId: string }) {
+  const statsQ = useModStats(guildId);
+  // „Wyciszeni teraz" liczymy z aktywnych kar — ta sama lista zasila kartę poniżej,
+  // więc nie pobieramy listy członków drugi raz (TanStack dedupuje po kluczu).
+  const punishmentsQ = useActivePunishments(guildId);
+  const s = statsQ.data;
+  const fmt = (v: number | null | undefined) => (v == null ? "—" : String(v));
+
+  return (
+    <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <StatCard
+        icon={AlertTriangle}
+        value={fmt(s?.activeWarnings)}
+        label="Aktywne ostrzeżenia"
+        cls="bg-yellow-400/10 text-yellow-400"
+        loading={statsQ.isLoading}
+      />
+      <StatCard
+        icon={MicOff}
+        value={fmt(punishmentsQ.data?.mutes.length)}
+        label="Wyciszeni teraz"
+        cls="bg-indigo-400/10 text-indigo-400"
+        loading={punishmentsQ.isLoading}
+      />
+      <StatCard
+        icon={Ban}
+        value={fmt(s?.bansThisWeek)}
+        label="Bany w tym tygodniu"
+        cls="bg-red-500/10 text-red-400"
+        loading={statsQ.isLoading}
+      />
+      <StatCard
+        icon={ShieldCheck}
+        value={fmt(s?.automodActions)}
+        label="Akcje automod (7 dni)"
+        cls="bg-green-400/10 text-green-400"
+        loading={statsQ.isLoading}
+      />
+    </div>
+  );
+}
+
+function StatCard({
+  icon: Icon,
+  value,
+  label,
+  cls,
+  loading,
+}: {
+  icon: typeof AlertTriangle;
+  value: string;
+  label: string;
+  cls: string;
+  loading?: boolean;
+}) {
+  return (
+    <div className="surface-raised flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
+      <span
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${cls}`}
+      >
+        <Icon size={18} />
+      </span>
+      <div className="min-w-0">
+        {loading ? (
+          <Skeleton className="h-5 w-8 rounded" />
+        ) : (
+          <p className="text-lg font-bold leading-tight text-white">{value}</p>
+        )}
+        <p className="truncate text-xs text-gray-400">{label}</p>
+      </div>
+    </div>
+  );
+}
+
+function Toggle({
+  checked,
+  onChange,
+  label,
+  desc,
+}: {
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  label: string;
+  desc?: string;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4">
+      <div className="min-w-0">
+        <p className="text-sm text-white">{label}</p>
+        {desc && <p className="text-xs text-gray-400">{desc}</p>}
+      </div>
+      <Switch checked={checked} onCheckedChange={onChange} className="mt-0.5" />
     </div>
   );
 }

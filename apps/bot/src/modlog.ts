@@ -8,6 +8,7 @@ const ACTION_LABELS: Record<ModActionType, string> = {
   unmute: "Unmute",
   kick: "Kick",
   ban: "Ban",
+  unban: "Unban",
   clearwarns: "Wyczyszczenie ostrzeżeń",
 };
 
@@ -17,8 +18,45 @@ const ACTION_COLORS: Record<ModActionType, number> = {
   unmute: 0x22c55e,
   kick: 0xef4444,
   ban: 0x7f1d1d,
+  unban: 0x22c55e,
   clearwarns: 0x6b7280,
 };
+
+/** Krótki komunikat DM dla karanego użytkownika (gdy serwer ma włączone `dmOnPunish`). */
+const DM_MESSAGE: Partial<Record<ModActionType, string>> = {
+  warn: "otrzymałeś ostrzeżenie",
+  mute: "zostałeś wyciszony",
+  kick: "zostałeś wyrzucony",
+  ban: "zostałeś zbanowany",
+};
+
+/**
+ * Wysyła karanemu użytkownikowi DM z informacją o nałożonej karze. Best-effort —
+ * użytkownik mógł mieć zamknięte wiadomości prywatne. Dla `kick`/`ban` wołaj PRZED
+ * usunięciem z serwera, bo potem bot i użytkownik nie dzielą już wspólnego serwera.
+ */
+export async function sendPunishDm(
+  user: User,
+  guildName: string,
+  action: ModActionType,
+  reason: string,
+  detail?: string,
+) {
+  const message = DM_MESSAGE[action];
+  if (!message) return;
+
+  const embed = new EmbedBuilder()
+    .setTitle(ACTION_LABELS[action])
+    .setColor(ACTION_COLORS[action])
+    .setDescription(
+      [`Na serwerze **${guildName}** ${message}.`, detail, `**Powód:** ${reason}`]
+        .filter(Boolean)
+        .join("\n"),
+    )
+    .setTimestamp();
+
+  await user.send({ embeds: [embed] }).catch(() => {});
+}
 
 /**
  * Zapisuje akcję moderacyjną do trwałego audytu (ZAWSZE — niezależnie od tego

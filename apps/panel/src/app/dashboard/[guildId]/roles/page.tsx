@@ -1,6 +1,5 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { MousePointerClick, SmilePlus } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
@@ -17,16 +16,20 @@ import { Skeleton, SkeletonForm, SkeletonTable } from "@/components/Skeleton";
 import { TipsCard } from "@/components/TipsCard";
 import { useToast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
-import { useButtonRoles, useChannels, useReactionRoles, useRoles } from "@/hooks/queries";
+import {
+  useBotStatus,
+  useButtonRoles,
+  useChannels,
+  useReactionRoles,
+  useRoles,
+} from "@/hooks/queries";
 import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import type { ButtonRole, Channel, EmbedConfig, ReactionRole, Role } from "@/lib/api";
 import {
   deleteButtonRole,
   deleteReactionRole,
-  getBotStatus,
   publishButtonRole,
   publishReactionRole,
-  queryKeys,
 } from "@/lib/api";
 import { hexToNumber, isEmbedEmpty } from "@/lib/embed";
 
@@ -116,11 +119,7 @@ export default function RolesPage() {
   const channelsQ = useChannels(guildId);
   const rolesQ = useRoles(guildId);
   // Tożsamość bota (avatar + nazwa) do podglądu „jak wystawi to bot serwera".
-  const botStatusQ = useQuery({
-    queryKey: queryKeys.botStatus(),
-    queryFn: getBotStatus,
-    staleTime: 60_000,
-  });
+  const botStatusQ = useBotStatus();
   // Bramka tylko na opublikowane listy (nasza baza); kanały/role dopełnią selekty w tle.
   const loading = buttonRolesQ.isLoading || reactionRolesQ.isLoading;
   useRedirectOnError(buttonRolesQ.isError, buttonRolesQ.error);

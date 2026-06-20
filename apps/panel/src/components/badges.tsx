@@ -37,6 +37,7 @@ export const MOD_ACTION: Record<
   unmute: { label: "Odciszenie", short: "Unmute", cls: "bg-green-400/10 text-green-400" },
   kick: { label: "Wyrzucenie", short: "Kick", cls: "bg-red-400/10 text-red-400" },
   ban: { label: "Ban", short: "Ban", cls: "bg-red-500/10 text-red-500" },
+  unban: { label: "Odbanowanie", short: "Unban", cls: "bg-green-400/10 text-green-400" },
   clearwarns: {
     label: "Wyczyszczono",
     short: "Clear",

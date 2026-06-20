@@ -232,6 +232,11 @@ export function sanitizeConfigPatch(
         const p = value.trim().slice(0, 5);
         if (p && !/\s/.test(p)) out[key] = p;
       }
+    } else if (key === "dmOnPunish") {
+      out[key] = value === true;
+    } else if (key === "autoBanThreshold") {
+      // Próg auto-banu po ostrzeżeniach: 0 = wyłączone, max 20.
+      out[key] = clampNum(value, 0, 0, 20);
     }
   }
 

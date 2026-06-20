@@ -28,6 +28,7 @@ import {
   handleTicketSubmit,
   showTicketModal,
 } from "./tickets/handler";
+import { BOT_VERSION } from "./version";
 
 /** Co ile bot odświeża heartbeat w bazie (API uznaje go za offline po ~3 nieudanych). */
 const HEARTBEAT_MS = 30_000;
@@ -90,6 +91,10 @@ export function createBot() {
           username: client.user?.tag,
           avatar: client.user?.displayAvatarURL() ?? null,
           guildCount: client.guilds.cache.size,
+          startedAt: client.readyAt ?? new Date(),
+          // Ping bywa -1 do pierwszego pomiaru — wtedy nie nadpisujemy pola.
+          ping: client.ws.ping >= 0 ? Math.round(client.ws.ping) : undefined,
+          version: BOT_VERSION,
         })
         .catch(() => {});
     await beat();

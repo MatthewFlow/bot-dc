@@ -1,11 +1,11 @@
-import { warnRepository } from "@jurassic-haven/db";
+import { guildConfigRepository, warnRepository } from "@jurassic-haven/db";
 import {
   type ChatInputCommandInteraction,
   EmbedBuilder,
   type GuildMember,
 } from "discord.js";
 
-import { sendModLog } from "../../modlog";
+import { sendModLog, sendPunishDm } from "../../modlog";
 
 /**
  * Wspólne zabezpieczenie akcji moderacyjnych: blokuje akcję na sobie,
@@ -64,8 +64,27 @@ export async function handleModWarn(interaction: ChatInputCommandInteraction) {
     `Ostrzeżenie #${all.length}`,
   );
 
+  const cfg = await guildConfigRepository.get(guild.id);
+  if (cfg?.dmOnPunish) await sendPunishDm(user, guild.name, "warn", reason);
+
+  // Auto-ban po przekroczeniu progu ostrzeżeń (0/brak = wyłączone).
+  let autoBanNote = "";
+  const threshold = cfg?.autoBanThreshold ?? 0;
+  if (threshold > 0 && all.length >= threshold && user.id !== guild.ownerId) {
+    const banReason = `Auto-ban po ${all.length} ostrzeżeniach`;
+    if (cfg?.dmOnPunish) await sendPunishDm(user, guild.name, "ban", banReason);
+    const banned = await guild.members
+      .ban(user.id, { reason: banReason })
+      .then(() => true)
+      .catch(() => false);
+    if (banned) {
+      await sendModLog(guild, "ban", user, interaction.user, banReason, "Auto-ban");
+      autoBanNote = `\n\n⛔ **Auto-ban** — użytkownik przekroczył próg ${threshold} ostrzeżeń.`;
+    }
+  }
+
   await interaction.editReply(
-    `Ostrzeżenie **#${all.length}** dla ${user} zostało dodane.\nPowód: ${reason}`,
+    `Ostrzeżenie **#${all.length}** dla ${user} zostało dodane.\nPowód: ${reason}${autoBanNote}`,
   );
 }
 
@@ -136,14 +155,10 @@ export async function handleModMute(interaction: ChatInputCommandInteraction) {
 
   try {
     await member.timeout(minutes * 60 * 1000, reason);
-    await sendModLog(
-      guild,
-      "mute",
-      user,
-      interaction.user,
-      reason,
-      `Czas: ${minutes} min`,
-    );
+    const detail = `Czas: ${minutes} min`;
+    await sendModLog(guild, "mute", user, interaction.user, reason, detail);
+    const cfg = await guildConfigRepository.get(guild.id);
+    if (cfg?.dmOnPunish) await sendPunishDm(user, guild.name, "mute", reason, detail);
     await interaction.editReply(
       `${user} wyciszony na **${minutes} min**.\nPowód: ${reason}`,
     );
@@ -194,6 +209,9 @@ export async function handleModKick(interaction: ChatInputCommandInteraction) {
   }
 
   try {
+    // DM przed wyrzuceniem — po nim bot i użytkownik nie dzielą już serwera.
+    const cfg = await guildConfigRepository.get(guild.id);
+    if (cfg?.dmOnPunish) await sendPunishDm(user, guild.name, "kick", reason);
     await member.kick(reason);
     await sendModLog(guild, "kick", user, interaction.user, reason);
     await interaction.editReply(
@@ -227,6 +245,9 @@ export async function handleModBan(interaction: ChatInputCommandInteraction) {
   }
 
   try {
+    // DM przed banem — po nim wiadomość już się nie dostarczy.
+    const cfg = await guildConfigRepository.get(guild.id);
+    if (cfg?.dmOnPunish) await sendPunishDm(user, guild.name, "ban", reason);
     await guild.members.ban(user.id, {
       reason,
       deleteMessageSeconds: deleteMessageDays * 86400,

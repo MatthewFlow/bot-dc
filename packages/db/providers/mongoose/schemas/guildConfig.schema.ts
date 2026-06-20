@@ -32,6 +32,10 @@ export type GuildConfigDocument = {
   goodbyeMessage?: string;
   roleRewards: RoleReward[];
   modLogChannelId?: string;
+  /** Czy bot wysyła karanemu użytkownikowi DM z informacją o nałożonej karze. */
+  dmOnPunish?: boolean;
+  /** Auto-ban po osiągnięciu tylu ostrzeżeń (`0`/brak = wyłączone). */
+  autoBanThreshold?: number;
   feedbackChannelId?: string;
   adminRoleId?: string;
   ticketSupportRoleId?: string;
@@ -153,6 +157,8 @@ const guildConfigSchema = new Schema<GuildConfigDocument>(
     goodbyeMessage: { type: String },
     roleRewards: { type: [roleRewardSchema], default: [] },
     modLogChannelId: { type: String },
+    dmOnPunish: { type: Boolean, default: undefined },
+    autoBanThreshold: { type: Number, default: undefined },
     feedbackChannelId: { type: String },
     adminRoleId: { type: String },
     ticketSupportRoleId: { type: String },

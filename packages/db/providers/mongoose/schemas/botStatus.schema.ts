@@ -9,6 +9,12 @@ export type BotStatusDocument = {
   username?: string;
   avatar?: string | null;
   guildCount?: number;
+  /** Moment startu bota — panel liczy z niego żywy uptime. */
+  startedAt?: Date;
+  /** Ping gatewaya (ms) z ostatniego heartbeatu. */
+  ping?: number;
+  /** Wersja bota (np. „2.4.1"). */
+  version?: string;
   lastHeartbeat: Date;
 };
 
@@ -18,6 +24,9 @@ const botStatusSchema = new Schema<BotStatusDocument>(
     username: { type: String },
     avatar: { type: String, default: null },
     guildCount: { type: Number, default: 0 },
+    startedAt: { type: Date },
+    ping: { type: Number },
+    version: { type: String },
     lastHeartbeat: { type: Date, default: () => new Date() },
   },
   { versionKey: false },

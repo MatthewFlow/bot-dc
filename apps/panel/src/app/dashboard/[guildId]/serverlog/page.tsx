@@ -1,14 +1,28 @@
 "use client";
 
-import { ScrollText } from "lucide-react";
+import {
+  Activity,
+  Hash,
+  LayoutGrid,
+  LogIn,
+  LogOut,
+  type LucideIcon,
+  Pencil,
+  ScrollText,
+  Settings,
+  ShieldCheck,
+  Tag,
+  Trash2,
+  UserPlus,
+} from "lucide-react";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { type ReactNode, useState } from "react";
 
+import { CardHead } from "@/components/CardHead";
 import { ChannelField } from "@/components/ChannelField";
-import { ChannelSelect } from "@/components/ChannelSelect";
+import { ExemptLists } from "@/components/ExemptLists";
 import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
-import { RoleSelect } from "@/components/RoleSelect";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
@@ -40,48 +54,138 @@ type CategoryKey =
   | "roleChanges"
   | "nicknameChanges";
 
-const CATEGORIES: { key: CategoryKey; label: string; desc: string }[] = [
+const CATEGORIES: {
+  key: CategoryKey;
+  label: string;
+  desc: string;
+  icon: LucideIcon;
+  iconCls: string;
+}[] = [
   {
     key: "messageDelete",
     label: "Usunięte wiadomości",
     desc: "Skasowane wiadomości (autor, kanał, treść)",
+    icon: Trash2,
+    iconCls: "bg-red-400/10 text-red-400",
   },
-  { key: "messageEdit", label: "Edytowane wiadomości", desc: "Zmiany treści (przed/po)" },
-  { key: "memberJoin", label: "Wejścia", desc: "Dołączenia nowych członków" },
-  { key: "memberLeave", label: "Wyjścia", desc: "Opuszczenia serwera" },
-  { key: "roleChanges", label: "Zmiany ról", desc: "Nadane i odebrane role" },
-  { key: "nicknameChanges", label: "Zmiany pseudonimów", desc: "Zmiany nicków członków" },
+  {
+    key: "messageEdit",
+    label: "Edytowane wiadomości",
+    desc: "Zmiany treści (przed/po)",
+    icon: Pencil,
+    iconCls: "bg-sky-400/10 text-sky-400",
+  },
+  {
+    key: "memberJoin",
+    label: "Wejścia",
+    desc: "Dołączenia nowych członków",
+    icon: LogIn,
+    iconCls: "bg-green-400/10 text-green-400",
+  },
+  {
+    key: "memberLeave",
+    label: "Wyjścia",
+    desc: "Opuszczenia serwera",
+    icon: LogOut,
+    iconCls: "bg-orange-400/10 text-orange-400",
+  },
+  {
+    key: "roleChanges",
+    label: "Zmiany ról",
+    desc: "Nadane i odebrane role",
+    icon: ShieldCheck,
+    iconCls: "bg-violet-400/10 text-violet-400",
+  },
+  {
+    key: "nicknameChanges",
+    label: "Zmiany pseudonimów",
+    desc: "Zmiany nicków członków",
+    icon: Tag,
+    iconCls: "bg-teal-400/10 text-teal-400",
+  },
 ];
 
-function Toggle({
-  checked,
-  onChange,
+/** Statyczny podgląd — pokazuje, jak wyglądają wpisy logów (nie pobiera danych). */
+const LOG_PREVIEW: {
+  icon: LucideIcon;
+  iconCls: string;
+  text: ReactNode;
+  time: string;
+}[] = [
+  {
+    icon: Trash2,
+    iconCls: "bg-red-400/10 text-red-400",
+    text: (
+      <>
+        <strong className="text-white">spam_bot_77</strong> — usunięto wiadomość na{" "}
+        <strong className="text-primary">#czat</strong>
+      </>
+    ),
+    time: "dziś o 12:04",
+  },
+  {
+    icon: LogIn,
+    iconCls: "bg-green-400/10 text-green-400",
+    text: (
+      <>
+        <strong className="text-white">nowy_dino</strong> dołączył na serwer
+      </>
+    ),
+    time: "dziś o 11:58",
+  },
+  {
+    icon: ShieldCheck,
+    iconCls: "bg-violet-400/10 text-violet-400",
+    text: (
+      <>
+        <strong className="text-white">Rexy</strong> otrzymał rolę{" "}
+        <strong className="text-primary">@Weteran</strong>
+      </>
+    ),
+    time: "dziś o 11:41",
+  },
+];
+
+/** Wiersz kategorii z kolorowym kafelkiem ikony + przełącznikiem. */
+function CategoryToggle({
+  icon: Icon,
+  iconCls,
   label,
   desc,
+  checked,
+  onChange,
 }: {
+  icon: LucideIcon;
+  iconCls: string;
+  label: string;
+  desc: string;
   checked: boolean;
   onChange: (v: boolean) => void;
-  label: string;
-  desc?: string;
 }) {
   return (
     <div className="flex items-start justify-between gap-4">
-      <div className="min-w-0">
-        <p className="text-sm text-white">{label}</p>
-        {desc && <p className="text-xs text-gray-400">{desc}</p>}
+      <div className="flex min-w-0 items-start gap-3">
+        <span
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${iconCls}`}
+        >
+          <Icon className="size-4" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-sm text-white">{label}</p>
+          <p className="text-xs text-gray-400">{desc}</p>
+        </div>
       </div>
-      <Switch checked={checked} onCheckedChange={onChange} className="mt-0.5" />
+      <Switch checked={checked} onCheckedChange={onChange} className="mt-1" />
     </div>
   );
 }
 
-/** Szkielet tylko karty z danymi — nagłówek i „Jak to działa" renderują się od razu. */
+/** Szkielet tylko kart z danymi — nagłówek i „Jak to działa" renderują się od razu. */
 function ServerLogSkeleton() {
   return <Skeleton className="h-80 w-full rounded-xl" />;
 }
 
 const CARD = "surface-raised rounded-xl border border-border bg-card";
-const SECTION_HEAD = "border-b border-border px-6 py-4 text-sm font-semibold text-white";
 
 export default function ServerLogPage() {
   const params = useParams();
@@ -110,8 +214,6 @@ export default function ServerLogPage() {
       ...c,
       serverLog: { ...DEFAULT_SERVERLOG, ...c.serverLog, ...patch },
     }));
-  const roleName = (id: string) => roles.find((r) => r.id === id)?.name ?? id;
-  const channelName = (id: string) => channels.find((c) => c.id === id)?.name ?? id;
 
   async function handleSave() {
     setSaving(true);
@@ -133,8 +235,6 @@ export default function ServerLogPage() {
     configReady,
   );
 
-  if (loading) return <ServerLogSkeleton />;
-
   return (
     <div className="jh-in flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
       <PageHeader
@@ -150,11 +250,28 @@ export default function ServerLogPage() {
       />
 
       <HowItWorks
-        steps={[
-          "Wybierz kanał logów i włącz logowanie zdarzeń serwera.",
-          "Zaznacz kategorie zdarzeń: wiadomości, wejścia/wyjścia, role, nicki.",
-          "Dodaj wyjątki dla ról i kanałów, których nie chcesz logować.",
-          "„Kto usunął” wymaga uprawnienia bota Wyświetlanie dziennika audytu.",
+        subtitle="Cztery kroki do pełnego audytu serwera"
+        cards={[
+          {
+            icon: Hash,
+            title: "Wybierz kanał",
+            text: "Wskaż kanał logów i włącz logowanie zdarzeń serwera.",
+          },
+          {
+            icon: LayoutGrid,
+            title: "Zaznacz kategorie",
+            text: "Wiadomości, wejścia/wyjścia, role, nicki — co chcesz śledzić.",
+          },
+          {
+            icon: UserPlus,
+            title: "Dodaj wyjątki",
+            text: "Role i kanały, których nie chcesz logować, pomiń.",
+          },
+          {
+            icon: Settings,
+            title: "Uprawnienia bota",
+            text: "„Kto usunął” wymaga uprawnienia Wyświetlanie dziennika audytu.",
+          },
         ]}
       />
 
@@ -162,45 +279,74 @@ export default function ServerLogPage() {
         <ServerLogSkeleton />
       ) : (
         <>
-          <div className={`${CARD} p-6`}>
-            <Toggle
+          {/* Master switch */}
+          <div className={`${CARD} flex items-center justify-between gap-4 p-6`}>
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                System logów
+              </p>
+              <p className="text-base font-semibold text-white">
+                Włącz logi serwera —{" "}
+                <span className={sl.enabled ? "text-green-400" : "text-gray-400"}>
+                  {sl.enabled ? "aktywne" : "wyłączone"}
+                </span>
+              </p>
+              <p className="mt-1 text-xs text-gray-400">
+                Gdy wyłączone, nic nie jest logowane.
+              </p>
+            </div>
+            <Switch
               checked={sl.enabled}
-              onChange={(v) => setSl({ enabled: v })}
-              label="Włącz logi serwera"
-              desc="Gdy wyłączone, nic nie jest logowane."
+              onCheckedChange={(v) => setSl({ enabled: v })}
+              className="shrink-0"
             />
           </div>
 
-          <div className={sl.enabled ? "" : "pointer-events-none opacity-50"}>
-            <div className="flex flex-col gap-6 lg:flex-row">
-              <div className="flex-1">
+          <div
+            className={sl.enabled ? "" : "pointer-events-none opacity-50"}
+            aria-disabled={!sl.enabled}
+          >
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+              {/* Kategorie */}
+              <div className="min-w-0 flex-1">
                 <div className={CARD}>
-                  <div className="flex items-center justify-between border-b border-border px-6 py-4">
-                    <p className="text-sm font-semibold text-white">Kategorie</p>
-                    <SaveButton
-                      onClick={handleSave}
-                      saving={saving}
-                      autoSaveStatus={autoSaveStatus}
-                      className="px-4 py-1.5 text-xs"
-                    />
-                  </div>
+                  <CardHead
+                    icon={LayoutGrid}
+                    title="Kategorie"
+                    subtitle="Które zdarzenia trafiają do logów"
+                    action={
+                      <SaveButton
+                        onClick={handleSave}
+                        saving={saving}
+                        autoSaveStatus={autoSaveStatus}
+                        className="px-4 py-1.5 text-xs"
+                      />
+                    }
+                  />
                   <div className="grid grid-cols-1 gap-5 p-6 sm:grid-cols-2">
                     {CATEGORIES.map((cat) => (
-                      <Toggle
+                      <CategoryToggle
                         key={cat.key}
-                        checked={sl[cat.key]}
-                        onChange={(v) => setSl({ [cat.key]: v })}
+                        icon={cat.icon}
+                        iconCls={cat.iconCls}
                         label={cat.label}
                         desc={cat.desc}
+                        checked={sl[cat.key]}
+                        onChange={(v) => setSl({ [cat.key]: v })}
                       />
                     ))}
                   </div>
                 </div>
               </div>
 
-              <div className="flex w-full flex-col gap-6 lg:w-80">
+              {/* Kanał + Wyjątki + Podgląd */}
+              <div className="flex w-full flex-col gap-6 lg:w-96 lg:shrink-0">
                 <div className={CARD}>
-                  <p className={SECTION_HEAD}>Kanał logów</p>
+                  <CardHead
+                    icon={Hash}
+                    title="Kanał logów"
+                    subtitle="Tu trafiają wszystkie włączone zdarzenia"
+                  />
                   <div className="p-6">
                     <ChannelField
                       value={sl.channelId ?? ""}
@@ -209,80 +355,51 @@ export default function ServerLogPage() {
                       onChannelsChange={setChannels}
                       guildId={guildId}
                       defaultName="logi-serwera"
-                      hint="Tu trafiają wszystkie włączone zdarzenia."
+                      hint="Prywatny kanał, widoczny dla ekipy."
                     />
                   </div>
                 </div>
 
                 <div className={CARD}>
-                  <p className={SECTION_HEAD}>Wyjątki</p>
-                  <div className="flex flex-col gap-4 p-6">
-                    <div>
-                      <label className="mb-1 block text-xs text-gray-400">
-                        Pomijane role
-                      </label>
-                      <RoleSelect
-                        value=""
-                        onChange={(v) =>
-                          v &&
-                          !sl.exemptRoleIds.includes(v) &&
-                          setSl({ exemptRoleIds: [...sl.exemptRoleIds, v] })
-                        }
-                        roles={roles.filter((r) => !sl.exemptRoleIds.includes(r.id))}
-                        placeholder="+ Dodaj rolę"
-                        className="w-full px-3 py-2"
-                      />
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {sl.exemptRoleIds.map((id) => (
-                          <button
-                            key={id}
-                            onClick={() =>
-                              setSl({
-                                exemptRoleIds: sl.exemptRoleIds.filter((x) => x !== id),
-                              })
-                            }
-                            className="rounded-full bg-background px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
-                          >
-                            @{roleName(id)} ✕
-                          </button>
-                        ))}
+                  <CardHead
+                    icon={UserPlus}
+                    title="Wyjątki"
+                    subtitle="Pomijane przy logowaniu"
+                  />
+                  <ExemptLists
+                    roles={roles}
+                    channels={channels}
+                    roleIds={sl.exemptRoleIds}
+                    channelIds={sl.exemptChannelIds}
+                    onRoleIdsChange={(ids) => setSl({ exemptRoleIds: ids })}
+                    onChannelIdsChange={(ids) => setSl({ exemptChannelIds: ids })}
+                  />
+                </div>
+
+                {/* Podgląd logów (statyczny) */}
+                <div className={CARD}>
+                  <CardHead
+                    icon={Activity}
+                    title="Podgląd logów"
+                    subtitle="Przykładowe wpisy na #logi"
+                  />
+                  <div className="flex flex-col">
+                    {LOG_PREVIEW.map((entry, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-3 border-b border-border px-5 py-3 last:border-0"
+                      >
+                        <span
+                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${entry.iconCls}`}
+                        >
+                          <entry.icon className="size-3.5" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-xs text-gray-300">{entry.text}</p>
+                          <p className="text-[11px] text-gray-500">{entry.time}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs text-gray-400">
-                        Pomijane kanały
-                      </label>
-                      <ChannelSelect
-                        value=""
-                        onChange={(v) =>
-                          v &&
-                          !sl.exemptChannelIds.includes(v) &&
-                          setSl({ exemptChannelIds: [...sl.exemptChannelIds, v] })
-                        }
-                        channels={channels.filter(
-                          (c) => !sl.exemptChannelIds.includes(c.id),
-                        )}
-                        placeholder="+ Dodaj kanał"
-                        className="w-full px-3 py-2"
-                      />
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {sl.exemptChannelIds.map((id) => (
-                          <button
-                            key={id}
-                            onClick={() =>
-                              setSl({
-                                exemptChannelIds: sl.exemptChannelIds.filter(
-                                  (x) => x !== id,
-                                ),
-                              })
-                            }
-                            className="rounded-full bg-background px-2.5 py-1 text-xs text-gray-300 hover:text-red-400"
-                          >
-                            #{channelName(id)} ✕
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                    ))}
                   </div>
                 </div>
               </div>

@@ -5,14 +5,22 @@ import { useQuery } from "@tanstack/react-query";
 import {
   fetchChannels,
   fetchGuildConfig,
+  fetchGuildStats,
   fetchLeaderboard,
   fetchRoles,
+  getActivePunishments,
+  getActivity,
+  getBotStatus,
   getButtonRoles,
   getGuildFeedback,
+  getMemberHistory,
   getModActions,
+  getModStats,
   getReactionRoles,
   getTickets,
+  getWarnings,
   queryKeys,
+  searchMembers,
   type TicketStatus,
 } from "@/lib/api";
 
@@ -61,6 +69,84 @@ export function useModActions(guildId: string, limit = 25) {
   return useQuery({
     queryKey: queryKeys.modActions(guildId, limit),
     queryFn: () => getModActions(guildId, limit),
+  });
+}
+
+export function useModStats(guildId: string) {
+  return useQuery({
+    queryKey: queryKeys.modStats(guildId),
+    queryFn: () => getModStats(guildId),
+    // Pasek statystyk odpytuje Discorda (lista członków) — nie refetchuj na każdy focus.
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useActivePunishments(guildId: string) {
+  return useQuery({
+    queryKey: queryKeys.activePunishments(guildId),
+    queryFn: () => getActivePunishments(guildId),
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useWarnings(guildId: string, userId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.warnings(guildId, userId ?? ""),
+    queryFn: () => getWarnings(guildId, userId as string),
+    enabled: Boolean(userId),
+  });
+}
+
+export function useMemberHistory(guildId: string, userId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.memberHistory(guildId, userId ?? ""),
+    queryFn: () => getMemberHistory(guildId, userId as string),
+    enabled: Boolean(userId),
+  });
+}
+
+/** Wyszukiwanie członka po nazwie/nicku/ID — odpalane dopiero gdy `q` ma ≥2 znaki. */
+export function useMemberSearch(guildId: string, q: string) {
+  const query = q.trim();
+  return useQuery({
+    queryKey: queryKeys.memberSearch(guildId, query),
+    queryFn: () => searchMembers(guildId, query),
+    enabled: query.length >= 2,
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+/**
+ * Status bota (jeden współdzielony klucz dla całej apki). `poll` włącza odświeżanie
+ * co 30 s (TopBar badge, karta „Informacje o bocie"); bez niego wystarcza 60 s świeżości.
+ */
+export function useBotStatus(poll = false) {
+  return useQuery({
+    queryKey: queryKeys.botStatus(),
+    queryFn: getBotStatus,
+    staleTime: poll ? 30_000 : 60_000,
+    refetchInterval: poll ? 30_000 : undefined,
+  });
+}
+
+export function useGuildStats(guildId: string) {
+  return useQuery({
+    queryKey: queryKeys.stats(guildId),
+    queryFn: () => fetchGuildStats(guildId),
+    staleTime: 30_000,
+  });
+}
+
+/** Feed „Aktywność na żywo" — odświeżany co 20 s (stąd badge „LIVE"). */
+export function useActivity(guildId: string, limit = 8) {
+  return useQuery({
+    queryKey: queryKeys.activity(guildId, limit),
+    queryFn: () => getActivity(guildId, limit),
+    refetchInterval: 20_000,
+    staleTime: 20_000,
   });
 }
 

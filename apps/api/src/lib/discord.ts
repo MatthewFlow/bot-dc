@@ -152,6 +152,7 @@ export function requireBotToken(c: Context): string | Response {
 
 const guildCountsSchema = z.object({
   name: z.string().optional(),
+  owner_id: z.string().optional(),
   approximate_member_count: z.number().optional(),
   approximate_presence_count: z.number().optional(),
 });

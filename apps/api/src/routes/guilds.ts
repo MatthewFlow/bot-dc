@@ -1,8 +1,15 @@
-import type { Feedback, FeedbackIdentityPatch, FeedbackStatus } from "@jurassic-haven/db";
+import type {
+  Feedback,
+  FeedbackIdentityPatch,
+  FeedbackStatus,
+  ModActionType,
+} from "@jurassic-haven/db";
 import {
+  activityEventRepository,
   feedbackRepository,
   guildConfigRepository,
   levelFromXp,
+  modActionRepository,
   ticketRepository,
   toDiscordEmbed,
   warnRepository,
@@ -42,6 +49,8 @@ const CONFIG_ALLOWED_FIELDS = [
   "goodbyeMessage",
   "roleRewards",
   "modLogChannelId",
+  "dmOnPunish",
+  "autoBanThreshold",
   "feedbackChannelId",
   "adminRoleId",
   "ticketSupportRoleId",
@@ -550,13 +559,26 @@ guildRoutes.get("/:guildId/stats", async (c) => {
     return { banCount: bans.length, banCountCapped: bans.length >= 1000 };
   })();
 
-  const [{ memberCount, onlineCount }, { banCount, banCountCapped }, warnCount, tickets] =
-    await Promise.all([
-      guildInfo,
-      banInfo,
-      warnRepository.countByGuild(guildId),
-      ticketRepository.counts(guildId),
-    ]);
+  // Trendy „w tym tygodniu" — z dat utworzenia (członków nie liczymy, brak historii).
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  const [
+    { memberCount, onlineCount },
+    { banCount, banCountCapped },
+    warnCount,
+    tickets,
+    bansThisWeek,
+    warnsThisWeek,
+    ticketsThisWeek,
+  ] = await Promise.all([
+    guildInfo,
+    banInfo,
+    warnRepository.countByGuild(guildId),
+    ticketRepository.counts(guildId),
+    modActionRepository.countSince(guildId, weekAgo, { type: "ban" }),
+    warnRepository.countSince(guildId, weekAgo),
+    ticketRepository.countSince(guildId, weekAgo),
+  ]);
 
   return c.json({
     memberCount,
@@ -565,5 +587,70 @@ guildRoutes.get("/:guildId/stats", async (c) => {
     banCountCapped,
     warnCount,
     tickets,
+    trends: { bans: bansThisWeek, warns: warnsThisWeek, tickets: ticketsThisWeek },
   });
+});
+
+// Feed „Aktywność na żywo" — łączy akcje moderacyjne z dziennikiem zdarzeń
+// (level-upy, role-nagrody), sortuje po czasie i wzbogaca o nick/avatar.
+guildRoutes.get("/:guildId/activity", async (c) => {
+  const guildId = c.req.param("guildId");
+  const raw = Number(c.req.query("limit") ?? 8);
+  const limit = Number.isFinite(raw) && raw > 0 ? Math.min(raw, 30) : 8;
+
+  const [modActions, events] = await Promise.all([
+    modActionRepository.getRecent(guildId, limit),
+    activityEventRepository.getRecent(guildId, limit),
+  ]);
+
+  type ActivityItem = {
+    id: string;
+    kind: "mod" | "levelup" | "role";
+    userId: string;
+    createdAt: Date;
+    modType?: ModActionType;
+    reason?: string;
+    level?: number;
+    roleName?: string | null;
+  };
+
+  const items: ActivityItem[] = [
+    ...modActions.map((a) => ({
+      id: `mod-${a.id}`,
+      kind: "mod" as const,
+      userId: a.userId,
+      createdAt: a.createdAt,
+      modType: a.type,
+      reason: a.reason,
+    })),
+    ...events.map((e) => ({
+      id: `ev-${e.id}`,
+      kind: e.type,
+      userId: e.userId,
+      createdAt: e.createdAt,
+      level: e.level,
+      roleName: e.roleName ?? null,
+    })),
+  ];
+  items.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  const top = items.slice(0, limit);
+
+  const resolve = createMemberResolver(guildId, process.env.DISCORD_TOKEN);
+  const uniqueIds = [...new Set(top.map((i) => i.userId))];
+  await Promise.all(uniqueIds.map((id) => resolve(id)));
+
+  const enriched = await Promise.all(
+    top.map(async (i) => {
+      const m = await resolve(i.userId);
+      return {
+        ...i,
+        createdAt: i.createdAt.toISOString(),
+        displayName: m.displayName,
+        username: m.username,
+        avatar: m.avatar,
+      };
+    }),
+  );
+
+  return c.json(enriched);
 });

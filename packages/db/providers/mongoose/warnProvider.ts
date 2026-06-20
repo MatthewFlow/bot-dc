@@ -38,4 +38,8 @@ export class WarnProvider implements IWarnRepository {
   async countByGuild(guildId: string): Promise<number> {
     return WarnModel.countDocuments({ guildId });
   }
+
+  async countSince(guildId: string, since: Date): Promise<number> {
+    return WarnModel.countDocuments({ guildId, createdAt: { $gte: since } });
+  }
 }

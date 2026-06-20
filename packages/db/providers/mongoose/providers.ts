@@ -1,3 +1,4 @@
+import type { IActivityEventRepository } from "../../repositories/activityEventRepository";
 import type { IBotStatusRepository } from "../../repositories/botStatusRepository";
 import type { IButtonRoleRepository } from "../../repositories/buttonRoleRepository";
 import type { IFeedbackRepository } from "../../repositories/feedbackRepository";
@@ -8,6 +9,7 @@ import type { ISessionRepository } from "../../repositories/sessionRepository";
 import type { ITicketRepository } from "../../repositories/ticketRepository";
 import type { IWarnRepository } from "../../repositories/warnRepository";
 import type { IXpRepository } from "../../repositories/xpRepository";
+import { ActivityEventProvider } from "./activityEventProvider";
 import { BotStatusProvider } from "./botStatusProvider";
 import { ButtonRoleProvider } from "./buttonRoleProvider";
 import { FeedbackProvider } from "./feedbackProvider";
@@ -29,3 +31,5 @@ export const modActionRepository: IModActionRepository = new ModActionProvider()
 export const sessionRepository: ISessionRepository = new SessionProvider();
 export const feedbackRepository: IFeedbackRepository = new FeedbackProvider();
 export const botStatusRepository: IBotStatusRepository = new BotStatusProvider();
+export const activityEventRepository: IActivityEventRepository =
+  new ActivityEventProvider();

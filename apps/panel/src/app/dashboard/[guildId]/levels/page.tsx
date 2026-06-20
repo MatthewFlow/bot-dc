@@ -1,6 +1,5 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { TrendingUp } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useId, useState } from "react";
@@ -22,11 +21,17 @@ import { useToast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { VariablesCard } from "@/components/VariablesCard";
-import { useChannels, useGuildConfig, useLeaderboard, useRoles } from "@/hooks/queries";
+import {
+  useBotStatus,
+  useChannels,
+  useGuildConfig,
+  useLeaderboard,
+  useRoles,
+} from "@/hooks/queries";
 import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import type { Channel, EmbedConfig, GuildConfig, LevelingConfig, Role } from "@/lib/api";
-import { getBotStatus, queryKeys, updateGuildConfig } from "@/lib/api";
+import { updateGuildConfig } from "@/lib/api";
 import { LEVEL_VARS, previewReplacer, VARIABLE_INFO } from "@/lib/embed";
 
 const DEFAULT_LEVELING: LevelingConfig = {
@@ -178,11 +183,7 @@ export default function LevelsPage() {
   const rolesQ = useRoles(guildId);
   const channelsQ = useChannels(guildId);
   // Tożsamość bota (avatar + nazwa) do podglądu „jak wystawi to bot serwera".
-  const botStatusQ = useQuery({
-    queryKey: queryKeys.botStatus(),
-    queryFn: getBotStatus,
-    staleTime: 60_000,
-  });
+  const botStatusQ = useBotStatus();
   const lbQ = useLeaderboard(guildId, 10);
   const leaderboard = lbQ.data ?? [];
   const leaderboardLoading = lbQ.isLoading;
