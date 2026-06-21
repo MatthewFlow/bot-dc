@@ -50,6 +50,12 @@ Większość pozycji to świadomie odłożone elementy z serii redesignów panel
 | **i18n PL/EN** | L | Zasięg/rynek, profesjonalizm | Ogromna powierzchnia (każdy string), utrzymanie tłumaczeń, ryzyko regresji |
 | **Sharding** | L | Skala (tysiące serwerów) | Przedwczesne teraz — duża złożoność bez realnej potrzeby |
 
+## 🦖 Integracje zewnętrzne (do rozważenia)
+
+| Funkcja | Koszt | Korzyści | Minusy / ryzyko vs teraz |
+|---|---|---|---|
+| **RCON — serwer gry The Isle: Evrima** | L | Zarządzanie serwerem gry z Discorda/panelu (ogłoszenia in-game, live lista graczy, kick/ban, save, **zaplanowane restarty przez kolejkę `botJob`**); idealnie pasuje do motywu dinozaurów | Inna domena niż moderacja Discorda; protokół RCON Evrimy bywa zmienny między patchami; najlepiej jako **wydzielona usługa z kontraktem sieciowym** (kandydat na osobny serwis, np. w Go) |
+
 ---
 
 ## Wspólny minus (dla wszystkiego)
