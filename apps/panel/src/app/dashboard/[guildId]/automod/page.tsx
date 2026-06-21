@@ -41,6 +41,10 @@ const DEFAULT_AUTOMOD: AutoModConfig = {
   exemptChannelIds: [],
   action: "delete",
   muteDurationSeconds: 300,
+  blockMassMention: false,
+  maxMentions: 5,
+  blockCaps: false,
+  blockRepeated: false,
 };
 
 const ACTIONS: { value: AutoModConfig["action"]; label: string; icon: LucideIcon }[] = [
@@ -251,6 +255,47 @@ export default function AutoModPage() {
                           className="w-full resize-y rounded-lg bg-background px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
                         />
                       </div>
+
+                      <div className="border-t border-border pt-4">
+                        <Toggle
+                          checked={am.blockMassMention ?? false}
+                          onChange={(v) => setAm({ blockMassMention: v })}
+                          label="Masowe oznaczenia"
+                          desc="Blokuj @everyone/@here oraz nadmiar oznaczeń."
+                        />
+                        {am.blockMassMention && (
+                          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-gray-300">
+                            <span>Maks.</span>
+                            <input
+                              type="number"
+                              name="maxMentions"
+                              aria-label="Maksymalna liczba oznaczeń"
+                              min={1}
+                              max={50}
+                              value={am.maxMentions ?? 5}
+                              onChange={(e) =>
+                                setAm({ maxMentions: Number(e.target.value) })
+                              }
+                              className={NUM_INPUT}
+                            />
+                            <span>oznaczeń.</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <Toggle
+                        checked={am.blockCaps ?? false}
+                        onChange={(v) => setAm({ blockCaps: v })}
+                        label="Blokuj CAPS"
+                        desc="Wiadomości pisane głównie WIELKIMI literami."
+                      />
+
+                      <Toggle
+                        checked={am.blockRepeated ?? false}
+                        onChange={(v) => setAm({ blockRepeated: v })}
+                        label="Powtarzanie znaków"
+                        desc="Np. „aaaaaaaaaa” albo „!!!!!!!!!!”."
+                      />
 
                       <div className="border-t border-border pt-4">
                         <Toggle

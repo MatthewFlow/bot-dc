@@ -116,6 +116,10 @@ const autoModSchema = new Schema<AutoModConfig>(
     exemptChannelIds: { type: [String], default: [] },
     action: { type: String, enum: ["delete", "warn", "mute"], default: "delete" },
     muteDurationSeconds: { type: Number, default: 300 },
+    blockMassMention: { type: Boolean, default: false },
+    maxMentions: { type: Number, default: 5 },
+    blockCaps: { type: Boolean, default: false },
+    blockRepeated: { type: Boolean, default: false },
   },
   { _id: false },
 );

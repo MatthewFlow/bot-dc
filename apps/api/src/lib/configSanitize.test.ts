@@ -67,6 +67,28 @@ describe("sanitizeConfigPatch", () => {
     expect(out.autoMod?.muteDurationSeconds).toBe(10);
   });
 
+  test("includes and clamps the new automod filters", () => {
+    const out = sanitizeConfigPatch({
+      autoMod: {
+        blockMassMention: true,
+        maxMentions: 999,
+        blockCaps: true,
+        blockRepeated: "x",
+      },
+    }) as {
+      autoMod?: {
+        blockMassMention: boolean;
+        maxMentions: number;
+        blockCaps: boolean;
+        blockRepeated: boolean;
+      };
+    };
+    expect(out.autoMod?.blockMassMention).toBe(true);
+    expect(out.autoMod?.maxMentions).toBe(50); // clamp 1..50
+    expect(out.autoMod?.blockCaps).toBe(true);
+    expect(out.autoMod?.blockRepeated).toBe(false); // tylko `true` liczy się jako on
+  });
+
   test("filters disabledCommands to a clean string array", () => {
     const out = sanitizeConfigPatch({
       disabledCommands: ["level", 5, "  profile  ", "", "leaderboard"],

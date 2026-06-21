@@ -140,6 +140,10 @@ function sanitizeAutoMod(v: unknown): AutoModConfig | undefined {
     action,
     // Discord timeout caps at 28 days.
     muteDurationSeconds: clampNum(o.muteDurationSeconds, 300, 10, 2_419_200),
+    blockMassMention: o.blockMassMention === true,
+    maxMentions: clampNum(o.maxMentions, 5, 1, 50),
+    blockCaps: o.blockCaps === true,
+    blockRepeated: o.blockRepeated === true,
   };
 }
 

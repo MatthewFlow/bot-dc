@@ -56,6 +56,14 @@ export type AutoModConfig = {
   exemptChannelIds: string[];
   action: AutoModAction;
   muteDurationSeconds: number;
+  /** Blokuj wiadomości z nadmiarem oznaczeń (lub @everyone/@here). */
+  blockMassMention?: boolean;
+  /** Próg oznaczeń dla mass-mention (domyślnie 5). */
+  maxMentions?: number;
+  /** Blokuj wiadomości pisane głównie WIELKIMI literami. */
+  blockCaps?: boolean;
+  /** Blokuj nadmierne powtarzanie znaków. */
+  blockRepeated?: boolean;
 };
 
 export type ServerLogConfig = {

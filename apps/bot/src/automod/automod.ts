@@ -59,6 +59,26 @@ function detectViolation(message: Message, cfg: AutoModConfig): string | null {
     }
   }
 
+  // Masowe oznaczenia: @everyone/@here lub więcej niż próg oznaczeń użytkowników/ról.
+  if (cfg.blockMassMention) {
+    const mentions = message.mentions.users.size + message.mentions.roles.size;
+    if (message.mentions.everyone || mentions > (cfg.maxMentions ?? 5)) {
+      return "masowe oznaczenia";
+    }
+  }
+
+  // CAPS: wiadomość pisana głównie WIELKIMI literami (pomijamy krótkie).
+  if (cfg.blockCaps) {
+    const letters = content.replace(/[^a-zA-ZąćęłńóśźżĄĆĘŁŃÓŚŹŻ]/g, "");
+    const upper = content.replace(/[^A-ZĄĆĘŁŃÓŚŹŻ]/g, "").length;
+    if (letters.length >= 10 && upper / letters.length > 0.7) {
+      return "nadmiar wielkich liter";
+    }
+  }
+
+  // Powtarzanie tego samego znaku (np. „aaaaaaaaaa", „!!!!!!!!!!").
+  if (cfg.blockRepeated && /(.)\1{9,}/.test(content)) return "powtarzanie znaków";
+
   if (cfg.spamEnabled && message.guild) {
     const key = `${message.guild.id}:${message.author.id}`;
     const now = Date.now();
