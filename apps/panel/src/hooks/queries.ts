@@ -13,6 +13,8 @@ import {
   getBotStatus,
   getButtonRoles,
   getConfigAudit,
+  getGameAnnounces,
+  getGameServer,
   getGuildFeedback,
   getJobs,
   getMemberHistory,
@@ -166,6 +168,24 @@ export function useJobs(guildId: string) {
     queryKey: queryKeys.jobs(guildId),
     queryFn: () => getJobs(guildId),
     staleTime: 30_000,
+  });
+}
+
+export function useGameServer(guildId: string) {
+  return useQuery({
+    queryKey: queryKeys.gameServer(guildId),
+    queryFn: () => getGameServer(guildId),
+    // Stan serwera gry odświeżamy co 20 s (bot pisze migawkę co 30 s).
+    refetchInterval: 20_000,
+    staleTime: 15_000,
+  });
+}
+
+export function useGameAnnounces(guildId: string) {
+  return useQuery({
+    queryKey: queryKeys.gameAnnounces(guildId),
+    queryFn: () => getGameAnnounces(guildId),
+    staleTime: 15_000,
   });
 }
 

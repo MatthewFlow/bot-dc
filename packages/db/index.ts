@@ -8,6 +8,7 @@ export {
   buttonRoleRepository,
   configAuditRepository,
   feedbackRepository,
+  gameServerStatusRepository,
   guildConfigRepository,
   modActionRepository,
   reactionRoleRepository,
@@ -46,6 +47,11 @@ export type {
   FeedbackReply,
   FeedbackStatus,
 } from "./repositories/feedbackRepository";
+export type {
+  GamePlayer,
+  GameServerSnapshot,
+  GameServerWrite,
+} from "./repositories/gameServerStatusRepository";
 export type {
   AutoModConfig,
   GuildConfig,

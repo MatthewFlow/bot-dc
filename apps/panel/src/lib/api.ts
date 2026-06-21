@@ -140,12 +140,13 @@ export type JobRecurrence = "once" | "daily" | "weekly";
 export type BotJob = {
   id: string;
   guildId: string;
-  type: "sendEmbed";
+  type: "sendEmbed" | "unban" | "gameAnnounce";
   runAt: string;
   recurrence: JobRecurrence;
   status: "pending" | "done" | "error" | "cancelled";
   channelId?: string;
   embed?: EmbedConfig;
+  text?: string;
   lastError?: string;
   lastRunAt?: string;
   createdBy: string;
@@ -159,6 +160,22 @@ export type CreateJobInput = {
   /** ISO — wymagane dla schedule/recurring. */
   runAt?: string;
   recurrence?: "daily" | "weekly";
+};
+
+/** Gracz na serwerze gry (The Isle: Evrima). */
+export type GamePlayer = { id: string; name: string; dino?: string };
+
+/** Migawka stanu serwera gry z panelu. */
+export type GameServerInfo = {
+  /** Czy integracja jest aktywna (bot kiedykolwiek zapisał migawkę). */
+  configured: boolean;
+  online: boolean;
+  name: string | null;
+  map: string | null;
+  players: number;
+  maxPlayers: number;
+  playerList: GamePlayer[];
+  updatedAt: string | null;
 };
 
 /** Wpis audytu zmian configu (kto/kiedy/które pola). */
@@ -510,6 +527,8 @@ export const queryKeys = {
   botStatus: () => ["bot-status"] as const,
   configAudit: (g: string) => ["config-audit", g] as const,
   jobs: (g: string) => ["jobs", g] as const,
+  gameServer: (g: string) => ["gameserver", g] as const,
+  gameAnnounces: (g: string) => ["game-announces", g] as const,
   guildFeedback: (g: string) => ["guild-feedback", g] as const,
   myFeedback: () => ["my-feedback"] as const,
 };
@@ -822,6 +841,43 @@ export async function deleteJob(guildId: string, id: string): Promise<void> {
     method: "DELETE",
   });
   if (!res.ok) throw new Error("Failed to delete job");
+}
+
+export async function getGameServer(guildId: string): Promise<GameServerInfo> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/gameserver`);
+  if (!res.ok) throw new Error("Failed to fetch game server");
+  return res.json();
+}
+
+export async function getGameAnnounces(guildId: string): Promise<BotJob[]> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/gameserver/announces`);
+  if (!res.ok) throw new Error("Failed to fetch announces");
+  return res.json();
+}
+
+export async function createGameAnnounce(
+  guildId: string,
+  message: string,
+  minutes?: number,
+): Promise<BotJob> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/gameserver/announce`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message, minutes }),
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(err?.error || "Nie udało się zlecić ogłoszenia.");
+  }
+  return res.json();
+}
+
+export async function cancelGameAnnounce(guildId: string, id: string): Promise<void> {
+  const res = await fetchWithRetry(
+    `${API_URL}/guilds/${guildId}/gameserver/announces/${id}`,
+    { method: "DELETE" },
+  );
+  if (!res.ok) throw new Error("Failed to cancel announce");
 }
 
 export async function getConfigAudit(

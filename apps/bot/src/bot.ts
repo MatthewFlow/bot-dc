@@ -25,6 +25,7 @@ import { onMessageReactionRemove } from "./events/messageReactionRemove";
 import { onThreadDelete } from "./events/threadDelete";
 import { onThreadUpdate } from "./events/threadUpdate";
 import { handleFeedbackSubmit, showFeedbackModal } from "./feedback/feedback";
+import { startGameStatusSweep } from "./gameserver/statusSweep";
 import { startJobWorker } from "./jobs/worker";
 import { startVoiceXp } from "./levels/voiceXp";
 import {
@@ -143,6 +144,9 @@ export function createBot() {
 
     // Worker kolejki zadań bot↔panel (zaplanowane/cykliczne ogłoszenia itd.).
     startJobWorker(client);
+
+    // Migawka stanu serwera gry (RCON) do DB — tylko gdy skonfigurowany.
+    startGameStatusSweep();
   });
 
   client.on("guildCreate", onGuildCreate);

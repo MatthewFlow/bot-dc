@@ -86,6 +86,9 @@ Zakładka **„Serwer gry"** (na razie placeholder „wkrótce", jak Giveaways).
 3. ✅ **Faza 2 (strona bota):** komendy `game_*` (admin-gated, rejestrowane tylko gdy RCON w env) —
    `game_status`/`game_players`/`game_announce`/`game_save`/`game_kick`/`game_ban`; zadanie
    `gameAnnounce` na kolejce `botJob` (opcja `za_minut`). ⏳ Kalibracja protokołu czeka na realny serwer.
-4. **Faza 3:** panel „Serwer gry" na żywych danych (wzorzec: bot pisze snapshot statusu do DB,
-   panel czyta — jak heartbeat bota), akcje z panelu przez kolejkę; ew. wycięcie do osobnej
-   usługi (kandydat na Go), kontrakt bez zmian.
+4. ✅ **Faza 3:** panel „Serwer gry" na żywych danych — bot pisze snapshot (`gameServerStatus`)
+   do DB co 30 s, API/panel czytają (online/gracze/mapa), ogłoszenia in-game z panelu przez
+   kolejkę (`gameAnnounce`, teraz/zaplanowane) + lista z anulowaniem. ⏳ Kalibracja protokołu
+   nadal czeka na realny serwer.
+5. **Faza 4 (opcjonalnie):** wycięcie do osobnej usługi (kandydat na Go), kontrakt bez zmian;
+   akcje na graczu (kick/ban) z panelu, transkrypty/alerty.

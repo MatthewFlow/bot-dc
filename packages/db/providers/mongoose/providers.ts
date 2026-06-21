@@ -4,6 +4,7 @@ import type { IBotStatusRepository } from "../../repositories/botStatusRepositor
 import type { IButtonRoleRepository } from "../../repositories/buttonRoleRepository";
 import type { IConfigAuditRepository } from "../../repositories/configAuditRepository";
 import type { IFeedbackRepository } from "../../repositories/feedbackRepository";
+import type { IGameServerStatusRepository } from "../../repositories/gameServerStatusRepository";
 import type { IGuildConfigRepository } from "../../repositories/guildConfigRepository";
 import type { IModActionRepository } from "../../repositories/modActionRepository";
 import type { IReactionRoleRepository } from "../../repositories/reactionRoleRepository";
@@ -17,6 +18,7 @@ import { BotStatusProvider } from "./botStatusProvider";
 import { ButtonRoleProvider } from "./buttonRoleProvider";
 import { ConfigAuditProvider } from "./configAuditProvider";
 import { FeedbackProvider } from "./feedbackProvider";
+import { GameServerStatusProvider } from "./gameServerStatusProvider";
 import { GuildConfigProvider } from "./guildConfigProvider";
 import { ModActionProvider } from "./modActionProvider";
 import { ReactionRoleProvider } from "./reactionRoleProvider";
@@ -39,3 +41,5 @@ export const activityEventRepository: IActivityEventRepository =
   new ActivityEventProvider();
 export const configAuditRepository: IConfigAuditRepository = new ConfigAuditProvider();
 export const botJobRepository: IBotJobRepository = new BotJobProvider();
+export const gameServerStatusRepository: IGameServerStatusRepository =
+  new GameServerStatusProvider();
