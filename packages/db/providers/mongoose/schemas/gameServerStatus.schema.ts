@@ -12,8 +12,11 @@ export type GameServerStatusDocument = {
   online: boolean;
   name?: string | null;
   map?: string | null;
+  version?: string | null;
   players: number;
   maxPlayers: number;
+  /** Włączone (grywalne) dinozaury na serwerze. */
+  dinos: string[];
   playerList: GamePlayer[];
   updatedAt: Date;
 };
@@ -33,8 +36,10 @@ const gameServerStatusSchema = new Schema<GameServerStatusDocument>(
     online: { type: Boolean, default: false },
     name: { type: String, default: null },
     map: { type: String, default: null },
+    version: { type: String, default: null },
     players: { type: Number, default: 0 },
     maxPlayers: { type: Number, default: 0 },
+    dinos: { type: [String], default: [] },
     playerList: { type: [playerSchema], default: [] },
     updatedAt: { type: Date, default: () => new Date() },
   },

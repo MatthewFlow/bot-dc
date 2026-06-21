@@ -21,8 +21,12 @@ export type ServerStatus = {
   online: boolean;
   name?: string;
   map?: string;
+  /** Wersja gry/serwera (jeśli serwer ją zwraca). */
+  version?: string;
   players: number;
   maxPlayers: number;
+  /** Włączone (grywalne) dinozaury na serwerze. */
+  dinos: string[];
   /** Uptime serwera w sekundach (jeśli dostępny). */
   uptimeSec?: number;
 };
@@ -41,6 +45,8 @@ export type RconConfig = {
 export interface RconClient {
   getStatus(): Promise<ServerStatus>;
   getPlayers(): Promise<PlayerInfo[]>;
+  /** Lista włączonych (grywalnych) dinozaurów na serwerze. */
+  getPlayables(): Promise<string[]>;
   announce(message: string): Promise<void>;
   kick(playerId: string, reason?: string): Promise<void>;
   ban(playerId: string, reason?: string): Promise<void>;

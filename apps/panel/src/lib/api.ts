@@ -172,8 +172,11 @@ export type GameServerInfo = {
   online: boolean;
   name: string | null;
   map: string | null;
+  version: string | null;
   players: number;
   maxPlayers: number;
+  /** Włączone (grywalne) dinozaury na serwerze. */
+  dinos: string[];
   playerList: GamePlayer[];
   updatedAt: string | null;
 };

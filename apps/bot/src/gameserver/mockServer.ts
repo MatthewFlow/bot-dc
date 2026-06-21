@@ -16,7 +16,9 @@ const port = Number(process.env.MOCK_RCON_PORT ?? 7779);
 const FAKE_PLAYERS =
   "PlayerList\nRex, 76561190000000001, Tyrannosaurus\nRaptor, 76561190000000002, Utahraptor\n";
 const FAKE_DETAILS =
-  "ServerName: Jurassic Test\nMapName: Gateway\nMaxPlayers: 100\nCurrentPlayers: 2\n";
+  "ServerName: Jurassic Test\nMapName: Gateway\nGameVersion: 0.18.40\nMaxPlayers: 100\nCurrentPlayers: 2\n";
+const FAKE_PLAYABLES =
+  "BP_Tyrannosaurus_C, BP_Triceratops_C, BP_Utahraptor_C, BP_Carnotaurus_C, BP_Stegosaurus_C\n";
 
 function respond(data: Buffer): string {
   if (data[0] === PACKET.LOGIN) return "Password Accepted\n";
@@ -26,6 +28,8 @@ function respond(data: Buffer): string {
         return FAKE_PLAYERS;
       case CMD.SERVER_DETAILS:
         return FAKE_DETAILS;
+      case CMD.PLAYABLES:
+        return FAKE_PLAYABLES;
       case CMD.SAVE:
         return "World Saved\n";
       case CMD.ANNOUNCE:

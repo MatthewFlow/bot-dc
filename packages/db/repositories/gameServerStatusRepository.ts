@@ -6,8 +6,10 @@ export type GameServerSnapshot = {
   online: boolean;
   name: string | null;
   map: string | null;
+  version: string | null;
   players: number;
   maxPlayers: number;
+  dinos: string[];
   playerList: GamePlayer[];
   updatedAt: Date | null;
 };
@@ -16,8 +18,10 @@ export type GameServerWrite = {
   online: boolean;
   name?: string | null;
   map?: string | null;
+  version?: string | null;
   players: number;
   maxPlayers: number;
+  dinos: string[];
   playerList: GamePlayer[];
 };
 

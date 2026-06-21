@@ -15,14 +15,16 @@ async function sweep(): Promise<void> {
       online: status.online,
       name: status.name ?? null,
       map: status.map ?? null,
+      version: status.version ?? null,
       players: players.length,
       maxPlayers: status.maxPlayers,
+      dinos: status.dinos,
       playerList: players,
     });
   } catch {
     // Serwer nieosiągalny — zapisujemy „offline", żeby panel to pokazał.
     await gameServerStatusRepository
-      .set({ online: false, players: 0, maxPlayers: 0, playerList: [] })
+      .set({ online: false, players: 0, maxPlayers: 0, dinos: [], playerList: [] })
       .catch(() => {});
   }
 }

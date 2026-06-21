@@ -2,6 +2,7 @@ import {
   buildCommand,
   buildLogin,
   CMD,
+  parsePlayables,
   parsePlayers,
   parseServerDetails,
 } from "./protocol";
@@ -107,20 +108,32 @@ export class EvrimaRconClient implements RconClient {
     return parsePlayers(await this.command(CMD.PLAYER_LIST));
   }
 
+  async getPlayables(): Promise<string[]> {
+    return parsePlayables(await this.command(CMD.PLAYABLES));
+  }
+
   async getStatus(): Promise<ServerStatus> {
     const players = await this.getPlayers().catch(() => null);
-    let details: { name?: string; map?: string; maxPlayers?: number } = {};
+    let details: {
+      name?: string;
+      map?: string;
+      version?: string;
+      maxPlayers?: number;
+    } = {};
     try {
       details = parseServerDetails(await this.command(CMD.SERVER_DETAILS));
     } catch {
       // szczegóły są opcjonalne — liczy się głównie liczba graczy
     }
+    const dinos = await this.getPlayables().catch(() => []);
     return {
       online: players !== null,
       name: details.name,
       map: details.map,
+      version: details.version,
       players: players?.length ?? 0,
       maxPlayers: details.maxPlayers ?? 0,
+      dinos,
     };
   }
 

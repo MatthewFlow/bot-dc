@@ -31,8 +31,10 @@ gameServerRoutes.get("/:guildId/gameserver", async (c) => {
     online: fresh && snap.online,
     name: snap.name,
     map: snap.map,
+    version: snap.version,
     players: snap.players,
     maxPlayers: snap.maxPlayers,
+    dinos: fresh ? snap.dinos : [],
     playerList: fresh ? snap.playerList : [],
     updatedAt: snap.updatedAt?.toISOString() ?? null,
   });

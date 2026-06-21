@@ -1,6 +1,6 @@
 "use client";
 
-import { Ban, Gamepad2, RotateCw, Save, Send, Users, UserX } from "lucide-react";
+import { Ban, Bone, Gamepad2, RotateCw, Save, Send, Users, UserX } from "lucide-react";
 import { useParams } from "next/navigation";
 
 import { PageHeader } from "@/components/PageHeader";
@@ -41,6 +41,7 @@ export default function GameServerPage() {
   const serverQ = useGameServer(guildId);
   const server = serverQ.data;
   const players = server?.playerList ?? [];
+  const dinos = server?.dinos ?? [];
 
   return (
     <div className="jh-in flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
@@ -77,12 +78,12 @@ export default function GameServerPage() {
                 value={`${server?.players ?? 0}${server?.maxPlayers ? `/${server.maxPlayers}` : ""}`}
               />
               <Stat label="Mapa" value={server?.map ?? "—"} />
+              <Stat label="Wersja" value={server?.version ?? "—"} />
               <Stat label="Nazwa" value={server?.name ?? "—"} />
-              <Stat
-                label="Aktualizacja"
-                value={server?.updatedAt ? relativeTime(server.updatedAt) : "—"}
-              />
             </div>
+            <p className="px-5 py-2.5 text-xs text-gray-500">
+              Zaktualizowano: {server?.updatedAt ? relativeTime(server.updatedAt) : "—"}
+            </p>
           </div>
 
           <div className={CARD}>
@@ -119,57 +120,86 @@ export default function GameServerPage() {
           </div>
         </div>
 
-        {/* Akcje serwera — widoczne, ale zablokowane (wkrótce) */}
-        <div className={CARD}>
-          <div className="flex items-center justify-between border-b border-border px-5 py-4">
-            <p className="text-sm font-semibold text-white">Akcje serwera</p>
-            <span className={SOON_BADGE}>wkrótce</span>
+        {/* Dinozaury + akcje */}
+        <div className="flex flex-col gap-6">
+          {/* Dinozaury włączone na serwerze (na żywo) */}
+          <div className={CARD}>
+            <div className="flex items-center gap-2 border-b border-border px-5 py-4">
+              <Bone className="h-4 w-4 text-primary" />
+              <p className="text-sm font-semibold text-white">
+                Dinozaury ({dinos.length})
+              </p>
+            </div>
+            {dinos.length === 0 ? (
+              <p className="px-5 py-6 text-center text-sm text-gray-400">
+                Brak danych o dinozaurach.
+              </p>
+            ) : (
+              <div className="flex flex-wrap gap-1.5 p-5">
+                {dinos.map((d) => (
+                  <span
+                    key={d}
+                    className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary"
+                  >
+                    {d}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
-          <div className="pointer-events-none flex select-none flex-col gap-4 p-6 opacity-60">
-            <div>
-              <label className="mb-1.5 block text-xs font-medium text-gray-300">
-                Ogłoszenie in-game
-              </label>
-              <textarea
-                disabled
-                rows={3}
-                placeholder="Treść ogłoszenia…"
-                className="w-full resize-none rounded-lg bg-background px-3 py-2 text-sm text-white outline-none"
-              />
-              <button
-                disabled
-                className="mt-2 flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-lg bg-primary/40 px-4 py-2 text-sm font-semibold text-primary-foreground"
-              >
-                <Send size={15} /> Wyślij ogłoszenie
-              </button>
+          {/* Akcje serwera — widoczne, ale zablokowane (wkrótce) */}
+          <div className={CARD}>
+            <div className="flex items-center justify-between border-b border-border px-5 py-4">
+              <p className="text-sm font-semibold text-white">Akcje serwera</p>
+              <span className={SOON_BADGE}>wkrótce</span>
             </div>
 
-            <div className="border-t border-border pt-4">
-              <label className="mb-2 block text-xs font-medium text-gray-300">
-                Sterowanie serwerem
-              </label>
-              <div className="flex flex-wrap gap-2">
+            <div className="pointer-events-none flex select-none flex-col gap-4 p-6 opacity-60">
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-gray-300">
+                  Ogłoszenie in-game
+                </label>
+                <textarea
+                  disabled
+                  rows={3}
+                  placeholder="Treść ogłoszenia…"
+                  className="w-full resize-none rounded-lg bg-background px-3 py-2 text-sm text-white outline-none"
+                />
                 <button
                   disabled
-                  className="flex cursor-not-allowed items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm text-gray-300"
+                  className="mt-2 flex w-full cursor-not-allowed items-center justify-center gap-2 rounded-lg bg-primary/40 px-4 py-2 text-sm font-semibold text-primary-foreground"
                 >
-                  <Save size={15} /> Zapisz świat
-                </button>
-                <button
-                  disabled
-                  className="flex cursor-not-allowed items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm text-gray-300"
-                >
-                  <RotateCw size={15} /> Restart serwera
+                  <Send size={15} /> Wyślij ogłoszenie
                 </button>
               </div>
-            </div>
-          </div>
 
-          <p className="border-t border-border px-6 py-3 text-xs text-gray-400">
-            Akcje z panelu będą dostępne po podłączeniu serwera gry. Status i lista graczy
-            działają na żywo.
-          </p>
+              <div className="border-t border-border pt-4">
+                <label className="mb-2 block text-xs font-medium text-gray-300">
+                  Sterowanie serwerem
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    disabled
+                    className="flex cursor-not-allowed items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm text-gray-300"
+                  >
+                    <Save size={15} /> Zapisz świat
+                  </button>
+                  <button
+                    disabled
+                    className="flex cursor-not-allowed items-center gap-2 rounded-lg border border-border bg-background px-4 py-2 text-sm text-gray-300"
+                  >
+                    <RotateCw size={15} /> Restart serwera
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <p className="border-t border-border px-6 py-3 text-xs text-gray-400">
+              Akcje z panelu będą dostępne po podłączeniu serwera gry. Status i lista
+              graczy działają na żywo.
+            </p>
+          </div>
         </div>
       </div>
     </div>

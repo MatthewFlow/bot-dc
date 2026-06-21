@@ -23,6 +23,7 @@ export const PACKET = {
 export const CMD = {
   ANNOUNCE: 0x10,
   SERVER_DETAILS: 0x12,
+  PLAYABLES: 0x15,
   BAN: 0x20,
   KICK: 0x30,
   PLAYER_LIST: 0x40,
@@ -70,6 +71,7 @@ export function parsePlayers(raw: string): PlayerInfo[] {
 export function parseServerDetails(raw: string): {
   name?: string;
   map?: string;
+  version?: string;
   maxPlayers?: number;
 } {
   const find = (re: RegExp): string | undefined => raw.match(re)?.[1]?.trim();
@@ -77,6 +79,25 @@ export function parseServerDetails(raw: string): {
   return {
     name: find(/server\s*name\s*[:=]\s*(.+)/i),
     map: find(/map\s*(?:name)?\s*[:=]\s*(.+)/i),
+    version: find(/(?:game\s*)?version\s*[:=]\s*(.+)/i),
     maxPlayers: max ? Number(max) : undefined,
   };
+}
+
+/** Ładna nazwa dinozaura: „BP_Tyrannosaurus_C" → „Tyrannosaurus". */
+function prettyDino(raw: string): string {
+  return raw.replace(/^BP_/i, "").replace(/_C$/i, "").replace(/_/g, " ").trim();
+}
+
+/**
+ * Parsuje listę włączonych dinozaurów (playables). Tolerancyjnie — różne patche zwracają
+ * przecinki/nowe linie i nazwy klas (`BP_..._C`); zwracamy czytelne nazwy gatunków.
+ */
+export function parsePlayables(raw: string): string[] {
+  return raw
+    .split(/[\r\n,]+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0 && !/^playables?$/i.test(s))
+    .map(prettyDino)
+    .filter((s) => s.length > 0);
 }
