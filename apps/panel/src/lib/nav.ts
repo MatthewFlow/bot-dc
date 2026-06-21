@@ -23,7 +23,7 @@ export type NavItem = {
   href: string;
   desc: string;
   icon: LucideIcon;
-  /** Pozycja „wkrótce" — widoczna w sidebarze, ale wyszarzona i nieklikalna. */
+  /** Pozycja „wkrótce" — klikalna (z plakietką), ale strona to placeholder. */
   soon?: boolean;
 };
 
@@ -154,10 +154,10 @@ export const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-/** Płaska lista nawigowalnych pozycji (overview + grupy) — pomija pozycje „wkrótce". */
+/** Płaska lista wszystkich pozycji (overview + grupy) — overview pierwszy. */
 export const NAV_ITEMS: NavItem[] = [
   ...NAV_TOP,
-  ...NAV_GROUPS.flatMap((group) => group.items.filter((i) => !i.soon)),
+  ...NAV_GROUPS.flatMap((group) => group.items),
 ];
 
 /** Dopasowuje pozycję nawigacji do bieżącej ścieżki (do breadcrumbów/topbara). */
