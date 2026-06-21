@@ -161,8 +161,14 @@ export function Sidebar({
                   className={`shrink-0 transition-transform ${isCollapsed ? "-rotate-90" : ""}`}
                 />
               </button>
-              {!isCollapsed &&
-                group.items.map((item) => <NavButton key={item.href} item={item} />)}
+              {/* Płynne rozwijanie sekcji wzorcem grid 0fr→1fr (treść zawsze w DOM). */}
+              <div className={`jh-acc ${isCollapsed ? "" : "open"}`}>
+                <div className="jh-acc-in">
+                  {group.items.map((item) => (
+                    <NavButton key={item.href} item={item} />
+                  ))}
+                </div>
+              </div>
             </div>
           );
         })}

@@ -162,6 +162,21 @@ body {
   animation-delay: calc(min(var(--i, 0), 10) * 30ms);
 }
 
+/* `jh-acc` — płynne rozwijanie/zwijanie sekcji wzorcem grid `0fr → 1fr`:
+   animuje się bez znajomości docelowej wysokości i bez mierzenia w JS. Wymaga
+   wewnętrznego wrappera `jh-acc-in` z `overflow:hidden` (przycina treść w ruchu). */
+.jh-acc {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur) var(--ease-out);
+}
+.jh-acc.open {
+  grid-template-rows: 1fr;
+}
+.jh-acc-in {
+  overflow: hidden;
+}
+
 .jh-card {
   transition:
     transform var(--dur-fast) var(--ease-out),
@@ -259,6 +274,9 @@ body {
   .jh-in,
   .jh-stagger {
     animation: none;
+  }
+  .jh-acc {
+    transition: none;
   }
   .jh-card {
     transition: none;
