@@ -14,6 +14,13 @@ import { PanelCard } from "@/components/PanelCard";
 import { Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useBotStatus, useChannels, useJobs } from "@/hooks/queries";
 import { useSeedOnce } from "@/hooks/queryDraft";
 import type { BotJob, Channel, EmbedConfig } from "@/lib/api";
@@ -210,16 +217,18 @@ export default function AnnouncePage() {
                 {mode === "recurring" && (
                   <div>
                     <label className="mb-1 block text-xs text-gray-400">Powtarzaj</label>
-                    <select
+                    <Select
                       value={recurrence}
-                      onChange={(e) =>
-                        setRecurrence(e.target.value as "daily" | "weekly")
-                      }
-                      className="rounded-lg bg-background px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+                      onValueChange={(v) => setRecurrence(v as "daily" | "weekly")}
                     >
-                      <option value="daily">Codziennie</option>
-                      <option value="weekly">Co tydzień</option>
-                    </select>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="daily">Codziennie</SelectItem>
+                        <SelectItem value="weekly">Co tydzień</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
               </div>

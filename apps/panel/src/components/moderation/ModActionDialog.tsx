@@ -14,6 +14,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   banUser,
   kickUser,
   type MemberSearchResult,
@@ -127,51 +134,63 @@ export function ModActionDialog({
           {meta.needsDuration && (
             <div>
               <label className={FIELD_LABEL}>Czas wyciszenia</label>
-              <select
-                value={minutes}
-                onChange={(e) => setMinutes(Number(e.target.value))}
-                className="w-full rounded-lg bg-background px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+              <Select
+                value={String(minutes)}
+                onValueChange={(v) => setMinutes(Number(v))}
               >
-                {MUTE_DURATIONS.map((d) => (
-                  <option key={d.minutes} value={d.minutes}>
-                    {d.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {MUTE_DURATIONS.map((d) => (
+                    <SelectItem key={d.minutes} value={String(d.minutes)}>
+                      {d.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
 
           {kind === "ban" && (
             <div>
               <label className={FIELD_LABEL}>Czas bana</label>
-              <select
-                value={banMinutes}
-                onChange={(e) => setBanMinutes(Number(e.target.value))}
-                className="w-full rounded-lg bg-background px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+              <Select
+                value={String(banMinutes)}
+                onValueChange={(v) => setBanMinutes(Number(v))}
               >
-                {BAN_DURATIONS.map((d) => (
-                  <option key={d.minutes} value={d.minutes}>
-                    {d.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {BAN_DURATIONS.map((d) => (
+                    <SelectItem key={d.minutes} value={String(d.minutes)}>
+                      {d.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
 
           {meta.needsDeleteDays && (
             <div>
               <label className={FIELD_LABEL}>Usuń wiadomości z ostatnich</label>
-              <select
-                value={deleteDays}
-                onChange={(e) => setDeleteDays(Number(e.target.value))}
-                className="w-full rounded-lg bg-background px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+              <Select
+                value={String(deleteDays)}
+                onValueChange={(v) => setDeleteDays(Number(v))}
               >
-                {[0, 1, 7].map((d) => (
-                  <option key={d} value={d}>
-                    {d === 0 ? "Nie usuwaj" : d === 1 ? "1 dzień" : "7 dni"}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {[0, 1, 7].map((d) => (
+                    <SelectItem key={d} value={String(d)}>
+                      {d === 0 ? "Nie usuwaj" : d === 1 ? "1 dzień" : "7 dni"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           )}
 
