@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@jurassic-haven/db": "workspace:*",
+    "@sentry/node": "^10.59.0",
     "hono": "^4.12.25",
     "jose": "^6.2.3",
     "zod": "^4.4.3"

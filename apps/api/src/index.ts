@@ -1,8 +1,9 @@
-import { connectDb } from "@jurassic-haven/db";
+import { botStatusRepository, connectDb } from "@jurassic-haven/db";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 
 import { startGuildGuardSweep } from "./lib/guildGuard";
+import { initObservability, isObservabilityEnabled } from "./lib/observability";
 import { rateLimit } from "./middleware/rateLimit";
 import { authRoutes } from "./routes/authRoutes";
 import { buttonRoleRoutes } from "./routes/buttonRoles";
@@ -13,6 +14,9 @@ import { moderationRoutes } from "./routes/moderation";
 import { reactionRoleRoutes } from "./routes/reactionRoles";
 import { statusRoutes } from "./routes/status";
 import type { AppVariables } from "./types";
+
+// Raportowanie błędów (Sentry, gdy ustawiono SENTRY_DSN) — jak najwcześniej.
+initObservability("api");
 
 const app = new Hono<{ Variables: AppVariables }>();
 
@@ -54,6 +58,35 @@ app.route("/feedback", feedbackRoutes);
 app.route("/bot", statusRoutes);
 
 app.get("/health", (c) => c.json({ ok: true }));
+
+// Metryki operacyjne: proces API + stan DB + heartbeat bota. Bez sekretów.
+app.get("/metrics", async (c) => {
+  const mem = process.memoryUsage();
+  let dbOk = true;
+  let bot: { online: boolean; guildCount: number; lastSeen: string | null } | null = null;
+  try {
+    const snap = await botStatusRepository.get();
+    const lastMs = snap.lastHeartbeat ? snap.lastHeartbeat.getTime() : 0;
+    bot = {
+      online: lastMs > 0 && Date.now() - lastMs < 90_000,
+      guildCount: snap.guildCount ?? 0,
+      lastSeen: snap.lastHeartbeat ? snap.lastHeartbeat.toISOString() : null,
+    };
+  } catch {
+    dbOk = false;
+  }
+  return c.json({
+    service: "api",
+    uptimeSec: Math.floor(process.uptime()),
+    rssMb: Math.round(mem.rss / 1_048_576),
+    heapUsedMb: Math.round(mem.heapUsed / 1_048_576),
+    nodeEnv: process.env.NODE_ENV ?? "development",
+    sentry: isObservabilityEnabled(),
+    dbOk,
+    bot,
+    time: new Date().toISOString(),
+  });
+});
 
 const port = Number(process.env.API_PORT ?? 3002);
 

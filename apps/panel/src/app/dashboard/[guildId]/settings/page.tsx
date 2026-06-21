@@ -4,7 +4,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   Bot,
   Clock,
+  Database,
   DoorOpen,
+  Download,
   Hash,
   History,
   type LucideIcon,
@@ -16,13 +18,14 @@ import {
   Ticket,
   ToggleLeft,
   TrendingUp,
+  Upload,
   UserPlus,
   Users,
   Wifi,
   Zap,
 } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import { Avatar } from "@/components/Avatar";
 import { CardHead } from "@/components/CardHead";
@@ -35,6 +38,7 @@ import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
 import { TipsCard } from "@/components/TipsCard";
 import { useToast } from "@/components/toast";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
   useBotStatus,
@@ -218,6 +222,91 @@ function ConfigAuditCard({ guildId }: { guildId: string }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/** Karta „Kopia konfiguracji" — eksport ustawień do JSON i import z pliku. */
+function ConfigBackupCard({
+  guildId,
+  config,
+  onImported,
+}: {
+  guildId: string;
+  config: GuildConfig;
+  onImported: (cfg: GuildConfig) => void;
+}) {
+  const toast = useToast();
+  const qc = useQueryClient();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
+
+  function handleExport() {
+    const blob = new Blob([JSON.stringify(config, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `jh-config-${guildId}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleImportFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setImporting(true);
+    try {
+      const parsed: unknown = JSON.parse(await file.text());
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new Error("Nieprawidłowy plik konfiguracji.");
+      }
+      await updateGuildConfig(guildId, parsed as Partial<GuildConfig>);
+      onImported(parsed as GuildConfig);
+      await qc.invalidateQueries({ queryKey: queryKeys.config(guildId) });
+      qc.invalidateQueries({ queryKey: queryKeys.configAudit(guildId) });
+      toast("Konfiguracja zaimportowana.", "success");
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Nie udało się zaimportować.", "error");
+    } finally {
+      setImporting(false);
+    }
+  }
+
+  return (
+    <div className={CARD}>
+      <CardHead
+        icon={Database}
+        title="Kopia konfiguracji"
+        subtitle="Eksport / import ustawień serwera"
+      />
+      <div className="flex flex-col gap-3 p-6">
+        <p className="text-xs text-gray-400">
+          Pobierz pełną konfigurację jako plik JSON albo przywróć ją z wcześniejszej
+          kopii. Import nadpisuje obecne ustawienia.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="secondary" onClick={handleExport}>
+            <Download className="size-4" /> Eksportuj
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => fileRef.current?.click()}
+            disabled={importing}
+          >
+            <Upload className="size-4" /> {importing ? "Importuję…" : "Importuj"}
+          </Button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/json,.json"
+            hidden
+            onChange={handleImportFile}
+          />
+        </div>
+      </div>
     </div>
   );
 }
@@ -428,6 +517,8 @@ export default function SettingsPage() {
                 </p>
               </div>
             </div>
+
+            <ConfigBackupCard guildId={guildId} config={config} onImported={setConfig} />
           </div>
 
           {/* Informacje o bocie + Wskazówki */}
