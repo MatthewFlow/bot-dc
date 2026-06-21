@@ -1,5 +1,6 @@
 import {
   DoorOpen,
+  Gamepad2,
   Gift,
   LayoutDashboard,
   type LucideIcon,
@@ -156,6 +157,13 @@ export const NAV_GROUPS: NavGroup[] = [
         href: "/settings",
         desc: "Rola admina i kanał logów moderacji",
         icon: Settings,
+      },
+      {
+        label: "Serwer gry",
+        href: "/gameserver",
+        desc: "Zarządzanie serwerem The Isle: Evrima (RCON)",
+        icon: Gamepad2,
+        soon: true,
       },
     ],
   },
