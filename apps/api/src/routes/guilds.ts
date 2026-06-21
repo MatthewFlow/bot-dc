@@ -66,6 +66,7 @@ const CONFIG_ALLOWED_FIELDS = [
   "serverLog",
   "leveling",
   "disabledCommands",
+  "disabledModules",
   "prefix",
 ] as const;
 

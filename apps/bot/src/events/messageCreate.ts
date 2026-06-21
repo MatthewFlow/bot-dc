@@ -5,6 +5,7 @@ import { runAutoMod } from "../automod/automod";
 import { handlePrefixCommand } from "../commands/prefix";
 import { applyLevelProgress } from "../levels/award";
 import { getCachedGuildConfig } from "../utils/configCache";
+import { isModuleEnabled } from "../utils/modules";
 
 export async function onMessageCreate(message: Message) {
   if (!message.guild) return;
@@ -23,6 +24,9 @@ export async function onMessageCreate(message: Message) {
 
   // Komendy prefiksowe (klasyczne) — gdy obsłużone, nie naliczamy XP za nie.
   if (cfg && (await handlePrefixCommand(message, cfg))) return;
+
+  // Moduł leveling wyłączony na serwerze → bez XP/level-upów.
+  if (!isModuleEnabled(cfg, "leveling")) return;
 
   const lvl = cfg?.leveling;
 

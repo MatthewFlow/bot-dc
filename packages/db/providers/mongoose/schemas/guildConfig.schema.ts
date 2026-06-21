@@ -52,6 +52,8 @@ export type GuildConfigDocument = {
   leveling?: LevelingConfig;
   /** Nazwy komend wyłączonych na tym serwerze (egzekwowane w runtime przez bota). */
   disabledCommands?: string[];
+  /** Klucze modułów wyłączonych na tym serwerze (leveling/welcome/tickets/feedback/selfroles). */
+  disabledModules?: string[];
   /** Prefiks komend klasycznych (np. `!`). Slash-komendy działają niezależnie. */
   prefix?: string;
 };
@@ -174,6 +176,7 @@ const guildConfigSchema = new Schema<GuildConfigDocument>(
     serverLog: { type: serverLogSchema, default: undefined },
     leveling: { type: levelingSchema, default: undefined },
     disabledCommands: { type: [String], default: undefined },
+    disabledModules: { type: [String], default: undefined },
     prefix: { type: String, default: undefined },
   },
   { versionKey: false },

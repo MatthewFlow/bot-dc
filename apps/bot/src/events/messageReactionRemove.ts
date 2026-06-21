@@ -6,6 +6,8 @@ import type {
   User,
 } from "discord.js";
 
+import { getCachedGuildConfig } from "../utils/configCache";
+import { isModuleEnabled } from "../utils/modules";
 import { isReactionRoleMessage } from "../utils/reactionRoleCache";
 
 export async function onMessageReactionRemove(
@@ -27,6 +29,8 @@ export async function onMessageReactionRemove(
 
   // Cache-gated: ordinary reactions never reach the DB — only panel messages do.
   if (!(await isReactionRoleMessage(guildId, reaction.message.id))) return;
+
+  if (!isModuleEnabled(await getCachedGuildConfig(guildId), "selfroles")) return;
 
   const config = await reactionRoleRepository.getByMessageId(reaction.message.id);
   if (!config) return;

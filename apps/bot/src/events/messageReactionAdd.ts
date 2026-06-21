@@ -7,6 +7,7 @@ import type {
 } from "discord.js";
 
 import { getCachedGuildConfig } from "../utils/configCache";
+import { isModuleEnabled } from "../utils/modules";
 import { isReactionRoleMessage } from "../utils/reactionRoleCache";
 
 export async function onMessageReactionAdd(
@@ -29,6 +30,9 @@ export async function onMessageReactionAdd(
   // Cache-gated: ordinary reactions never reach the DB — only panel messages do.
   if (!(await isReactionRoleMessage(guildId, reaction.message.id))) return;
 
+  const cfg = await getCachedGuildConfig(guildId);
+  if (!isModuleEnabled(cfg, "selfroles")) return;
+
   const config = await reactionRoleRepository.getByMessageId(reaction.message.id);
   if (!config) return;
 
@@ -49,7 +53,6 @@ export async function onMessageReactionAdd(
     console.error(`[reactionAdd] Nie udało się nadać roli ${entry.roleId}:`, e);
   });
 
-  const cfg = await getCachedGuildConfig(guild.id);
   if (cfg?.verifiedRoleId && entry.roleId === cfg.verifiedRoleId && cfg.joinRoleId) {
     await member.roles.remove(cfg.joinRoleId).catch((e) => {
       console.error(

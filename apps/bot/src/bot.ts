@@ -1,5 +1,12 @@
 import { botStatusRepository } from "@jurassic-haven/db";
-import { Client, GatewayIntentBits, Options, Partials } from "discord.js";
+import {
+  type ButtonInteraction,
+  Client,
+  GatewayIntentBits,
+  type ModalSubmitInteraction,
+  Options,
+  Partials,
+} from "discord.js";
 
 import { startAutoModSweep } from "./automod/automod";
 import { handleButtonRoleClick } from "./buttonroles/handler";
@@ -28,7 +35,26 @@ import {
   handleTicketSubmit,
   showTicketModal,
 } from "./tickets/handler";
+import { getCachedGuildConfig } from "./utils/configCache";
+import { isModuleEnabled, type ModuleKey } from "./utils/modules";
 import { BOT_VERSION } from "./version";
+
+/**
+ * Odrzuca interakcję, gdy moduł jest wyłączony na serwerze (odpowiada ephemerally).
+ * Zwraca `true`, gdy zablokowano — wtedy handler nie powinien się wykonać.
+ */
+async function moduleBlocked(
+  interaction: ButtonInteraction | ModalSubmitInteraction,
+  key: ModuleKey,
+): Promise<boolean> {
+  if (!interaction.guildId) return false;
+  const cfg = await getCachedGuildConfig(interaction.guildId);
+  if (isModuleEnabled(cfg, key)) return false;
+  await interaction
+    .reply({ content: "Ten moduł jest wyłączony na tym serwerze.", ephemeral: true })
+    .catch(() => {});
+  return true;
+}
 
 /** Co ile bot odświeża heartbeat w bazie (API uznaje go za offline po ~3 nieudanych). */
 const HEARTBEAT_MS = 30_000;
@@ -131,19 +157,28 @@ export function createBot() {
       return;
     }
     if (interaction.isButton()) {
-      if (interaction.customId === "ticket_open") await showTicketModal(interaction);
-      else if (interaction.customId === "ticket_claim")
-        await handleTicketClaim(interaction);
-      else if (interaction.customId === "feedback_open")
+      const { customId } = interaction;
+      if (customId === "ticket_open" || customId === "ticket_claim") {
+        if (await moduleBlocked(interaction, "tickets")) return;
+        if (customId === "ticket_open") await showTicketModal(interaction);
+        else await handleTicketClaim(interaction);
+      } else if (customId === "feedback_open") {
+        if (await moduleBlocked(interaction, "feedback")) return;
         await showFeedbackModal(interaction);
-      else if (interaction.customId.startsWith("br:"))
+      } else if (customId.startsWith("br:")) {
+        if (await moduleBlocked(interaction, "selfroles")) return;
         await handleButtonRoleClick(interaction);
+      }
       return;
     }
     if (interaction.isModalSubmit()) {
-      if (interaction.customId === "ticket_submit") await handleTicketSubmit(interaction);
-      else if (interaction.customId === "feedback_submit")
+      if (interaction.customId === "ticket_submit") {
+        if (await moduleBlocked(interaction, "tickets")) return;
+        await handleTicketSubmit(interaction);
+      } else if (interaction.customId === "feedback_submit") {
+        if (await moduleBlocked(interaction, "feedback")) return;
         await handleFeedbackSubmit(interaction);
+      }
     }
   });
 

@@ -7,6 +7,7 @@ import {
   handleTicketSetup,
 } from "../../tickets/handler";
 import { getCachedGuildConfig } from "../../utils/configCache";
+import { isModuleEnabled, type ModuleKey } from "../../utils/modules";
 import {
   handleCfgAddReward,
   handleCfgCheckRole,
@@ -33,6 +34,18 @@ import { handleCfgAddXp, handleTestGoodbye, handleTestWelcome } from "./test";
 import { handleFeedback, handleLeaderboard, handleLevel, handleProfile } from "./user";
 
 type Handler = (interaction: ChatInputCommandInteraction) => Promise<void>;
+
+/** Komendy należące do przełączalnych modułów — gdy moduł wyłączony, odrzucamy. */
+const COMMAND_MODULE: Record<string, ModuleKey> = {
+  level: "leveling",
+  leaderboard: "leveling",
+  profile: "leveling",
+  feedback: "feedback",
+  ticket_setup: "tickets",
+  ticket_close: "tickets",
+  ticket_add: "tickets",
+  ticket_delete: "tickets",
+};
 
 const handlers: Record<string, Handler> = {
   level: handleLevel,
@@ -81,6 +94,16 @@ export async function handleCommand(interaction: ChatInputCommandInteraction) {
   if (cfg?.disabledCommands?.includes(interaction.commandName)) {
     await interaction.reply({
       content: "Ta komenda jest wyłączona na tym serwerze.",
+      ephemeral: true,
+    });
+    return;
+  }
+
+  // Moduł, do którego należy komenda, wyłączony na serwerze.
+  const moduleKey = COMMAND_MODULE[interaction.commandName];
+  if (moduleKey && !isModuleEnabled(cfg, moduleKey)) {
+    await interaction.reply({
+      content: "Ten moduł jest wyłączony na tym serwerze.",
       ephemeral: true,
     });
     return;

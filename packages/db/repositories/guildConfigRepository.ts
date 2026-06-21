@@ -39,6 +39,8 @@ export type GuildConfig = {
   serverLog?: ServerLogConfig;
   leveling?: LevelingConfig;
   disabledCommands?: string[];
+  /** Klucze modułów wyłączonych na tym serwerze. */
+  disabledModules?: string[];
   /** Prefiks komend klasycznych (np. `!`). Slash-komendy działają niezależnie. */
   prefix?: string;
 };

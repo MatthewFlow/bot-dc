@@ -2,6 +2,7 @@ import { guildConfigRepository, toDiscordEmbed } from "@jurassic-haven/db";
 import { EmbedBuilder, type GuildMember, type PartialGuildMember } from "discord.js";
 
 import { isAllowedTextChannel } from "../utils/channels";
+import { isModuleEnabled } from "../utils/modules";
 
 const DEFAULT_GOODBYE = "{username} wyszedł z serwera.";
 
@@ -22,7 +23,7 @@ function goodbyeVarReplacer(
 export async function onMemberRemove(member: GuildMember | PartialGuildMember) {
   const cfg = await guildConfigRepository.get(member.guild.id);
   const channelId = cfg?.goodbyeChannelId;
-  if (!channelId) return;
+  if (!channelId || !isModuleEnabled(cfg, "welcome")) return;
 
   const ch = member.guild.channels.cache.get(channelId);
   if (!isAllowedTextChannel(ch)) return;

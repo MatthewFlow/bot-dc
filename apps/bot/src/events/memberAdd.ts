@@ -9,6 +9,7 @@ import { EmbedBuilder, type GuildMember } from "discord.js";
 import { applyAutoRole } from "../levels/autorole";
 import { isAllowedTextChannel } from "../utils/channels";
 import { memberVarReplacer } from "../utils/embedVars";
+import { isModuleEnabled } from "../utils/modules";
 
 const DEFAULT_WELCOME = "Siema {user}, miło że jesteś 😄";
 
@@ -33,8 +34,9 @@ export async function onMemberAdd(member: GuildMember) {
 
   await applyAutoRole(member, level).catch(() => {});
 
+  // Moduł powitań wyłączony → role nadajemy, ale wiadomości powitalnej nie wysyłamy.
   const channelId = cfg?.welcomeChannelId;
-  if (!channelId) return;
+  if (!channelId || !isModuleEnabled(cfg, "welcome")) return;
 
   const ch = member.guild.channels.cache.get(channelId);
   if (!isAllowedTextChannel(ch)) return;

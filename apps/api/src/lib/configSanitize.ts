@@ -226,6 +226,9 @@ export function sanitizeConfigPatch(
     } else if (key === "disabledCommands") {
       // Lista nazw wyłączonych komend; nazwy slash-komend to [a-z0-9_], do 32 znaków.
       out[key] = strArray(value, 100, 32);
+    } else if (key === "disabledModules") {
+      // Klucze wyłączonych modułów (krótkie identyfikatory).
+      out[key] = strArray(value, 20, 32);
     } else if (key === "prefix") {
       // Prefiks komend klasycznych: 1–5 znaków, bez białych znaków.
       if (typeof value === "string") {

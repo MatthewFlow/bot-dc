@@ -3,11 +3,17 @@
 import {
   Bot,
   Clock,
+  DoorOpen,
   Hash,
   type LucideIcon,
+  MessageSquare,
   Server,
   Settings,
   ShieldCheck,
+  Sparkles,
+  Ticket,
+  ToggleLeft,
+  TrendingUp,
   UserPlus,
   Users,
   Wifi,
@@ -27,6 +33,7 @@ import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
 import { TipsCard } from "@/components/TipsCard";
 import { useToast } from "@/components/toast";
+import { Switch } from "@/components/ui/switch";
 import {
   useBotStatus,
   useChannels,
@@ -40,6 +47,36 @@ import type { Channel, GuildConfig, Role } from "@/lib/api";
 import { updateGuildConfig } from "@/lib/api";
 
 const CARD = "surface-raised rounded-xl border border-border bg-card";
+
+/** Moduły przełączane przez `disabledModules`. Auto-moderacja i Logi serwera mają
+ *  własny master-switch na swoich stronach, więc tu ich nie ma. */
+const MODULES: { key: string; label: string; desc: string; icon: LucideIcon }[] = [
+  {
+    key: "leveling",
+    label: "System poziomów",
+    desc: "XP, level-upy i role za poziom",
+    icon: TrendingUp,
+  },
+  {
+    key: "welcome",
+    label: "Powitania",
+    desc: "Wiadomości wejścia i wyjścia",
+    icon: DoorOpen,
+  },
+  { key: "tickets", label: "Tickety", desc: "Panel i wątki zgłoszeń", icon: Ticket },
+  {
+    key: "feedback",
+    label: "Feedback",
+    desc: "Komenda i panel opinii",
+    icon: MessageSquare,
+  },
+  {
+    key: "selfroles",
+    label: "Self-role",
+    desc: "Reaction i button role",
+    icon: Sparkles,
+  },
+];
 
 /** Formatuje uptime ze startedAt: „14d 06:21" lub „06:21". */
 function formatUptime(startedAt: string | null | undefined): string {
@@ -174,6 +211,7 @@ export default function SettingsPage() {
       await updateGuildConfig(guildId, {
         adminRoleId: config.adminRoleId,
         modLogChannelId: config.modLogChannelId,
+        disabledModules: config.disabledModules ?? [],
       });
       toast("Zapisano zmiany.", "success");
     } catch {
@@ -187,10 +225,20 @@ export default function SettingsPage() {
     JSON.stringify({
       adminRoleId: config.adminRoleId,
       modLogChannelId: config.modLogChannelId,
+      disabledModules: [...(config.disabledModules ?? [])].sort(),
     }),
     handleSave,
     configReady,
   );
+
+  const disabledModules = new Set(config.disabledModules ?? []);
+  const setModuleEnabled = (key: string, enabled: boolean) =>
+    setConfig((c) => {
+      const next = new Set(c.disabledModules ?? []);
+      if (enabled) next.delete(key);
+      else next.add(key);
+      return { ...c, disabledModules: [...next] };
+    });
 
   return (
     <div className="jh-in flex flex-col gap-6 p-4 sm:p-6 lg:p-8">
@@ -237,7 +285,7 @@ export default function SettingsPage() {
       ) : (
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
           {/* Ogólne */}
-          <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 flex-1 flex-col gap-6">
             <div className={CARD}>
               <CardHead
                 icon={Settings}
@@ -301,6 +349,39 @@ export default function SettingsPage() {
                   placeholder="— Nie ustawiono —"
                   hint="Tu trafiają logi akcji moderacyjnych (ostrzeżenia, muty, kicki, bany)."
                 />
+              </div>
+            </div>
+
+            {/* Moduły */}
+            <div className={CARD}>
+              <CardHead
+                icon={ToggleLeft}
+                title="Moduły"
+                subtitle="Włącz/wyłącz funkcje bota na serwerze"
+              />
+              <div className="flex flex-col gap-4 p-6">
+                {MODULES.map((m) => (
+                  <div key={m.key} className="flex items-start justify-between gap-4">
+                    <div className="flex min-w-0 items-start gap-3">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <m.icon className="size-4" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-sm text-white">{m.label}</p>
+                        <p className="text-xs text-gray-400">{m.desc}</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={!disabledModules.has(m.key)}
+                      onCheckedChange={(v) => setModuleEnabled(m.key, v)}
+                      className="mt-1"
+                    />
+                  </div>
+                ))}
+                <p className="text-xs text-gray-500">
+                  Auto-moderacja i Logi serwera mają własny przełącznik na swoich
+                  stronach.
+                </p>
               </div>
             </div>
           </div>

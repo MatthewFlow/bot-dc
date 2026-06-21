@@ -7,6 +7,7 @@ import {
 import type { Client, GuildMember, VoiceState } from "discord.js";
 
 import { getCachedGuildConfig } from "../utils/configCache";
+import { isModuleEnabled } from "../utils/modules";
 import { applyLevelProgress } from "./award";
 
 // Licznik kolejnych „obecnych" ticków na osobę: `${guildId}:${userId}` → liczba ticków.
@@ -57,6 +58,7 @@ async function sweep(client: Client) {
 
   for (const guild of client.guilds.cache.values()) {
     const cfg = await getCachedGuildConfig(guild.id);
+    if (!isModuleEnabled(cfg, "leveling")) continue;
     const voiceXp = clampSliderXp(cfg?.leveling?.voiceXp);
 
     const present = new Set<string>();
