@@ -197,6 +197,31 @@ export type MemberSearchResult = {
 /** Wpis historii akcji użytkownika — `ModAction` wzbogacony o nazwę moderatora. */
 export type ModActionHistory = ModAction & { moderatorName: string | null };
 
+/** Rola członka (do kolorowych chipów w profilu). `color` = int Discorda (0 = brak). */
+export type MemberRole = { id: string; name: string; color: number };
+
+/** Pełny profil członka (Karta członka) — live z Discorda + statystyki z bazy. */
+export type MemberProfile = {
+  userId: string;
+  /** Czy użytkownik jest nadal na serwerze. */
+  onServer: boolean;
+  displayName: string | null;
+  username: string | null;
+  avatar: string | null;
+  /** ISO daty / null. */
+  joinedAt: string | null;
+  accountCreatedAt: string | null;
+  /** Aktywne wyciszenie (timeout) — ISO wygaśnięcia lub null. */
+  timeoutUntil: string | null;
+  /** Boostuje serwer od (ISO) lub null. */
+  boostingSince: string | null;
+  roles: MemberRole[];
+  xp: number;
+  level: number;
+  warnCount: number;
+  ticketCount: number;
+};
+
 export type GuildStats = {
   /** Przybliżona liczba członków (z Discorda); null gdy niedostępna. */
   memberCount: number | null;
@@ -419,6 +444,7 @@ export const queryKeys = {
   modStats: (g: string) => ["mod-stats", g] as const,
   activePunishments: (g: string) => ["active-punishments", g] as const,
   memberHistory: (g: string, userId: string) => ["member-history", g, userId] as const,
+  memberProfile: (g: string, userId: string) => ["member-profile", g, userId] as const,
   memberSearch: (g: string, q: string) => ["member-search", g, q] as const,
   warnings: (g: string, userId: string) => ["warnings", g, userId] as const,
   botStatus: () => ["bot-status"] as const,
@@ -736,6 +762,17 @@ export async function getMemberHistory(
 ): Promise<ModActionHistory[]> {
   const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/mod-actions/${userId}`);
   if (!res.ok) throw new Error("Failed to fetch member history");
+  return res.json();
+}
+
+export async function getMemberProfile(
+  guildId: string,
+  userId: string,
+): Promise<MemberProfile> {
+  const res = await fetchWithRetry(
+    `${API_URL}/guilds/${guildId}/members/${userId}/profile`,
+  );
+  if (!res.ok) throw new Error("Failed to fetch member profile");
   return res.json();
 }
 

@@ -14,6 +14,7 @@ import {
   getButtonRoles,
   getGuildFeedback,
   getMemberHistory,
+  getMemberProfile,
   getModActions,
   getModStats,
   getReactionRoles,
@@ -103,6 +104,14 @@ export function useMemberHistory(guildId: string, userId: string | null) {
   return useQuery({
     queryKey: queryKeys.memberHistory(guildId, userId ?? ""),
     queryFn: () => getMemberHistory(guildId, userId as string),
+    enabled: Boolean(userId),
+  });
+}
+
+export function useMemberProfile(guildId: string, userId: string | null) {
+  return useQuery({
+    queryKey: queryKeys.memberProfile(guildId, userId ?? ""),
+    queryFn: () => getMemberProfile(guildId, userId as string),
     enabled: Boolean(userId),
   });
 }

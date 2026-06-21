@@ -68,6 +68,7 @@ export default function ModerationPage() {
     qc.invalidateQueries({ queryKey: queryKeys.activePunishments(guildId) });
     qc.invalidateQueries({ queryKey: ["mod-actions", guildId] });
     qc.invalidateQueries({ queryKey: ["member-history", guildId] });
+    qc.invalidateQueries({ queryKey: ["member-profile", guildId] });
     qc.invalidateQueries({ queryKey: ["warnings", guildId] });
   }, [qc, guildId]);
 

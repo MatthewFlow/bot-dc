@@ -65,6 +65,10 @@ export class TicketProvider implements ITicketRepository {
     return TicketModel.countDocuments({ guildId, createdAt: { $gte: since } });
   }
 
+  async countByUser(guildId: string, userId: string): Promise<number> {
+    return TicketModel.countDocuments({ guildId, userId });
+  }
+
   async claim(threadId: string, moderatorId: string): Promise<void> {
     await TicketModel.updateOne(
       { threadId },

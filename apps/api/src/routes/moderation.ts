@@ -1,8 +1,10 @@
 import {
   guildConfigRepository,
+  levelFromXp,
   modActionRepository,
   ticketRepository,
   warnRepository,
+  xpRepository,
 } from "@jurassic-haven/db";
 import { type Context, Hono } from "hono";
 import { z } from "zod";
@@ -580,6 +582,109 @@ moderationRoutes.get("/:guildId/members/search", async (c) => {
     avatar: avatarUrl(m.user.id, m.user.avatar),
   }));
   return c.json(results);
+});
+
+const profileMemberSchema = z.object({
+  nick: z.string().nullish(),
+  avatar: z.string().nullish(),
+  joined_at: z.string().nullish(),
+  premium_since: z.string().nullish(),
+  communication_disabled_until: z.string().nullish(),
+  roles: z.array(z.string()),
+  user: z.object({
+    id: z.string(),
+    username: z.string(),
+    global_name: z.string().nullish(),
+    avatar: z.string().nullish(),
+  }),
+});
+const profileRoleSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  color: z.number(),
+  position: z.number(),
+});
+
+/** Data utworzenia konta z snowflake Discorda (timestamp w górnych bitach ID). */
+function accountCreatedFromId(userId: string): string | null {
+  if (!/^\d+$/.test(userId)) return null;
+  return new Date(Number((BigInt(userId) >> 22n) + 1_420_070_400_000n)).toISOString();
+}
+
+// Pełny profil członka (Karta członka): dane live z Discorda + statystyki z bazy.
+moderationRoutes.get("/:guildId/members/:userId/profile", async (c) => {
+  const guildId = c.req.param("guildId");
+  const userId = c.req.param("userId");
+  const botToken = requireBotToken(c);
+  if (botToken instanceof Response) return botToken;
+  const headers = botHeaders(botToken);
+
+  const [member, guildRoles, xp, warnings, ticketCount] = await Promise.all([
+    discordJson(`/guilds/${guildId}/members/${userId}`, profileMemberSchema, {
+      headers,
+      retry: 2,
+    }),
+    discordJson(`/guilds/${guildId}/roles`, z.array(profileRoleSchema), {
+      headers,
+      retry: 2,
+    }),
+    xpRepository.getXp(guildId, userId),
+    warnRepository.getAll(guildId, userId),
+    ticketRepository.countByUser(guildId, userId),
+  ]);
+
+  const dbStats = {
+    xp,
+    level: levelFromXp(xp),
+    warnCount: warnings.length,
+    ticketCount,
+    accountCreatedAt: accountCreatedFromId(userId),
+  };
+
+  // Opuścił serwer — pokaż, co się da (lookup użytkownika) + dane z bazy.
+  if (!member) {
+    const resolve = createMemberResolver(guildId, botToken);
+    const m = await resolve(userId);
+    return c.json({
+      userId,
+      onServer: false,
+      displayName: m.displayName,
+      username: m.username,
+      avatar: m.avatar,
+      joinedAt: null,
+      timeoutUntil: null,
+      boostingSince: null,
+      roles: [] as { id: string; name: string; color: number }[],
+      ...dbStats,
+    });
+  }
+
+  type ProfileRole = z.infer<typeof profileRoleSchema>;
+  const roleMap = new Map((guildRoles ?? []).map((r) => [r.id, r]));
+  const roles = member.roles
+    .map((id) => roleMap.get(id))
+    .filter((r): r is ProfileRole => r != null && r.name !== "@everyone")
+    .sort((a, b) => b.position - a.position)
+    .map((r) => ({ id: r.id, name: r.name, color: r.color }));
+
+  const timeout =
+    member.communication_disabled_until &&
+    new Date(member.communication_disabled_until).getTime() > Date.now()
+      ? member.communication_disabled_until
+      : null;
+
+  return c.json({
+    userId,
+    onServer: true,
+    displayName: member.nick ?? member.user.global_name ?? member.user.username,
+    username: member.user.username,
+    avatar: avatarUrl(userId, member.avatar ?? member.user.avatar),
+    joinedAt: member.joined_at ?? null,
+    timeoutUntil: timeout,
+    boostingSince: member.premium_since ?? null,
+    roles,
+    ...dbStats,
+  });
 });
 
 moderationRoutes.get("/:guildId/tickets", async (c) => {
