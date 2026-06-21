@@ -15,6 +15,14 @@ export function botHeaders(
   return { Authorization: `Bot ${token}`, ...extra };
 }
 
+/** Discord CDN avatar URL from a user id + avatar hash (`null` when no hash). */
+export function avatarUrl(
+  userId: string,
+  hash: string | null | undefined,
+): string | null {
+  return hash ? `https://cdn.discordapp.com/avatars/${userId}/${hash}.png` : null;
+}
+
 type DiscordFetchInit = RequestInit & {
   /** How many times to retry on HTTP 429, honouring `retry_after`. Default 0. */
   retry?: number;
@@ -138,6 +146,23 @@ export async function sendDiscordMessage(
   }
   const msg = messageIdSchema.safeParse(await res.json().catch(() => null));
   return msg.success ? msg.data : null;
+}
+
+/**
+ * Locks/archives (or reopens) a thread as the bot. Returns the `Response`
+ * (so callers needing to fail on error can check `res?.ok`) or `null` on a
+ * network error. Used by the ticket close/reopen paths.
+ */
+export function setThreadState(
+  threadId: string,
+  token: string,
+  state: { archived: boolean; locked: boolean },
+): Promise<Response | null> {
+  return discordFetch(`/channels/${threadId}`, {
+    method: "PATCH",
+    headers: botHeaders(token, { "Content-Type": "application/json" }),
+    body: JSON.stringify(state),
+  });
 }
 
 /**

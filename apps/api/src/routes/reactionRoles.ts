@@ -15,7 +15,7 @@ import {
   requireBotToken,
   sendDiscordMessage,
 } from "../lib/discord";
-import { canAccessGuild } from "../lib/guildGuard";
+import { guildAccessGuard } from "../lib/guildGuard";
 import { authMiddleware } from "../middleware/authMiddleware";
 import type { AppVariables } from "../types";
 
@@ -79,17 +79,7 @@ export const reactionRoleRoutes = new Hono<{ Variables: AppVariables }>();
 reactionRoleRoutes.use("*", authMiddleware);
 
 // Verify guild admin access for all /:guildId/* routes
-reactionRoleRoutes.use("/:guildId/*", async (c, next) => {
-  const guildId = c.req.param("guildId");
-  const accessToken = c.get("accessToken");
-  const userId = c.get("userId");
-
-  if (!(await canAccessGuild(accessToken, userId, guildId))) {
-    return c.json({ error: "Forbidden" }, 403);
-  }
-
-  await next();
-});
+reactionRoleRoutes.use("/:guildId/*", guildAccessGuard);
 
 reactionRoleRoutes.get("/:guildId/reaction-roles", async (c) => {
   const guildId = c.req.param("guildId");

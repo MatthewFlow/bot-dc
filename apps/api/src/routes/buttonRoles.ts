@@ -13,7 +13,7 @@ import {
   requireBotToken,
   sendDiscordMessage,
 } from "../lib/discord";
-import { canAccessGuild } from "../lib/guildGuard";
+import { guildAccessGuard } from "../lib/guildGuard";
 import { buttonRolesSchema, parseBody } from "../lib/validation";
 import { authMiddleware } from "../middleware/authMiddleware";
 import type { AppVariables } from "../types";
@@ -80,15 +80,7 @@ export const buttonRoleRoutes = new Hono<{ Variables: AppVariables }>();
 
 buttonRoleRoutes.use("*", authMiddleware);
 
-buttonRoleRoutes.use("/:guildId/*", async (c, next) => {
-  const guildId = c.req.param("guildId");
-  const accessToken = c.get("accessToken");
-  const userId = c.get("userId");
-  if (!(await canAccessGuild(accessToken, userId, guildId))) {
-    return c.json({ error: "Forbidden" }, 403);
-  }
-  await next();
-});
+buttonRoleRoutes.use("/:guildId/*", guildAccessGuard);
 
 buttonRoleRoutes.get("/:guildId/button-roles", async (c) => {
   const guildId = c.req.param("guildId");

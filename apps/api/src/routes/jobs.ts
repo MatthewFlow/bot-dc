@@ -9,7 +9,7 @@ import { z } from "zod";
 
 import { channelInGuild } from "../lib/channelGuard";
 import { requireBotToken, sendDiscordMessage } from "../lib/discord";
-import { canAccessGuild } from "../lib/guildGuard";
+import { guildAccessGuard } from "../lib/guildGuard";
 import { idSchema, parseBody } from "../lib/validation";
 import { authMiddleware } from "../middleware/authMiddleware";
 import type { AppVariables } from "../types";
@@ -18,13 +18,7 @@ export const jobRoutes = new Hono<{ Variables: AppVariables }>();
 
 jobRoutes.use("*", authMiddleware);
 
-jobRoutes.use("/:guildId/*", async (c, next) => {
-  const guildId = c.req.param("guildId");
-  if (!(await canAccessGuild(c.get("accessToken"), c.get("userId"), guildId))) {
-    return c.json({ error: "Forbidden" }, 403);
-  }
-  await next();
-});
+jobRoutes.use("/:guildId/*", guildAccessGuard);
 
 jobRoutes.get("/:guildId/jobs", async (c) => {
   const guildId = c.req.param("guildId");

@@ -18,6 +18,16 @@ export async function parseBody<T>(
   return { ok: true, data: parsed.data };
 }
 
+/**
+ * Reads `?limit=` from the query, clamping to `[1, max]` and falling back to
+ * `def` for missing/non-positive/non-finite values. Single source for the
+ * list endpoints that all repeated this guard inline.
+ */
+export function parseLimit(c: Context, def: number, max: number): number {
+  const raw = Number(c.req.query("limit") ?? def);
+  return Number.isFinite(raw) && raw > 0 ? Math.min(raw, max) : def;
+}
+
 /** Discord snowflake id as accepted across the config (non-empty, ≤32 chars). */
 export const idSchema = z.string().trim().min(1).max(32);
 

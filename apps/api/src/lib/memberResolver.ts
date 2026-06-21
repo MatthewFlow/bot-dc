@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { botHeaders, discordJson } from "./discord";
+import { avatarUrl, botHeaders, discordJson } from "./discord";
 
 /** Dane członka rozwiązane z Discorda. `displayName` = pseudonim (nick/global), `username` = @handle. */
 export type ResolvedMember = {
@@ -21,10 +21,6 @@ const memberSchema = z.object({
   avatar: z.string().nullish(),
   user: userSchema,
 });
-
-function avatarUrl(userId: string, hash: string | null | undefined): string | null {
-  return hash ? `https://cdn.discordapp.com/avatars/${userId}/${hash}.png` : null;
-}
 
 /**
  * Tworzy resolver członków serwera z własnym cache (po userId), żeby nie odpytywać

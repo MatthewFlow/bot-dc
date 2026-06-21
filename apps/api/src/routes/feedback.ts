@@ -1,6 +1,7 @@
 import { feedbackRepository } from "@jurassic-haven/db";
 import { Hono } from "hono";
 
+import { avatarUrl } from "../lib/discord";
 import { feedbackSchema, parseBody } from "../lib/validation";
 import { authMiddleware } from "../middleware/authMiddleware";
 import type { AppVariables } from "../types";
@@ -18,14 +19,11 @@ feedbackRoutes.post("/", async (c) => {
   if (!parsed.ok) return parsed.res;
   const { message, category, rating, guildId } = parsed.data;
 
-  const avatarHash = c.get("avatar");
   const fb = await feedbackRepository.add({
     userId,
     username,
     displayName: username,
-    avatar: avatarHash
-      ? `https://cdn.discordapp.com/avatars/${userId}/${avatarHash}.png`
-      : null,
+    avatar: avatarUrl(userId, c.get("avatar")),
     guildId,
     category,
     message,

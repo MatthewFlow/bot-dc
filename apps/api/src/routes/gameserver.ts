@@ -2,7 +2,7 @@ import { botJobRepository, gameServerStatusRepository } from "@jurassic-haven/db
 import { Hono } from "hono";
 import { z } from "zod";
 
-import { canAccessGuild } from "../lib/guildGuard";
+import { guildAccessGuard } from "../lib/guildGuard";
 import { parseBody } from "../lib/validation";
 import { authMiddleware } from "../middleware/authMiddleware";
 import type { AppVariables } from "../types";
@@ -11,13 +11,7 @@ export const gameServerRoutes = new Hono<{ Variables: AppVariables }>();
 
 gameServerRoutes.use("*", authMiddleware);
 
-gameServerRoutes.use("/:guildId/*", async (c, next) => {
-  const guildId = c.req.param("guildId");
-  if (!(await canAccessGuild(c.get("accessToken"), c.get("userId"), guildId))) {
-    return c.json({ error: "Forbidden" }, 403);
-  }
-  await next();
-});
+gameServerRoutes.use("/:guildId/*", guildAccessGuard);
 
 /** Migawka starsza niż tyle = serwer/bot uznawany za offline. */
 const STALE_MS = 90_000;

@@ -11,24 +11,21 @@ import { type Context, Hono } from "hono";
 import { z } from "zod";
 
 import {
+  avatarUrl,
   botHeaders,
   DISCORD_API,
   discordFetch,
   discordJson,
   fetchGuildCounts,
   requireBotToken,
+  setThreadState,
 } from "../lib/discord";
-import { canAccessGuild } from "../lib/guildGuard";
+import { guildAccessGuard } from "../lib/guildGuard";
 import { createMemberResolver, type ResolvedMember } from "../lib/memberResolver";
 import { logModAction, sendPunishDm } from "../lib/modActions";
-import { idSchema, parseBody } from "../lib/validation";
+import { idSchema, parseBody, parseLimit } from "../lib/validation";
 import { authMiddleware } from "../middleware/authMiddleware";
 import type { AppVariables } from "../types";
-
-/** Buduje URL avatara z CDN Discorda (lub `null`, gdy użytkownik go nie ma). */
-function avatarUrl(userId: string, hash: string | null | undefined): string | null {
-  return hash ? `https://cdn.discordapp.com/avatars/${userId}/${hash}.png` : null;
-}
 
 const DEFAULT_REASON = "Brak powodu";
 
@@ -70,17 +67,7 @@ export const moderationRoutes = new Hono<{ Variables: AppVariables }>();
 
 moderationRoutes.use("*", authMiddleware);
 
-moderationRoutes.use("/:guildId/*", async (c, next) => {
-  const guildId = c.req.param("guildId");
-  const accessToken = c.get("accessToken");
-  const userId = c.get("userId");
-
-  if (!(await canAccessGuild(accessToken, userId, guildId))) {
-    return c.json({ error: "Forbidden" }, 403);
-  }
-
-  await next();
-});
+moderationRoutes.use("/:guildId/*", guildAccessGuard);
 
 moderationRoutes.get("/:guildId/warnings/:userId", async (c) => {
   const guildId = c.req.param("guildId");
@@ -98,8 +85,7 @@ moderationRoutes.delete("/:guildId/warnings/:userId", async (c) => {
 
 moderationRoutes.get("/:guildId/mod-actions", async (c) => {
   const guildId = c.req.param("guildId");
-  const raw = Number(c.req.query("limit") ?? 25);
-  const limit = Number.isFinite(raw) && raw > 0 ? Math.min(raw, 100) : 25;
+  const limit = parseLimit(c, 25, 100);
   const actions = await modActionRepository.getRecent(guildId, limit);
 
   // Wzbogacamy o pseudonim (display name), nazwę (@handle) i avatar ukaranego
@@ -778,11 +764,7 @@ moderationRoutes.post("/:guildId/tickets/:threadId/close", async (c) => {
   if (ticket.status === "closed") return c.json({ error: "Already closed" }, 400);
 
   // Lock + archiwizacja wątku (best-effort — wątek mógł zostać usunięty ręcznie)
-  await fetch(`${DISCORD_API}/channels/${threadId}`, {
-    method: "PATCH",
-    headers: botHeaders(botToken, { "Content-Type": "application/json" }),
-    body: JSON.stringify({ archived: true, locked: true }),
-  }).catch(() => {});
+  await setThreadState(threadId, botToken, { archived: true, locked: true });
 
   await ticketRepository.close(threadId);
   await postTicketLog(
@@ -836,11 +818,10 @@ moderationRoutes.post("/:guildId/tickets/:threadId/reopen", async (c) => {
   if (!ticket || ticket.guildId !== guildId) return c.json({ error: "Not found" }, 404);
   if (ticket.status !== "closed") return c.json({ error: "Not closed" }, 400);
 
-  const res = await fetch(`${DISCORD_API}/channels/${threadId}`, {
-    method: "PATCH",
-    headers: botHeaders(botToken, { "Content-Type": "application/json" }),
-    body: JSON.stringify({ archived: false, locked: false }),
-  }).catch(() => null);
+  const res = await setThreadState(threadId, botToken, {
+    archived: false,
+    locked: false,
+  });
 
   // Jeśli wątek nie istnieje, nie da się go otworzyć ponownie
   if (!res || !res.ok) {

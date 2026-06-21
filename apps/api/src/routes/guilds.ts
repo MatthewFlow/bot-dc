@@ -29,9 +29,9 @@ import {
   requireBotToken,
   serverVarReplacer,
 } from "../lib/discord";
-import { canAccessGuild, fetchAccessibleGuilds } from "../lib/guildGuard";
+import { fetchAccessibleGuilds, guildAccessGuard } from "../lib/guildGuard";
 import { createMemberResolver } from "../lib/memberResolver";
-import { channelIdSchema, nameSchema, parseBody } from "../lib/validation";
+import { channelIdSchema, nameSchema, parseBody, parseLimit } from "../lib/validation";
 import { authMiddleware } from "../middleware/authMiddleware";
 import type { AppVariables } from "../types";
 
@@ -107,17 +107,7 @@ export const guildRoutes = new Hono<{ Variables: AppVariables }>();
 guildRoutes.use("*", authMiddleware);
 
 // Verify guild admin access for all /:guildId/* routes
-guildRoutes.use("/:guildId/*", async (c, next) => {
-  const guildId = c.req.param("guildId");
-  const accessToken = c.get("accessToken");
-  const userId = c.get("userId");
-
-  if (!(await canAccessGuild(accessToken, userId, guildId))) {
-    return c.json({ error: "Forbidden" }, 403);
-  }
-
-  await next();
-});
+guildRoutes.use("/:guildId/*", guildAccessGuard);
 
 guildRoutes.get("/", async (c) => {
   const accessToken = c.get("accessToken");
@@ -168,8 +158,7 @@ guildRoutes.put("/:guildId/config", async (c) => {
 
 guildRoutes.get("/:guildId/config-audit", async (c) => {
   const guildId = c.req.param("guildId");
-  const raw = Number(c.req.query("limit") ?? 15);
-  const limit = Number.isFinite(raw) && raw > 0 ? Math.min(raw, 50) : 15;
+  const limit = parseLimit(c, 15, 50);
   return c.json(await configAuditRepository.getRecent(guildId, limit));
 });
 
@@ -522,8 +511,7 @@ guildRoutes.get("/:guildId/leaderboard", async (c) => {
   const botToken = requireBotToken(c);
   if (botToken instanceof Response) return botToken;
 
-  const raw = Number(c.req.query("limit") ?? 10);
-  const limit = Number.isFinite(raw) && raw > 0 ? Math.min(raw, 100) : 10;
+  const limit = parseLimit(c, 10, 100);
 
   try {
     const entries = await xpRepository.getLeaderboard(guildId, limit);
@@ -619,8 +607,7 @@ guildRoutes.get("/:guildId/stats", async (c) => {
 // (level-upy, role-nagrody), sortuje po czasie i wzbogaca o nick/avatar.
 guildRoutes.get("/:guildId/activity", async (c) => {
   const guildId = c.req.param("guildId");
-  const raw = Number(c.req.query("limit") ?? 8);
-  const limit = Number.isFinite(raw) && raw > 0 ? Math.min(raw, 30) : 8;
+  const limit = parseLimit(c, 8, 30);
 
   const [modActions, events] = await Promise.all([
     modActionRepository.getRecent(guildId, limit),

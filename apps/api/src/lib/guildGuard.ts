@@ -1,6 +1,8 @@
 import { guildConfigRepository } from "@jurassic-haven/db";
+import { createMiddleware } from "hono/factory";
 import { z } from "zod";
 
+import type { AppVariables } from "../types";
 import { botHeaders, discordJson } from "./discord";
 
 const ADMIN_PERM = BigInt(0x8); // ADMINISTRATOR
@@ -111,6 +113,25 @@ export async function canAccessGuild(
   if (await isGuildAdmin(accessToken, guildId)) return true;
   return hasBotAdminRole(userId, guildId);
 }
+
+/**
+ * Middleware gatekeeping all `/:guildId/*` routes: 403 unless the caller can
+ * administer that guild. Mount once per router (`routes.use("/:guildId/*",
+ * guildAccessGuard)`) instead of repeating the same inline closure everywhere.
+ * Assumes `authMiddleware` already populated `accessToken`/`userId`.
+ */
+export const guildAccessGuard = createMiddleware<{ Variables: AppVariables }>(
+  async (c, next) => {
+    const guildId = c.req.param("guildId");
+    if (
+      !guildId ||
+      !(await canAccessGuild(c.get("accessToken"), c.get("userId"), guildId))
+    ) {
+      return c.json({ error: "Forbidden" }, 403);
+    }
+    await next();
+  },
+);
 
 /**
  * Okresowo usuwa wygasłe wpisy z cache listy serwerów (per token) i cache roli
