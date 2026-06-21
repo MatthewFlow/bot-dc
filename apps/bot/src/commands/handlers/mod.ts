@@ -1,4 +1,8 @@
-import { guildConfigRepository, warnRepository } from "@jurassic-haven/db";
+import {
+  botJobRepository,
+  guildConfigRepository,
+  warnRepository,
+} from "@jurassic-haven/db";
 import {
   type ChatInputCommandInteraction,
   EmbedBuilder,
@@ -228,6 +232,7 @@ export async function handleModBan(interaction: ChatInputCommandInteraction) {
   const user = interaction.options.getUser("user", true);
   const reason = interaction.options.getString("reason") ?? "Brak powodu";
   const deleteMessageDays = interaction.options.getInteger("delete_messages") ?? 0;
+  const durationMin = interaction.options.getInteger("duration");
 
   if (user.id === interaction.user.id) {
     await interaction.editReply("Nie możesz zbanować samego siebie.");
@@ -252,9 +257,32 @@ export async function handleModBan(interaction: ChatInputCommandInteraction) {
       reason,
       deleteMessageSeconds: deleteMessageDays * 86400,
     });
-    await sendModLog(guild, "ban", user, interaction.user, reason);
+
+    // Temp-ban: zaplanuj auto-unban przez kolejkę zadań.
+    if (durationMin) {
+      await botJobRepository
+        .create({
+          guildId: guild.id,
+          type: "unban",
+          runAt: new Date(Date.now() + durationMin * 60_000),
+          recurrence: "once",
+          userId: user.id,
+          createdBy: interaction.user.id,
+        })
+        .catch(() => {});
+    }
+
+    const tempNote = durationMin ? ` na ${durationMin} min` : "";
+    await sendModLog(
+      guild,
+      "ban",
+      user,
+      interaction.user,
+      reason,
+      durationMin ? `Temp-ban: ${durationMin} min` : undefined,
+    );
     await interaction.editReply(
-      `**${user.username}** został zbanowany.\nPowód: ${reason}`,
+      `**${user.username}** został zbanowany${tempNote}.\nPowód: ${reason}`,
     );
   } catch {
     await interaction.editReply("Nie udało się zbanować. Sprawdź uprawnienia bota.");

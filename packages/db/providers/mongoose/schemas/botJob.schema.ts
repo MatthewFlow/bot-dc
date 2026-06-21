@@ -3,7 +3,7 @@ import { type Model, model, Schema } from "mongoose";
 import type { EmbedConfig } from "../../../embed";
 
 /** Typ zadania w kolejce bot↔panel (rozszerzalny). */
-export type BotJobType = "sendEmbed";
+export type BotJobType = "sendEmbed" | "unban";
 export type JobRecurrence = "once" | "daily" | "weekly";
 export type JobStatus = "pending" | "done" | "error" | "cancelled";
 
@@ -17,6 +17,8 @@ export type BotJobDocument = {
   /** Payload `sendEmbed`. */
   channelId?: string;
   embed?: EmbedConfig;
+  /** Payload `unban` — kogo odbanować (temp-ban). */
+  userId?: string;
   lastError?: string;
   lastRunAt?: Date;
   createdBy: string;
@@ -26,7 +28,7 @@ export type BotJobDocument = {
 const botJobSchema = new Schema<BotJobDocument>(
   {
     guildId: { type: String, required: true },
-    type: { type: String, enum: ["sendEmbed"], required: true },
+    type: { type: String, enum: ["sendEmbed", "unban"], required: true },
     runAt: { type: Date, required: true },
     recurrence: {
       type: String,
@@ -40,6 +42,7 @@ const botJobSchema = new Schema<BotJobDocument>(
     },
     channelId: { type: String },
     embed: { type: Schema.Types.Mixed, default: undefined },
+    userId: { type: String },
     lastError: { type: String },
     lastRunAt: { type: Date },
     createdBy: { type: String, required: true },

@@ -1,4 +1,5 @@
 import {
+  botJobRepository,
   guildConfigRepository,
   levelFromXp,
   modActionRepository,
@@ -140,8 +141,17 @@ const banBody = z.object({
   userId: idSchema,
   reason: reasonField,
   deleteDays: z.coerce.number().int().min(0).max(7).optional(),
+  // Temp-ban: czas w minutach (1 min – 365 dni). Brak = ban na stałe.
+  minutes: z.coerce.number().int().min(1).max(525_600).optional(),
 });
 const userIdBody = z.object({ userId: idSchema });
+
+/** Czytelny opis czasu temp-bana (np. „2 godz", „3 dni"). */
+function durationLabel(min: number): string {
+  if (min % 1440 === 0) return `${min / 1440} dni`;
+  if (min % 60 === 0) return `${min / 60} godz`;
+  return `${min} min`;
+}
 
 type ActionContext = {
   guildId: string;
@@ -334,7 +344,7 @@ moderationRoutes.post("/:guildId/actions/ban", async (c) => {
   if (ctx instanceof Response) return ctx;
 
   const { guildId, moderatorId, botToken, cfg, guildName } = ctx;
-  const { userId } = body.data;
+  const { userId, minutes } = body.data;
   const reason = body.data.reason || DEFAULT_REASON;
   const deleteDays = body.data.deleteDays ?? 0;
 
@@ -353,13 +363,32 @@ moderationRoutes.post("/:guildId/actions/ban", async (c) => {
     );
   }
 
+  // Temp-ban: zaplanuj auto-unban przez kolejkę zadań (worker bota zdejmie o czasie).
+  if (minutes) {
+    await botJobRepository
+      .create({
+        guildId,
+        type: "unban",
+        runAt: new Date(Date.now() + minutes * 60_000),
+        recurrence: "once",
+        userId,
+        createdBy: moderatorId,
+      })
+      .catch(() => {});
+  }
+
+  const notes = [
+    deleteDays > 0 ? `Usunięto wiadomości: ${deleteDays} dni` : null,
+    minutes ? `Temp-ban: ${durationLabel(minutes)}` : null,
+  ].filter(Boolean);
+
   await logModAction({
     guildId,
     type: "ban",
     userId,
     moderatorId,
     reason,
-    extra: deleteDays > 0 ? `Usunięto wiadomości: ${deleteDays} dni` : undefined,
+    extra: notes.length > 0 ? notes.join(" · ") : undefined,
     botToken,
     cfg,
   });
@@ -409,6 +438,9 @@ moderationRoutes.delete("/:guildId/bans/:userId", async (c) => {
       { error: "Nie udało się odbanować — być może nie jest zbanowany." },
       502,
     );
+
+  // Ręczne odbanowanie unieważnia zaplanowany auto-unban (gdyby to był temp-ban).
+  await botJobRepository.cancelPending(guildId, "unban", userId).catch(() => {});
 
   await logModAction({
     guildId,
@@ -518,12 +550,22 @@ moderationRoutes.get("/:guildId/active-punishments", async (c) => {
     reason: muteReasons.get(m.user.id)?.reason ?? null,
   }));
 
+  // Temp-bany: zaplanowane unbany dają datę wygaśnięcia (mapowanie userId → runAt).
+  const pendingUnbans = await botJobRepository.getPendingByType(guildId, "unban");
+  const expiry = new Map(
+    pendingUnbans
+      .filter((j) => j.userId)
+      .map((j) => [j.userId as string, j.runAt.toISOString()]),
+  );
+
   const banned = (bans ?? []).map((b) => ({
     userId: b.user.id,
     displayName: b.user.global_name ?? b.user.username,
     username: b.user.username,
     avatar: avatarUrl(b.user.id, b.user.avatar),
     reason: b.reason ?? null,
+    /** ISO wygaśnięcia (temp-ban) lub null (ban na stałe). */
+    until: expiry.get(b.user.id) ?? null,
   }));
 
   return c.json({ mutes, bans: banned });

@@ -6,6 +6,8 @@ import {
 } from "@jurassic-haven/db";
 import type { Client } from "discord.js";
 
+import { sendModLog } from "../modlog";
+
 /** Co ile worker sprawdza zaległe zadania. */
 const WORKER_INTERVAL_MS = 30_000;
 /** Ile zadań naraz bierzemy z kolejki w jednym przebiegu. */
@@ -32,11 +34,34 @@ async function runSendEmbed(client: Client, job: BotJob): Promise<void> {
   await channel.send({ embeds: [toDiscordEmbed(job.embed)] });
 }
 
+/** Wykonanie zadania `unban`: zdejmuje bana (koniec temp-bana) i loguje akcję. */
+async function runUnban(client: Client, job: BotJob): Promise<void> {
+  if (!job.userId) throw new Error("brak userId");
+  const guild = await client.guilds.fetch(job.guildId).catch(() => null);
+  if (!guild) throw new Error("serwer niedostępny");
+
+  await guild.bans.remove(job.userId, "Koniec tymczasowego bana");
+
+  const botUser = client.user;
+  const user = await client.users.fetch(job.userId).catch(() => null);
+  if (botUser && user) {
+    await sendModLog(
+      guild,
+      "unban",
+      user,
+      botUser,
+      "Koniec tymczasowego bana",
+      "Auto",
+    ).catch(() => {});
+  }
+}
+
 async function tick(client: Client): Promise<void> {
   const due = await botJobRepository.getDue(new Date(), BATCH).catch(() => []);
   for (const job of due) {
     try {
       if (job.type === "sendEmbed") await runSendEmbed(client, job);
+      else if (job.type === "unban") await runUnban(client, job);
 
       if (job.recurrence === "once") await botJobRepository.markDone(job.id);
       else

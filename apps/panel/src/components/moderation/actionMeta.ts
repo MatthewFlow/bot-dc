@@ -60,3 +60,13 @@ export const MUTE_DURATIONS: { label: string; minutes: number }[] = [
   { label: "1 dzień", minutes: 1440 },
   { label: "1 tydzień", minutes: 10080 },
 ];
+
+/** Opcje czasu bana (minuty); 0 = ban na stałe (auto-unban przez kolejkę zadań). */
+export const BAN_DURATIONS: { label: string; minutes: number }[] = [
+  { label: "Na stałe", minutes: 0 },
+  { label: "1 godzina", minutes: 60 },
+  { label: "6 godzin", minutes: 360 },
+  { label: "1 dzień", minutes: 1440 },
+  { label: "7 dni", minutes: 10080 },
+  { label: "30 dni", minutes: 43200 },
+];

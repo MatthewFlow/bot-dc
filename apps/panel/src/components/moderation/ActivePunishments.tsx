@@ -38,14 +38,15 @@ export function ActivePunishments({
   const punishmentsQ = useActivePunishments(guildId);
   const data = punishmentsQ.data;
 
-  // Odliczanie odświeża się co sekundę, póki są jakieś aktywne wyciszenia.
+  // Odliczanie odświeża się co sekundę, póki są aktywne wyciszenia lub temp-bany.
   const [, setTick] = useState(0);
-  const hasMutes = (data?.mutes.length ?? 0) > 0;
+  const needTick =
+    (data?.mutes.length ?? 0) > 0 || (data?.bans.some((b) => b.until) ?? false);
   useEffect(() => {
-    if (!hasMutes) return;
+    if (!needTick) return;
     const id = setInterval(() => setTick((t) => t + 1), 1000);
     return () => clearInterval(id);
-  }, [hasMutes]);
+  }, [needTick]);
 
   const [pending, setPending] = useState<string | null>(null);
 
@@ -129,9 +130,16 @@ export function ActivePunishments({
                 name={b.displayName ?? b.username ?? b.userId}
                 reason={b.reason ?? "Ban"}
                 badge={
-                  <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-400">
-                    na stałe
-                  </span>
+                  b.until ? (
+                    <span className="flex items-center gap-1 rounded-full bg-amber-400/10 px-2 py-0.5 text-xs font-semibold text-amber-300">
+                      <Clock className="h-3 w-3" />
+                      {formatRemaining(new Date(b.until).getTime() - now)}
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-semibold text-red-400">
+                      na stałe
+                    </span>
+                  )
                 }
                 actionLabel="Odbanuj"
                 pending={pending === b.userId}

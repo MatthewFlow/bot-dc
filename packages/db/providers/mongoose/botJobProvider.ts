@@ -17,6 +17,7 @@ function toJob(doc: LeanBotJob): BotJob {
     status: doc.status,
     channelId: doc.channelId,
     embed: doc.embed,
+    userId: doc.userId,
     lastError: doc.lastError,
     lastRunAt: doc.lastRunAt,
     createdBy: doc.createdBy,
@@ -36,6 +37,27 @@ export class BotJobProvider implements IBotJobRepository {
       .limit(limit)
       .lean<LeanBotJob[]>();
     return docs.map(toJob);
+  }
+
+  async getPendingByType(guildId: string, type: BotJob["type"]): Promise<BotJob[]> {
+    const docs = await BotJobModel.find({ guildId, type, status: "pending" }).lean<
+      LeanBotJob[]
+    >();
+    return docs.map(toJob);
+  }
+
+  async cancelPending(
+    guildId: string,
+    type: BotJob["type"],
+    userId: string,
+  ): Promise<number> {
+    const res = await BotJobModel.deleteMany({
+      guildId,
+      type,
+      userId,
+      status: "pending",
+    });
+    return res.deletedCount;
   }
 
   async getDue(now: Date, limit: number): Promise<BotJob[]> {

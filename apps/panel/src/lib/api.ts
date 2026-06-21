@@ -232,6 +232,8 @@ export type BanPunishment = {
   username: string | null;
   avatar: string | null;
   reason: string | null;
+  /** ISO wygaśnięcia (temp-ban) lub null (ban na stałe). */
+  until: string | null;
 };
 
 export type ActivePunishments = {
@@ -926,11 +928,13 @@ export function banUser(
   userId: string,
   reason?: string,
   deleteDays?: number,
+  minutes?: number,
 ): Promise<{ ok: true }> {
   return postModAction(`${API_URL}/guilds/${guildId}/actions/ban`, {
     userId,
     reason,
     deleteDays,
+    minutes,
   });
 }
 

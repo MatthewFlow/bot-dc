@@ -236,6 +236,14 @@ export const commands = [
         .setRequired(false)
         .setMinValue(0)
         .setMaxValue(7),
+    )
+    .addIntegerOption((opt) =>
+      opt
+        .setName("duration")
+        .setDescription("Temp-ban: czas w minutach (puste = na stałe)")
+        .setRequired(false)
+        .setMinValue(1)
+        .setMaxValue(525600),
     ),
 
   // ===== TICKETS =====
