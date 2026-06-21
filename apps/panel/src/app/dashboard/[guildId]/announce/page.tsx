@@ -1,13 +1,14 @@
 "use client";
 
 import { useQueryClient } from "@tanstack/react-query";
-import { Clock, Megaphone, Repeat, Send, Trash2 } from "lucide-react";
+import { Clock, Hash, Megaphone, PenLine, Repeat, Send, Trash2 } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { type CSSProperties, useState } from "react";
 
 import { ChannelField } from "@/components/ChannelField";
 import { EmbedPreviewCard } from "@/components/EmbedPreviewCard";
+import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
 import { PanelCard } from "@/components/PanelCard";
 import { Skeleton } from "@/components/Skeleton";
@@ -126,6 +127,32 @@ export default function AnnouncePage() {
         }
         description="Wyślij embed teraz albo zaplanuj go (jednorazowo lub cyklicznie)."
         className="mb-0"
+      />
+
+      <HowItWorks
+        subtitle="Od pomysłu do publikacji w czterech krokach"
+        cards={[
+          {
+            icon: PenLine,
+            title: "Zbuduj embed",
+            text: "Ustaw tytuł, opis, kolor i pola w edytorze obok.",
+          },
+          {
+            icon: Hash,
+            title: "Wybierz kanał",
+            text: "Wskaż kanał, na którym pojawi się ogłoszenie.",
+          },
+          {
+            icon: Clock,
+            title: "Wybierz tryb",
+            text: "Wyślij teraz, zaplanuj na konkretny czas lub ustaw cykl.",
+          },
+          {
+            icon: Send,
+            title: "Bot publikuje",
+            text: "Zaplanowane prowadzi bot — możesz je anulować na liście.",
+          },
+        ]}
       />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start">
