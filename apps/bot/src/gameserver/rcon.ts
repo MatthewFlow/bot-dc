@@ -1,10 +1,8 @@
 /**
- * Kontrakt klienta RCON dla serwera gry The Isle: Evrima — SZKIC.
+ * Kontrakt klienta RCON dla serwera gry The Isle: Evrima.
  *
- * To tylko uzgodniony kształt API: typy + interfejs + stub, który celowo rzuca.
- * Nic tu nie jest podłączone do runtime (plik nie jest nigdzie importowany).
- * Implementację protokołu (zmiennego między patchami Evrimy) dopisujemy później —
- * patrz `docs/rcon-evrima.md`.
+ * Tu żyją tylko typy + interfejs. Implementacja: `evrimaClient.ts`
+ * (transport + protokół), konfiguracja z env: `config.ts`. Patrz `docs/rcon-evrima.md`.
  */
 
 /** Pojedynczy gracz na serwerze gry. */
@@ -52,12 +50,4 @@ export interface RconClient {
   raw(command: string): Promise<string>;
   /** Zamyka połączenie. */
   close(): Promise<void>;
-}
-
-/**
- * Fabryka klienta — STUB. Implementacja protokołu powstanie w fazie 1
- * (patrz `docs/rcon-evrima.md`). Na razie celowo rzuca, by nic nie poszło „po cichu".
- */
-export function createRconClient(_config: RconConfig): RconClient {
-  throw new Error("RconClient nie jest jeszcze zaimplementowany (szkic — faza 1).");
 }
