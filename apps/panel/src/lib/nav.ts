@@ -1,5 +1,6 @@
 import {
   DoorOpen,
+  Gift,
   LayoutDashboard,
   type LucideIcon,
   MessageSquareHeart,
@@ -22,6 +23,8 @@ export type NavItem = {
   href: string;
   desc: string;
   icon: LucideIcon;
+  /** Pozycja „wkrótce" — widoczna w sidebarze, ale wyszarzona i nieklikalna. */
+  soon?: boolean;
 };
 
 export type NavGroup = {
@@ -96,6 +99,13 @@ export const NAV_GROUPS: NavGroup[] = [
         desc: "Obsługa zgłoszeń użytkowników",
         icon: Ticket,
       },
+      {
+        label: "Giveawaye",
+        href: "/giveaways",
+        desc: "Konkursy z losowaniem nagród",
+        icon: Gift,
+        soon: true,
+      },
     ],
   },
   {
@@ -144,10 +154,10 @@ export const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-/** Płaska lista wszystkich pozycji (overview + grupy) — overview pierwszy. */
+/** Płaska lista nawigowalnych pozycji (overview + grupy) — pomija pozycje „wkrótce". */
 export const NAV_ITEMS: NavItem[] = [
   ...NAV_TOP,
-  ...NAV_GROUPS.flatMap((group) => group.items),
+  ...NAV_GROUPS.flatMap((group) => group.items.filter((i) => !i.soon)),
 ];
 
 /** Dopasowuje pozycję nawigacji do bieżącej ścieżki (do breadcrumbów/topbara). */

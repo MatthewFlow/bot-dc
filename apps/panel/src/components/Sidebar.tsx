@@ -83,9 +83,27 @@ export function Sidebar({
   }
 
   function NavButton({ item }: { item: NavItem }) {
+    const Icon = item.icon;
+
+    // Pozycja „wkrótce" — wyszarzona, nieklikalna, z plakietką.
+    if (item.soon) {
+      return (
+        <div
+          aria-disabled
+          title="Wkrótce"
+          className="mb-1 flex w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 py-2 text-sm text-gray-500"
+        >
+          <Icon size={18} className="shrink-0" />
+          <span className="flex-1 text-left">{item.label}</span>
+          <span className="rounded-full bg-white/5 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+            wkrótce
+          </span>
+        </div>
+      );
+    }
+
     const href = `/dashboard/${guildId}${item.href}`;
     const isActive = isItemActive(item);
-    const Icon = item.icon;
 
     return (
       <button
