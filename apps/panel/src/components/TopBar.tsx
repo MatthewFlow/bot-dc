@@ -10,6 +10,7 @@ import { NotificationBell } from "@/components/NotificationBell";
 import { Skeleton } from "@/components/Skeleton";
 import type { User } from "@/lib/api";
 import { getMe, logout } from "@/lib/api";
+import { discordAvatarUrl } from "@/lib/format";
 import { findNavGroup, findNavItem } from "@/lib/nav";
 
 export function TopBar({ guildName }: { guildName: string }) {
@@ -68,11 +69,7 @@ export function TopBar({ guildName }: { guildName: string }) {
         {user ? (
           <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card/60 py-1.5 pl-2.5 pr-1.5">
             <Avatar
-              src={
-                user.avatar
-                  ? `https://cdn.discordapp.com/avatars/${user.userId}/${user.avatar}.png`
-                  : null
-              }
+              src={discordAvatarUrl(user.userId, user.avatar)}
               name={user.displayName ?? user.username}
               size="sm"
             />

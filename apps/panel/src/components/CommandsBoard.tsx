@@ -13,9 +13,8 @@ import {
 import { useMemo, useState } from "react";
 
 import { Switch } from "@/components/ui/switch";
+import { CARD } from "@/lib/cn";
 import { COMMAND_CATALOG } from "@/lib/commands";
-
-const CARD = "surface-raised rounded-xl border border-border bg-card";
 
 /** Ikona + kolory per kategoria (jak w mockupie Command Center). */
 const CATEGORY_STYLE: Record<string, { icon: LucideIcon; tile: string; badge: string }> =

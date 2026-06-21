@@ -61,10 +61,9 @@ import {
   toggleGuildFeedbackUpvote,
   updateGuildConfig,
 } from "@/lib/api";
+import { CARD } from "@/lib/cn";
 import { feedbackInputSchema } from "@/lib/schemas";
 import { dayAgo } from "@/lib/time";
-
-const CARD = "surface-raised rounded-xl border border-border bg-card";
 
 // Ciężka sekcja (edytor embeda + podgląd) ładowana leniwie — schodzi z initial bundle.
 const FeedbackPanelSection = dynamic(

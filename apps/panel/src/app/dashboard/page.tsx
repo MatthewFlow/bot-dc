@@ -9,6 +9,7 @@ import { Avatar } from "@/components/Avatar";
 import { Skeleton } from "@/components/Skeleton";
 import type { Guild, User } from "@/lib/api";
 import { getGuilds, getMe, logout } from "@/lib/api";
+import { discordAvatarUrl } from "@/lib/format";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3002";
 const INVITE_URL = `${API_URL}/auth/invite`;
@@ -109,11 +110,7 @@ export default function DashboardPage() {
             user && (
               <div className="flex items-center gap-3">
                 <Avatar
-                  src={
-                    user.avatar
-                      ? `https://cdn.discordapp.com/avatars/${user.userId}/${user.avatar}.png`
-                      : null
-                  }
+                  src={discordAvatarUrl(user.userId, user.avatar)}
                   name={user.displayName ?? user.username}
                   size="sm"
                 />

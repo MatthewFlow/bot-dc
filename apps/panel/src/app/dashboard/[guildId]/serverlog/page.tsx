@@ -22,16 +22,17 @@ import { CardHead } from "@/components/CardHead";
 import { ChannelField } from "@/components/ChannelField";
 import { ExemptLists } from "@/components/ExemptLists";
 import { HowItWorks } from "@/components/HowItWorks";
+import { MasterSwitchCard } from "@/components/MasterSwitchCard";
 import { PageHeader } from "@/components/PageHeader";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
-import { useToast } from "@/components/toast";
-import { Switch } from "@/components/ui/switch";
-import { useChannels, useGuildConfig, useRoles } from "@/hooks/queries";
-import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
+import { ToggleRow } from "@/components/ui/ToggleRow";
+import { useChannels, useRoles } from "@/hooks/queries";
+import { useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import type { Channel, GuildConfig, Role, ServerLogConfig } from "@/lib/api";
-import { updateGuildConfig } from "@/lib/api";
+import { useConfigDraft } from "@/hooks/useConfigDraft";
+import type { Channel, Role, ServerLogConfig } from "@/lib/api";
+import { CARD } from "@/lib/cn";
 
 const DEFAULT_SERVERLOG: ServerLogConfig = {
   enabled: false,
@@ -146,64 +147,23 @@ const LOG_PREVIEW: {
   },
 ];
 
-/** Wiersz kategorii z kolorowym kafelkiem ikony + przełącznikiem. */
-function CategoryToggle({
-  icon: Icon,
-  iconCls,
-  label,
-  desc,
-  checked,
-  onChange,
-}: {
-  icon: LucideIcon;
-  iconCls: string;
-  label: string;
-  desc: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-}) {
-  return (
-    <div className="flex items-start justify-between gap-4">
-      <div className="flex min-w-0 items-start gap-3">
-        <span
-          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${iconCls}`}
-        >
-          <Icon className="size-4" />
-        </span>
-        <div className="min-w-0">
-          <p className="text-sm text-white">{label}</p>
-          <p className="text-xs text-gray-400">{desc}</p>
-        </div>
-      </div>
-      <Switch checked={checked} onCheckedChange={onChange} className="mt-1" />
-    </div>
-  );
-}
-
 /** Szkielet tylko kart z danymi — nagłówek i „Jak to działa" renderują się od razu. */
 function ServerLogSkeleton() {
   return <Skeleton className="h-80 w-full rounded-xl" />;
 }
 
-const CARD = "surface-raised rounded-xl border border-border bg-card";
-
 export default function ServerLogPage() {
   const params = useParams();
   const guildId = params.guildId as string;
-  const toast = useToast();
 
-  const [config, setConfig] = useState<GuildConfig>({});
+  const { config, setConfig, saving, loading, configReady, saveConfig } =
+    useConfigDraft(guildId);
   const [channels, setChannels] = useState<Channel[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
-  const [saving, setSaving] = useState(false);
 
-  const configQ = useGuildConfig(guildId);
   const channelsQ = useChannels(guildId);
   const rolesQ = useRoles(guildId);
-  // Bramka tylko na config; kanały/role (proxy do Discorda) dopełnią selekty w tle.
-  const loading = configQ.isLoading;
-  useRedirectOnError(configQ.isError, configQ.error);
-  const configReady = useSeedOnce(configQ.data, setConfig);
+  // Kanały/role (proxy do Discorda) dopełnią selekty w tle — nie blokują formularza.
   useSeedOnce(channelsQ.data, setChannels);
   useSeedOnce(rolesQ.data, setRoles);
 
@@ -215,19 +175,8 @@ export default function ServerLogPage() {
       serverLog: { ...DEFAULT_SERVERLOG, ...c.serverLog, ...patch },
     }));
 
-  async function handleSave() {
-    setSaving(true);
-    try {
-      await updateGuildConfig(guildId, {
-        serverLog: config.serverLog ?? DEFAULT_SERVERLOG,
-      });
-      toast("Zapisano zmiany.", "success");
-    } catch {
-      toast("Nie udało się zapisać.", "error");
-    } finally {
-      setSaving(false);
-    }
-  }
+  const handleSave = () =>
+    saveConfig({ serverLog: config.serverLog ?? DEFAULT_SERVERLOG });
 
   const { status: autoSaveStatus } = useAutoSave(
     JSON.stringify(config.serverLog ?? DEFAULT_SERVERLOG),
@@ -280,27 +229,15 @@ export default function ServerLogPage() {
       ) : (
         <>
           {/* Master switch */}
-          <div className={`${CARD} flex items-center justify-between gap-4 p-6`}>
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                System logów
-              </p>
-              <p className="text-base font-semibold text-white">
-                Włącz logi serwera —{" "}
-                <span className={sl.enabled ? "text-green-400" : "text-gray-400"}>
-                  {sl.enabled ? "aktywne" : "wyłączone"}
-                </span>
-              </p>
-              <p className="mt-1 text-xs text-gray-400">
-                Gdy wyłączone, nic nie jest logowane.
-              </p>
-            </div>
-            <Switch
-              checked={sl.enabled}
-              onCheckedChange={(v) => setSl({ enabled: v })}
-              className="shrink-0"
-            />
-          </div>
+          <MasterSwitchCard
+            eyebrow="System logów"
+            title="Włącz logi serwera — "
+            active={sl.enabled}
+            activeLabel="aktywne"
+            inactiveLabel="wyłączone"
+            hint="Gdy wyłączone, nic nie jest logowane."
+            onChange={(v) => setSl({ enabled: v })}
+          />
 
           <div
             className={sl.enabled ? "" : "pointer-events-none opacity-50"}
@@ -325,7 +262,7 @@ export default function ServerLogPage() {
                   />
                   <div className="grid grid-cols-1 gap-5 p-6 sm:grid-cols-2">
                     {CATEGORIES.map((cat) => (
-                      <CategoryToggle
+                      <ToggleRow
                         key={cat.key}
                         icon={cat.icon}
                         iconCls={cat.iconCls}

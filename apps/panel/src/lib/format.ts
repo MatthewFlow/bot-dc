@@ -10,3 +10,11 @@ export function formatNumber(n: number): string {
 export function formatCount(n: number | null | undefined): string {
   return n == null ? "—" : nf.format(n);
 }
+
+/** URL avatara użytkownika z CDN Discorda (lub `null`, gdy brak hasha). */
+export function discordAvatarUrl(
+  userId: string,
+  hash: string | null | undefined,
+): string | null {
+  return hash ? `https://cdn.discordapp.com/avatars/${userId}/${hash}.png` : null;
+}

@@ -52,9 +52,8 @@ import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import type { Channel, GuildConfig, Role } from "@/lib/api";
 import { queryKeys, updateGuildConfig } from "@/lib/api";
+import { CARD } from "@/lib/cn";
 import { relativeTime } from "@/lib/time";
-
-const CARD = "surface-raised rounded-xl border border-border bg-card";
 
 /** Moduły przełączane przez `disabledModules`. Auto-moderacja i Logi serwera mają
  *  własny master-switch na swoich stronach, więc tu ich nie ma. */

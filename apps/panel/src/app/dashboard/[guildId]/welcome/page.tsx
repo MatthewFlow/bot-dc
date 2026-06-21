@@ -15,14 +15,13 @@ import { PageHeader } from "@/components/PageHeader";
 import { PanelCard } from "@/components/PanelCard";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
-import { useToast } from "@/components/toast";
 import { VariablesCard } from "@/components/VariablesCard";
 import { WelcomeGuide } from "@/components/WelcomeGuide";
-import { useBotStatus, useChannels, useGuildConfig } from "@/hooks/queries";
-import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
+import { useBotStatus, useChannels } from "@/hooks/queries";
+import { useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import type { Channel, EmbedConfig, GuildConfig } from "@/lib/api";
-import { updateGuildConfig } from "@/lib/api";
+import { useConfigDraft } from "@/hooks/useConfigDraft";
+import type { Channel, EmbedConfig } from "@/lib/api";
 import { previewReplacer, WELCOME_VARS } from "@/lib/embed";
 
 // Ciężki edytor embeda schodzi z initial bundle — montuje się dopiero w trybie embed.
@@ -87,43 +86,28 @@ function WelcomeSkeleton() {
 export default function WelcomePage() {
   const params = useParams();
   const guildId = params.guildId as string;
-  const toast = useToast();
 
   const [tab, setTab] = useState<Tab>("welcome");
-  const [config, setConfig] = useState<GuildConfig>({});
   const [channels, setChannels] = useState<Channel[]>([]);
-  const [saving, setSaving] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const configQ = useGuildConfig(guildId);
+  const { config, setConfig, saving, loading, configReady, saveConfig } =
+    useConfigDraft(guildId);
   const channelsQ = useChannels(guildId);
   // Tożsamość bota (avatar + nazwa) do podglądu „jak wystawi to bot serwera".
   const botStatusQ = useBotStatus();
-  // Bramka tylko na config (nasza baza, szybko). Kanały (proxy do Discorda, wolniej)
-  // dopełnią się w selektach w tle — formularz nie czeka na nie.
-  const loading = configQ.isLoading;
-  useRedirectOnError(configQ.isError, configQ.error);
-  const configReady = useSeedOnce(configQ.data, setConfig);
+  // Kanały (proxy do Discorda) dopełnią się w selektach w tle — formularz nie czeka.
   useSeedOnce(channelsQ.data, setChannels);
 
-  async function handleSave() {
-    setSaving(true);
-    try {
-      await updateGuildConfig(guildId, {
-        welcomeChannelId: config.welcomeChannelId,
-        goodbyeChannelId: config.goodbyeChannelId,
-        welcomeMessage: config.welcomeMessage,
-        goodbyeMessage: config.goodbyeMessage,
-        welcomeEmbed: config.welcomeEmbed ?? null,
-        goodbyeEmbed: config.goodbyeEmbed ?? null,
-      });
-      toast("Zapisano zmiany.", "success");
-    } catch {
-      toast("Nie udało się zapisać.", "error");
-    } finally {
-      setSaving(false);
-    }
-  }
+  const handleSave = () =>
+    saveConfig({
+      welcomeChannelId: config.welcomeChannelId,
+      goodbyeChannelId: config.goodbyeChannelId,
+      welcomeMessage: config.welcomeMessage,
+      goodbyeMessage: config.goodbyeMessage,
+      welcomeEmbed: config.welcomeEmbed ?? null,
+      goodbyeEmbed: config.goodbyeEmbed ?? null,
+    });
 
   function insertVariable(variable: string) {
     const textarea = textareaRef.current;

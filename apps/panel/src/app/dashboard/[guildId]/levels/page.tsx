@@ -17,21 +17,14 @@ import { RefreshButton } from "@/components/RefreshButton";
 import { RoleSelect } from "@/components/RoleSelect";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton, SkeletonRow } from "@/components/Skeleton";
-import { useToast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
+import { ToggleRow } from "@/components/ui/ToggleRow";
 import { VariablesCard } from "@/components/VariablesCard";
-import {
-  useBotStatus,
-  useChannels,
-  useGuildConfig,
-  useLeaderboard,
-  useRoles,
-} from "@/hooks/queries";
-import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
+import { useBotStatus, useChannels, useLeaderboard, useRoles } from "@/hooks/queries";
+import { useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import type { Channel, EmbedConfig, GuildConfig, LevelingConfig, Role } from "@/lib/api";
-import { updateGuildConfig } from "@/lib/api";
+import { useConfigDraft } from "@/hooks/useConfigDraft";
+import type { Channel, EmbedConfig, LevelingConfig, Role } from "@/lib/api";
 import { LEVEL_VARS, previewReplacer, VARIABLE_INFO } from "@/lib/embed";
 
 const DEFAULT_LEVELING: LevelingConfig = {
@@ -50,28 +43,6 @@ const DEFAULT_LEVELUP_EMBED: EmbedConfig = {
   thumbnailUrl: "{avatar}",
   timestamp: true,
 };
-
-function LvToggle({
-  checked,
-  onChange,
-  label,
-  desc,
-}: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  label: string;
-  desc?: string;
-}) {
-  return (
-    <div className="flex items-start justify-between gap-4">
-      <div className="min-w-0">
-        <p className="text-sm text-white">{label}</p>
-        {desc && <p className="text-xs text-gray-400">{desc}</p>}
-      </div>
-      <Switch checked={checked} onCheckedChange={onChange} className="mt-0.5" />
-    </div>
-  );
-}
 
 /** Suwak XP 0–8 z aktualną wartością w odznace. */
 function XpSlider({
@@ -169,17 +140,15 @@ function LevelsSkeleton() {
 export default function LevelsPage() {
   const params = useParams();
   const guildId = params.guildId as string;
-  const toast = useToast();
 
-  const [config, setConfig] = useState<GuildConfig>({});
+  const { config, setConfig, saving, loading, configReady, saveConfig } =
+    useConfigDraft(guildId);
   const [roles, setRoles] = useState<Role[]>([]);
   const [channels, setChannels] = useState<Channel[]>([]);
-  const [saving, setSaving] = useState(false);
   const [newLevel, setNewLevel] = useState("");
   const [newRoleId, setNewRoleId] = useState("");
   const [pendingDelete, setPendingDelete] = useState<number | null>(null);
 
-  const configQ = useGuildConfig(guildId);
   const rolesQ = useRoles(guildId);
   const channelsQ = useChannels(guildId);
   // Tożsamość bota (avatar + nazwa) do podglądu „jak wystawi to bot serwera".
@@ -187,10 +156,7 @@ export default function LevelsPage() {
   const lbQ = useLeaderboard(guildId, 10);
   const leaderboard = lbQ.data ?? [];
   const leaderboardLoading = lbQ.isLoading;
-  // Bramka tylko na config; role/kanały (proxy do Discorda) i leaderboard dopełnią się w tle.
-  const loading = configQ.isLoading;
-  useRedirectOnError(configQ.isError, configQ.error);
-  const configReady = useSeedOnce(configQ.data, setConfig);
+  // Role/kanały (proxy do Discorda) i leaderboard dopełnią się w tle — nie blokują.
   useSeedOnce(rolesQ.data, setRoles);
   useSeedOnce(channelsQ.data, setChannels);
 
@@ -227,21 +193,12 @@ export default function LevelsPage() {
     setPendingDelete(null);
   }
 
-  async function handleSave() {
-    setSaving(true);
-    try {
-      await updateGuildConfig(guildId, {
-        roleRewards: config.roleRewards,
-        leveling: config.leveling ?? DEFAULT_LEVELING,
-        levelUpEmbed: config.levelUpEmbed ?? null,
-      });
-      toast("Zapisano zmiany.", "success");
-    } catch {
-      toast("Nie udało się zapisać.", "error");
-    } finally {
-      setSaving(false);
-    }
-  }
+  const handleSave = () =>
+    saveConfig({
+      roleRewards: config.roleRewards,
+      leveling: config.leveling ?? DEFAULT_LEVELING,
+      levelUpEmbed: config.levelUpEmbed ?? null,
+    });
 
   const { status: autoSaveStatus } = useAutoSave(
     JSON.stringify({
@@ -412,13 +369,13 @@ export default function LevelsPage() {
                 onChange={(v) => setLv({ voiceXp: v })}
               />
               <div className="flex flex-col gap-4 border-t border-border pt-4">
-                <LvToggle
+                <ToggleRow
                   checked={lv.levelUpEnabled}
                   onChange={(v) => setLv({ levelUpEnabled: v })}
                   label="Powiadomienia o awansie na kanale"
                   desc="Wysyłaj wiadomość o nowym levelu na kanał level-up."
                 />
-                <LvToggle
+                <ToggleRow
                   checked={lv.levelUpDm}
                   onChange={(v) => setLv({ levelUpDm: v })}
                   label="Powiadomienia w DM"
@@ -508,7 +465,7 @@ export default function LevelsPage() {
               }
             >
               <div className="max-w-xs">
-                <LvToggle
+                <ToggleRow
                   checked={Boolean(config.levelUpEmbed)}
                   onChange={(v) =>
                     setConfig((c) => ({

@@ -17,17 +17,18 @@ import { useState } from "react";
 import { CardHead } from "@/components/CardHead";
 import { ExemptLists } from "@/components/ExemptLists";
 import { HowItWorks } from "@/components/HowItWorks";
+import { MasterSwitchCard } from "@/components/MasterSwitchCard";
 import { PageHeader } from "@/components/PageHeader";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
 import { TipsCard } from "@/components/TipsCard";
-import { useToast } from "@/components/toast";
-import { Switch } from "@/components/ui/switch";
-import { useChannels, useGuildConfig, useRoles } from "@/hooks/queries";
-import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
+import { ToggleRow } from "@/components/ui/ToggleRow";
+import { useChannels, useRoles } from "@/hooks/queries";
+import { useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import type { AutoModConfig, Channel, GuildConfig, Role } from "@/lib/api";
-import { updateGuildConfig } from "@/lib/api";
+import { useConfigDraft } from "@/hooks/useConfigDraft";
+import type { AutoModConfig, Channel, Role } from "@/lib/api";
+import { CARD } from "@/lib/cn";
 
 const DEFAULT_AUTOMOD: AutoModConfig = {
   enabled: false,
@@ -64,54 +65,26 @@ const RAID_ACTIONS: { value: RaidAction; label: string }[] = [
   { value: "ban", label: "Alert + zbanuj" },
 ];
 
-function Toggle({
-  checked,
-  onChange,
-  label,
-  desc,
-}: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  label: string;
-  desc?: string;
-}) {
-  return (
-    <div className="flex items-start justify-between gap-4">
-      <div className="min-w-0">
-        <p className="text-sm text-white">{label}</p>
-        {desc && <p className="text-xs text-gray-400">{desc}</p>}
-      </div>
-      <Switch checked={checked} onCheckedChange={onChange} className="mt-0.5" />
-    </div>
-  );
-}
-
 /** Szkielet tylko kart z danymi — nagłówek i „Jak to działa" renderują się od razu. */
 function AutoModSkeleton() {
   return <Skeleton className="h-96 w-full rounded-xl" />;
 }
 
-const CARD = "surface-raised rounded-xl border border-border bg-card";
 const NUM_INPUT =
   "w-20 rounded-lg bg-background px-2 py-1.5 text-center text-sm text-white outline-none focus:ring-2 focus:ring-primary";
 
 export default function AutoModPage() {
   const params = useParams();
   const guildId = params.guildId as string;
-  const toast = useToast();
 
-  const [config, setConfig] = useState<GuildConfig>({});
+  const { config, setConfig, saving, loading, configReady, saveConfig } =
+    useConfigDraft(guildId);
   const [roles, setRoles] = useState<Role[]>([]);
   const [channels, setChannels] = useState<Channel[]>([]);
-  const [saving, setSaving] = useState(false);
 
-  const configQ = useGuildConfig(guildId);
   const rolesQ = useRoles(guildId);
   const channelsQ = useChannels(guildId);
-  // Bramka tylko na config; role/kanały (proxy do Discorda) dopełnią selekty w tle.
-  const loading = configQ.isLoading;
-  useRedirectOnError(configQ.isError, configQ.error);
-  const configReady = useSeedOnce(configQ.data, setConfig);
+  // Role/kanały (proxy do Discorda) dopełnią selekty w tle — nie blokują formularza.
   useSeedOnce(rolesQ.data, setRoles);
   useSeedOnce(channelsQ.data, setChannels);
 
@@ -120,17 +93,7 @@ export default function AutoModPage() {
   const setAm = (patch: Partial<AutoModConfig>) =>
     setConfig((c) => ({ ...c, autoMod: { ...DEFAULT_AUTOMOD, ...c.autoMod, ...patch } }));
 
-  async function handleSave() {
-    setSaving(true);
-    try {
-      await updateGuildConfig(guildId, { autoMod: config.autoMod ?? DEFAULT_AUTOMOD });
-      toast("Zapisano zmiany.", "success");
-    } catch {
-      toast("Nie udało się zapisać.", "error");
-    } finally {
-      setSaving(false);
-    }
-  }
+  const handleSave = () => saveConfig({ autoMod: config.autoMod ?? DEFAULT_AUTOMOD });
 
   const { status: autoSaveStatus } = useAutoSave(
     JSON.stringify(config.autoMod ?? DEFAULT_AUTOMOD),
@@ -183,28 +146,15 @@ export default function AutoModPage() {
       ) : (
         <>
           {/* Master switch */}
-          <div className={`${CARD} flex items-center justify-between gap-4 p-6`}>
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
-                System auto-moderacji
-              </p>
-              <p className="text-base font-semibold text-white">
-                Włącz auto-moderację —{" "}
-                <span className={am.enabled ? "text-green-400" : "text-gray-400"}>
-                  {am.enabled ? "włączona" : "wyłączona"}
-                </span>
-              </p>
-              <p className="mt-1 text-xs text-gray-400">
-                Gdy wyłączona, żadne filtry nie działają. Administratorzy i moderatorzy
-                (Zarządzanie wiadomościami) są zawsze pomijani.
-              </p>
-            </div>
-            <Switch
-              checked={am.enabled}
-              onCheckedChange={(v) => setAm({ enabled: v })}
-              className="shrink-0"
-            />
-          </div>
+          <MasterSwitchCard
+            eyebrow="System auto-moderacji"
+            title="Włącz auto-moderację — "
+            active={am.enabled}
+            activeLabel="włączona"
+            inactiveLabel="wyłączona"
+            hint="Gdy wyłączona, żadne filtry nie działają. Administratorzy i moderatorzy (Zarządzanie wiadomościami) są zawsze pomijani."
+            onChange={(v) => setAm({ enabled: v })}
+          />
 
           <div
             className={am.enabled ? "" : "pointer-events-none opacity-50"}
@@ -229,13 +179,13 @@ export default function AutoModPage() {
                       }
                     />
                     <div className="flex flex-col gap-5 p-6">
-                      <Toggle
+                      <ToggleRow
                         checked={am.blockInvites}
                         onChange={(v) => setAm({ blockInvites: v })}
                         label="Blokuj zaproszenia Discord"
                         desc="Wiadomości z linkami discord.gg / invite."
                       />
-                      <Toggle
+                      <ToggleRow
                         checked={am.blockLinks}
                         onChange={(v) => setAm({ blockLinks: v })}
                         label="Blokuj linki"
@@ -268,7 +218,7 @@ export default function AutoModPage() {
                       </div>
 
                       <div className="border-t border-border pt-4">
-                        <Toggle
+                        <ToggleRow
                           checked={am.blockMassMention ?? false}
                           onChange={(v) => setAm({ blockMassMention: v })}
                           label="Masowe oznaczenia"
@@ -294,14 +244,14 @@ export default function AutoModPage() {
                         )}
                       </div>
 
-                      <Toggle
+                      <ToggleRow
                         checked={am.blockCaps ?? false}
                         onChange={(v) => setAm({ blockCaps: v })}
                         label="Blokuj CAPS"
                         desc="Wiadomości pisane głównie WIELKIMI literami."
                       />
 
-                      <Toggle
+                      <ToggleRow
                         checked={am.blockRepeated ?? false}
                         onChange={(v) => setAm({ blockRepeated: v })}
                         label="Powtarzanie znaków"
@@ -309,7 +259,7 @@ export default function AutoModPage() {
                       />
 
                       <div className="border-t border-border pt-4">
-                        <Toggle
+                        <ToggleRow
                           checked={am.spamEnabled}
                           onChange={(v) => setAm({ spamEnabled: v })}
                           label="Anty-spam"
@@ -349,7 +299,7 @@ export default function AutoModPage() {
                       </div>
 
                       <div className="border-t border-border pt-4">
-                        <Toggle
+                        <ToggleRow
                           checked={am.raidEnabled ?? false}
                           onChange={(v) => setAm({ raidEnabled: v })}
                           label="Wykrywanie raidów"

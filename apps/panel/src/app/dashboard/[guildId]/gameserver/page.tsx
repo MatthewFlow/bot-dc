@@ -5,9 +5,9 @@ import { useParams } from "next/navigation";
 
 import { PageHeader } from "@/components/PageHeader";
 import { useGameServer } from "@/hooks/queries";
+import { CARD } from "@/lib/cn";
 import { relativeTime } from "@/lib/time";
 
-const CARD = "surface-raised rounded-xl border border-border bg-card";
 const SOON_BADGE =
   "rounded-full bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400";
 
