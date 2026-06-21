@@ -14,6 +14,8 @@ export type ButtonRole = {
   messageId: string;
   embed?: EmbedConfig;
   entries: ButtonRoleEntry[];
+  /** Forma panelu: przyciski (domyślnie) lub menu rozwijane. */
+  style?: "buttons" | "select";
 };
 
 export interface IButtonRoleRepository {

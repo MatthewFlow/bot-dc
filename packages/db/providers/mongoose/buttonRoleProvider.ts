@@ -13,6 +13,7 @@ export class ButtonRoleProvider implements IButtonRoleRepository {
       messageId: doc.messageId,
       embed: doc.embed,
       entries: doc.entries ?? [],
+      style: doc.style,
     }));
   }
 
@@ -25,6 +26,7 @@ export class ButtonRoleProvider implements IButtonRoleRepository {
       messageId: doc.messageId,
       embed: doc.embed,
       entries: doc.entries ?? [],
+      style: doc.style,
     };
   }
 
@@ -36,6 +38,7 @@ export class ButtonRoleProvider implements IButtonRoleRepository {
       messageId: doc.messageId,
       embed: doc.embed,
       entries: doc.entries ?? [],
+      style: doc.style,
     };
   }
 

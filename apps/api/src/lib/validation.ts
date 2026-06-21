@@ -42,6 +42,8 @@ export const feedbackSchema = z.object({
 /** Button-roles panel: embed + up to 25 buttons, one per role. */
 export const buttonRolesSchema = z.object({
   channelId: z.string().trim().min(1, "Missing required fields"),
+  // Forma panelu: przyciski (domyślnie) albo menu rozwijane.
+  style: z.enum(["buttons", "select"]).optional(),
   // Full EmbedConfig — its contents are validated downstream by toDiscordEmbed/isEmbedEmpty.
   embed: z.record(z.string(), z.unknown()),
   entries: z
