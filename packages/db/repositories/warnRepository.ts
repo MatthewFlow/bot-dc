@@ -22,4 +22,6 @@ export interface IWarnRepository {
   countByGuild(guildId: string): Promise<number>;
   /** Liczba ostrzeżeń dodanych od `since` (trend „w tym tygodniu"). */
   countSince(guildId: string, since: Date): Promise<number>;
+  /** Usuwa ostrzeżenia starsze niż `before` (decay). Zwraca liczbę usuniętych. */
+  deleteOlderThan(guildId: string, before: Date): Promise<number>;
 }

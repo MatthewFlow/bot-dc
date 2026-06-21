@@ -98,6 +98,8 @@ export type GuildConfig = {
   dmOnPunish?: boolean;
   /** Auto-ban po osiągnięciu tylu ostrzeżeń (`0` = wyłączone). */
   autoBanThreshold?: number;
+  /** Wygasanie ostrzeżeń po tylu dniach (`0` = nigdy). */
+  warnDecayDays?: number;
   feedbackChannelId?: string;
   adminRoleId?: string;
   ticketSupportRoleId?: string;
@@ -118,6 +120,16 @@ export type GuildConfig = {
   disabledModules?: string[];
   /** Prefiks komend klasycznych (np. `!`). Slash-komendy działają niezależnie. */
   prefix?: string;
+};
+
+/** Wpis audytu zmian configu (kto/kiedy/które pola). */
+export type ConfigAuditEntry = {
+  id: string;
+  guildId: string;
+  userId: string;
+  username?: string;
+  fields: string[];
+  createdAt: string;
 };
 
 export type ModActionType =
@@ -455,6 +467,7 @@ export const queryKeys = {
   memberSearch: (g: string, q: string) => ["member-search", g, q] as const,
   warnings: (g: string, userId: string) => ["warnings", g, userId] as const,
   botStatus: () => ["bot-status"] as const,
+  configAudit: (g: string) => ["config-audit", g] as const,
   guildFeedback: (g: string) => ["guild-feedback", g] as const,
   myFeedback: () => ["my-feedback"] as const,
 };
@@ -737,6 +750,17 @@ export async function getActivity(guildId: string, limit = 8): Promise<ActivityI
     `${API_URL}/guilds/${guildId}/activity?limit=${limit}`,
   );
   if (!res.ok) throw new Error("Failed to fetch activity");
+  return res.json();
+}
+
+export async function getConfigAudit(
+  guildId: string,
+  limit = 15,
+): Promise<ConfigAuditEntry[]> {
+  const res = await fetchWithRetry(
+    `${API_URL}/guilds/${guildId}/config-audit?limit=${limit}`,
+  );
+  if (!res.ok) throw new Error("Failed to fetch config audit");
   return res.json();
 }
 

@@ -24,6 +24,8 @@ export type GuildConfig = {
   dmOnPunish?: boolean;
   /** Auto-ban po osiągnięciu tylu ostrzeżeń (`0`/brak = wyłączone). */
   autoBanThreshold?: number;
+  /** Wygasanie ostrzeżeń po tylu dniach (`0`/brak = nigdy). */
+  warnDecayDays?: number;
   feedbackChannelId?: string;
   adminRoleId?: string;
   ticketSupportRoleId?: string;

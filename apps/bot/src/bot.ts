@@ -40,6 +40,7 @@ import {
 import { getCachedGuildConfig } from "./utils/configCache";
 import { isModuleEnabled, type ModuleKey } from "./utils/modules";
 import { BOT_VERSION } from "./version";
+import { startWarnDecay } from "./warnDecay";
 
 /**
  * Odrzuca interakcję, gdy moduł jest wyłączony na serwerze (odpowiada ephemerally).
@@ -134,6 +135,9 @@ export function createBot() {
 
     // Okresowe czyszczenie mapy anty-spamu auto-moderacji.
     startAutoModSweep();
+
+    // Okresowe wygasanie ostrzeżeń (decay) zgodnie z konfiguracją serwerów.
+    startWarnDecay(client);
   });
 
   client.on("guildCreate", onGuildCreate);

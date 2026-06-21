@@ -6,6 +6,7 @@ import type {
 } from "@jurassic-haven/db";
 import {
   activityEventRepository,
+  configAuditRepository,
   feedbackRepository,
   guildConfigRepository,
   levelFromXp,
@@ -51,6 +52,7 @@ const CONFIG_ALLOWED_FIELDS = [
   "modLogChannelId",
   "dmOnPunish",
   "autoBanThreshold",
+  "warnDecayDays",
   "feedbackChannelId",
   "adminRoleId",
   "ticketSupportRoleId",
@@ -147,7 +149,28 @@ guildRoutes.put("/:guildId/config", async (c) => {
     guildId,
     patch as Parameters<typeof guildConfigRepository.set>[1],
   );
+
+  // Audyt — kto i kiedy zmienił które pola (accountability w multi-tenant).
+  const fields = Object.keys(patch);
+  if (fields.length > 0) {
+    await configAuditRepository
+      .add({
+        guildId,
+        userId: c.get("userId"),
+        username: c.get("username"),
+        fields,
+      })
+      .catch(() => {});
+  }
+
   return c.json({ ok: true });
+});
+
+guildRoutes.get("/:guildId/config-audit", async (c) => {
+  const guildId = c.req.param("guildId");
+  const raw = Number(c.req.query("limit") ?? 15);
+  const limit = Number.isFinite(raw) && raw > 0 ? Math.min(raw, 50) : 15;
+  return c.json(await configAuditRepository.getRecent(guildId, limit));
 });
 
 guildRoutes.get("/:guildId/channels", async (c) => {

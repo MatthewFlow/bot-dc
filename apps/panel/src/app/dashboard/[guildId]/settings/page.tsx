@@ -1,10 +1,12 @@
 "use client";
 
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Bot,
   Clock,
   DoorOpen,
   Hash,
+  History,
   type LucideIcon,
   MessageSquare,
   Server,
@@ -37,6 +39,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   useBotStatus,
   useChannels,
+  useConfigAudit,
   useGuildConfig,
   useGuildStats,
   useRoles,
@@ -44,7 +47,8 @@ import {
 import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import type { Channel, GuildConfig, Role } from "@/lib/api";
-import { updateGuildConfig } from "@/lib/api";
+import { queryKeys, updateGuildConfig } from "@/lib/api";
+import { relativeTime } from "@/lib/time";
 
 const CARD = "surface-raised rounded-xl border border-border bg-card";
 
@@ -180,6 +184,44 @@ function BotInfoCard({ guildId }: { guildId: string }) {
   );
 }
 
+/** Karta „Historia zmian" — kto i kiedy zmienił konfigurację (audyt z bazy). */
+function ConfigAuditCard({ guildId }: { guildId: string }) {
+  const auditQ = useConfigAudit(guildId);
+  const entries = auditQ.data ?? [];
+
+  return (
+    <div className={CARD}>
+      <CardHead
+        icon={History}
+        title="Historia zmian"
+        subtitle="Kto zmieniał konfigurację"
+      />
+      {auditQ.isLoading ? (
+        <p className="px-5 py-6 text-center text-xs text-gray-400">Ładowanie…</p>
+      ) : entries.length === 0 ? (
+        <p className="px-5 py-6 text-center text-sm text-gray-400">
+          Brak zapisanych zmian.
+        </p>
+      ) : (
+        <div className="flex flex-col">
+          {entries.map((e) => (
+            <div key={e.id} className="border-b border-border px-5 py-3 last:border-0">
+              <p className="truncate text-sm text-white">
+                <span className="font-semibold">{e.username ?? e.userId}</span>
+                <span className="text-gray-400"> zmienił</span>
+              </p>
+              <p className="truncate text-xs text-gray-400" title={e.fields.join(", ")}>
+                {e.fields.join(", ")}
+              </p>
+              <p className="text-[11px] text-gray-500">{relativeTime(e.createdAt)}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Szkielet tylko karty z danymi — nagłówek i „Jak to działa" renderują się od razu. */
 function SettingsSkeleton() {
   return <Skeleton className="h-64 w-full rounded-xl" />;
@@ -189,6 +231,7 @@ export default function SettingsPage() {
   const params = useParams();
   const guildId = params.guildId as string;
   const toast = useToast();
+  const qc = useQueryClient();
 
   const [config, setConfig] = useState<GuildConfig>({});
   const [roles, setRoles] = useState<Role[]>([]);
@@ -213,6 +256,7 @@ export default function SettingsPage() {
         modLogChannelId: config.modLogChannelId,
         disabledModules: config.disabledModules ?? [],
       });
+      qc.invalidateQueries({ queryKey: queryKeys.configAudit(guildId) });
       toast("Zapisano zmiany.", "success");
     } catch {
       toast("Nie udało się zapisać.", "error");
@@ -402,6 +446,8 @@ export default function SettingsPage() {
                 </>,
               ]}
             />
+
+            <ConfigAuditCard guildId={guildId} />
           </div>
         </div>
       )}

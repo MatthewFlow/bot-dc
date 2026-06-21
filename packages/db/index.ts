@@ -5,6 +5,7 @@ export {
   activityEventRepository,
   botStatusRepository,
   buttonRoleRepository,
+  configAuditRepository,
   feedbackRepository,
   guildConfigRepository,
   modActionRepository,
@@ -25,6 +26,10 @@ export type {
   IBotStatusRepository,
 } from "./repositories/botStatusRepository";
 export type { ButtonRole, ButtonRoleEntry } from "./repositories/buttonRoleRepository";
+export type {
+  AddConfigAuditOpts,
+  ConfigAuditEntry,
+} from "./repositories/configAuditRepository";
 export type {
   AddFeedbackOpts,
   Feedback,

@@ -240,6 +240,9 @@ export function sanitizeConfigPatch(
     } else if (key === "autoBanThreshold") {
       // Próg auto-banu po ostrzeżeniach: 0 = wyłączone, max 20.
       out[key] = clampNum(value, 0, 0, 20);
+    } else if (key === "warnDecayDays") {
+      // Wygasanie ostrzeżeń: 0 = nigdy, max 365 dni.
+      out[key] = clampNum(value, 0, 0, 365);
     }
   }
 

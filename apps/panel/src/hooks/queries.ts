@@ -12,6 +12,7 @@ import {
   getActivity,
   getBotStatus,
   getButtonRoles,
+  getConfigAudit,
   getGuildFeedback,
   getMemberHistory,
   getMemberProfile,
@@ -156,6 +157,14 @@ export function useActivity(guildId: string, limit = 8) {
     queryFn: () => getActivity(guildId, limit),
     refetchInterval: 20_000,
     staleTime: 20_000,
+  });
+}
+
+export function useConfigAudit(guildId: string) {
+  return useQuery({
+    queryKey: queryKeys.configAudit(guildId),
+    queryFn: () => getConfigAudit(guildId),
+    staleTime: 30_000,
   });
 }
 

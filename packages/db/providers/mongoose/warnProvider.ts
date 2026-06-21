@@ -42,4 +42,9 @@ export class WarnProvider implements IWarnRepository {
   async countSince(guildId: string, since: Date): Promise<number> {
     return WarnModel.countDocuments({ guildId, createdAt: { $gte: since } });
   }
+
+  async deleteOlderThan(guildId: string, before: Date): Promise<number> {
+    const res = await WarnModel.deleteMany({ guildId, createdAt: { $lt: before } });
+    return res.deletedCount;
+  }
 }

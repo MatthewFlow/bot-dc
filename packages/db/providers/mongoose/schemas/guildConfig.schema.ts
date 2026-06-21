@@ -36,6 +36,8 @@ export type GuildConfigDocument = {
   dmOnPunish?: boolean;
   /** Auto-ban po osiągnięciu tylu ostrzeżeń (`0`/brak = wyłączone). */
   autoBanThreshold?: number;
+  /** Wygasanie ostrzeżeń po tylu dniach (`0`/brak = nigdy). */
+  warnDecayDays?: number;
   feedbackChannelId?: string;
   adminRoleId?: string;
   ticketSupportRoleId?: string;
@@ -161,6 +163,7 @@ const guildConfigSchema = new Schema<GuildConfigDocument>(
     modLogChannelId: { type: String },
     dmOnPunish: { type: Boolean, default: undefined },
     autoBanThreshold: { type: Number, default: undefined },
+    warnDecayDays: { type: Number, default: undefined },
     feedbackChannelId: { type: String },
     adminRoleId: { type: String },
     ticketSupportRoleId: { type: String },

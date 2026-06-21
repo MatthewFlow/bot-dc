@@ -1,6 +1,7 @@
 import type { IActivityEventRepository } from "../../repositories/activityEventRepository";
 import type { IBotStatusRepository } from "../../repositories/botStatusRepository";
 import type { IButtonRoleRepository } from "../../repositories/buttonRoleRepository";
+import type { IConfigAuditRepository } from "../../repositories/configAuditRepository";
 import type { IFeedbackRepository } from "../../repositories/feedbackRepository";
 import type { IGuildConfigRepository } from "../../repositories/guildConfigRepository";
 import type { IModActionRepository } from "../../repositories/modActionRepository";
@@ -12,6 +13,7 @@ import type { IXpRepository } from "../../repositories/xpRepository";
 import { ActivityEventProvider } from "./activityEventProvider";
 import { BotStatusProvider } from "./botStatusProvider";
 import { ButtonRoleProvider } from "./buttonRoleProvider";
+import { ConfigAuditProvider } from "./configAuditProvider";
 import { FeedbackProvider } from "./feedbackProvider";
 import { GuildConfigProvider } from "./guildConfigProvider";
 import { ModActionProvider } from "./modActionProvider";
@@ -33,3 +35,4 @@ export const feedbackRepository: IFeedbackRepository = new FeedbackProvider();
 export const botStatusRepository: IBotStatusRepository = new BotStatusProvider();
 export const activityEventRepository: IActivityEventRepository =
   new ActivityEventProvider();
+export const configAuditRepository: IConfigAuditRepository = new ConfigAuditProvider();

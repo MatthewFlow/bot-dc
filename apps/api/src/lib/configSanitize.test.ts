@@ -97,6 +97,14 @@ describe("sanitizeConfigPatch", () => {
     });
   });
 
+  test("clamps warnDecayDays to 0..365", () => {
+    expect(sanitizeConfigPatch({ warnDecayDays: 30 })).toEqual({ warnDecayDays: 30 });
+    expect(sanitizeConfigPatch({ warnDecayDays: 9999 })).toEqual({
+      warnDecayDays: 365,
+    });
+    expect(sanitizeConfigPatch({ warnDecayDays: -5 })).toEqual({ warnDecayDays: 0 });
+  });
+
   test("clamps the xp multiplier and filters leveling arrays", () => {
     const out = sanitizeConfigPatch({
       leveling: { xpMultiplier: 99, levelUpEnabled: false, noXpRoleIds: ["a", 5, "b"] },

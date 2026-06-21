@@ -79,6 +79,7 @@ export default function ModerationPage() {
         modLogChannelId: config.modLogChannelId,
         dmOnPunish: config.dmOnPunish ?? false,
         autoBanThreshold: config.autoBanThreshold ?? 0,
+        warnDecayDays: config.warnDecayDays ?? 0,
       });
       toast("Zapisano zmiany.", "success");
     } catch {
@@ -93,6 +94,7 @@ export default function ModerationPage() {
       modLogChannelId: config.modLogChannelId ?? "",
       dmOnPunish: config.dmOnPunish ?? false,
       autoBanThreshold: config.autoBanThreshold ?? 0,
+      warnDecayDays: config.warnDecayDays ?? 0,
     }),
     handleSave,
     configReady,
@@ -253,6 +255,39 @@ export default function ModerationPage() {
                         className="w-20 rounded-lg bg-background px-2 py-1.5 text-center text-sm text-white outline-none focus:ring-2 focus:ring-primary"
                       />
                       <span className="text-xs text-gray-400">ostrzeżeń</span>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <Toggle
+                    label="Wygasanie ostrzeżeń"
+                    desc="Stare ostrzeżenia znikają z licznika (audyt zostaje)."
+                    checked={(config.warnDecayDays ?? 0) > 0}
+                    onChange={(v) =>
+                      setConfig((c) => ({ ...c, warnDecayDays: v ? 30 : 0 }))
+                    }
+                  />
+                  {(config.warnDecayDays ?? 0) > 0 && (
+                    <div className="mt-3 flex items-center gap-2">
+                      <span className="text-xs text-gray-400">Po:</span>
+                      <input
+                        type="number"
+                        min={1}
+                        max={365}
+                        value={config.warnDecayDays ?? 30}
+                        onChange={(e) =>
+                          setConfig((c) => ({
+                            ...c,
+                            warnDecayDays: Math.min(
+                              365,
+                              Math.max(1, Number(e.target.value) || 1),
+                            ),
+                          }))
+                        }
+                        className="w-20 rounded-lg bg-background px-2 py-1.5 text-center text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      <span className="text-xs text-gray-400">dniach</span>
                     </div>
                   )}
                 </div>
