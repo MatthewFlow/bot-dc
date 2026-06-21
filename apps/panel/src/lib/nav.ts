@@ -163,6 +163,7 @@ export const NAV_GROUPS: NavGroup[] = [
         href: "/gameserver",
         desc: "Zarządzanie serwerem The Isle: Evrima (RCON)",
         icon: Gamepad2,
+        soon: true,
       },
     ],
   },
