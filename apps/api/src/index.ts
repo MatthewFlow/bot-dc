@@ -7,6 +7,7 @@ import { initObservability, isObservabilityEnabled } from "./lib/observability";
 import { rateLimit } from "./middleware/rateLimit";
 import { authRoutes } from "./routes/authRoutes";
 import { buttonRoleRoutes } from "./routes/buttonRoles";
+import { eventsRoutes } from "./routes/events";
 import { feedbackRoutes } from "./routes/feedback";
 import { guildRoutes } from "./routes/guilds";
 import { jobRoutes } from "./routes/jobs";
@@ -54,6 +55,7 @@ app.route("/guilds", reactionRoleRoutes);
 app.route("/guilds", buttonRoleRoutes);
 app.route("/guilds", moderationRoutes);
 app.route("/guilds", jobRoutes);
+app.route("/guilds", eventsRoutes);
 app.route("/feedback", feedbackRoutes);
 app.route("/bot", statusRoutes);
 

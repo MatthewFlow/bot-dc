@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { Sidebar } from "@/components/Sidebar";
 import { TopBar } from "@/components/TopBar";
+import { useGuildEvents } from "@/hooks/useGuildEvents";
 import { getGuilds, prefetchGuildData } from "@/lib/api";
 
 export default function GuildLayout({ children }: { children: React.ReactNode }) {
@@ -13,6 +14,9 @@ export default function GuildLayout({ children }: { children: React.ReactNode })
   const guildId = params.guildId as string;
   const [guildName, setGuildName] = useState("...");
   const [guildIcon, setGuildIcon] = useState<string | null>(null);
+
+  // Real-time: odświeżanie statusu bota i aktywności przez SSE (zamiast pollingu).
+  useGuildEvents(guildId);
 
   useEffect(() => {
     // Rozgrzej cache (config/role/kanały) raz przy wejściu na serwer — wtedy
