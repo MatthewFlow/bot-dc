@@ -4,15 +4,17 @@ import { ChevronLeft, LayoutGrid, Search } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { Button } from "@/components/ui/button";
+
 export default function NotFound() {
   const router = useRouter();
 
   return (
     <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-background px-6 text-center">
-      {/* Ciepła poświata w tle */}
+      {/* Ciepła poświata marki (złoto) */}
       <div
         aria-hidden
-        className="pointer-events-none absolute left-1/2 top-1/3 -z-10 h-[480px] w-[480px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/20 blur-[120px]"
+        className="pointer-events-none absolute left-1/2 top-1/3 -z-10 h-[460px] w-[460px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/15 blur-[120px]"
       />
 
       <div className="jh-in flex flex-col items-center">
@@ -20,7 +22,7 @@ export default function NotFound() {
           <Search className="size-9" />
         </span>
 
-        <h1 className="bg-gradient-to-b from-primary to-amber-600 bg-clip-text text-8xl font-black leading-none text-transparent sm:text-9xl">
+        <h1 className="bg-gradient-to-b from-primary to-primary-hover bg-clip-text text-8xl font-black leading-none text-transparent sm:text-9xl">
           404
         </h1>
 
@@ -33,20 +35,14 @@ export default function NotFound() {
         </p>
 
         <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <Link
-            href="/dashboard"
-            className="jh-glow flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-amber-500 px-5 py-3 text-sm font-bold text-primary-foreground transition hover:brightness-110"
-          >
-            <LayoutGrid className="size-4" />
-            Wróć do dashboardu
-          </Link>
-          <button
-            onClick={() => router.back()}
-            className="flex items-center gap-2 rounded-xl border border-border bg-card px-5 py-3 text-sm font-semibold text-gray-200 transition hover:bg-elevated hover:text-white"
-          >
-            <ChevronLeft className="size-4" />
-            Cofnij
-          </button>
+          <Button asChild size="lg">
+            <Link href="/dashboard">
+              <LayoutGrid /> Wróć do dashboardu
+            </Link>
+          </Button>
+          <Button variant="outline" size="lg" onClick={() => router.back()}>
+            <ChevronLeft /> Cofnij
+          </Button>
         </div>
       </div>
     </div>
