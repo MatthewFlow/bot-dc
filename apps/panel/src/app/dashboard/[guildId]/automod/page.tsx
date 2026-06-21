@@ -45,12 +45,23 @@ const DEFAULT_AUTOMOD: AutoModConfig = {
   maxMentions: 5,
   blockCaps: false,
   blockRepeated: false,
+  raidEnabled: false,
+  raidJoinCount: 10,
+  raidWindowSeconds: 10,
+  raidAction: "alert",
 };
 
 const ACTIONS: { value: AutoModConfig["action"]; label: string; icon: LucideIcon }[] = [
   { value: "delete", label: "Usuń wiadomość", icon: Trash2 },
   { value: "warn", label: "Usuń + ostrzeż", icon: ShieldAlert },
   { value: "mute", label: "Usuń + timeout", icon: Clock },
+];
+
+type RaidAction = NonNullable<AutoModConfig["raidAction"]>;
+const RAID_ACTIONS: { value: RaidAction; label: string }[] = [
+  { value: "alert", label: "Tylko alert" },
+  { value: "kick", label: "Alert + wyrzuć" },
+  { value: "ban", label: "Alert + zbanuj" },
 ];
 
 function Toggle({
@@ -333,6 +344,65 @@ export default function AutoModPage() {
                               className={NUM_INPUT}
                             />
                             <span>sekund.</span>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="border-t border-border pt-4">
+                        <Toggle
+                          checked={am.raidEnabled ?? false}
+                          onChange={(v) => setAm({ raidEnabled: v })}
+                          label="Wykrywanie raidów"
+                          desc="Alarmuj, gdy wielu użytkowników wejdzie w krótkim czasie."
+                        />
+                        {am.raidEnabled && (
+                          <div className="mt-3 flex flex-col gap-3">
+                            <div className="flex flex-wrap items-center gap-2 text-sm text-gray-300">
+                              <input
+                                type="number"
+                                name="raidJoinCount"
+                                aria-label="Liczba wejść"
+                                min={2}
+                                max={100}
+                                value={am.raidJoinCount ?? 10}
+                                onChange={(e) =>
+                                  setAm({ raidJoinCount: Number(e.target.value) })
+                                }
+                                className={NUM_INPUT}
+                              />
+                              <span>wejść w</span>
+                              <input
+                                type="number"
+                                name="raidWindowSeconds"
+                                aria-label="Okno czasowe w sekundach"
+                                min={2}
+                                max={300}
+                                value={am.raidWindowSeconds ?? 10}
+                                onChange={(e) =>
+                                  setAm({ raidWindowSeconds: Number(e.target.value) })
+                                }
+                                className={NUM_INPUT}
+                              />
+                              <span>sekund.</span>
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {RAID_ACTIONS.map((ra) => {
+                                const active = (am.raidAction ?? "alert") === ra.value;
+                                return (
+                                  <button
+                                    key={ra.value}
+                                    onClick={() => setAm({ raidAction: ra.value })}
+                                    className={`rounded-lg px-3 py-1.5 text-xs transition ${
+                                      active
+                                        ? "bg-primary font-semibold text-primary-foreground"
+                                        : "border border-border bg-background text-gray-300 hover:text-white"
+                                    }`}
+                                  >
+                                    {ra.label}
+                                  </button>
+                                );
+                              })}
+                            </div>
                           </div>
                         )}
                       </div>

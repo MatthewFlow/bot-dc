@@ -64,6 +64,11 @@ export type AutoModConfig = {
   blockCaps?: boolean;
   /** Blokuj nadmierne powtarzanie znaków. */
   blockRepeated?: boolean;
+  /** Wykrywanie raidów (wiele wejść w krótkim czasie). */
+  raidEnabled?: boolean;
+  raidJoinCount?: number;
+  raidWindowSeconds?: number;
+  raidAction?: "alert" | "kick" | "ban";
 };
 
 export type ServerLogConfig = {

@@ -10,6 +10,7 @@ import {
 } from "discord.js";
 
 import { startAutoModSweep } from "./automod/automod";
+import { checkRaid } from "./automod/raid";
 import { handleButtonRoleClick } from "./buttonroles/handler";
 import { handleSelectRole } from "./buttonroles/selectHandler";
 import { handleCommand } from "./commands/handlers/handler";
@@ -143,6 +144,7 @@ export function createBot() {
   client.on("guildCreate", onGuildCreate);
   client.on("guildDelete", onGuildDelete);
   client.on("guildMemberAdd", onMemberAdd);
+  client.on("guildMemberAdd", checkRaid); // wykrywanie raidów (decoupled)
   client.on("guildMemberRemove", onMemberRemove);
   client.on("messageCreate", onMessageCreate);
   client.on("messageReactionAdd", onMessageReactionAdd);

@@ -144,6 +144,11 @@ function sanitizeAutoMod(v: unknown): AutoModConfig | undefined {
     maxMentions: clampNum(o.maxMentions, 5, 1, 50),
     blockCaps: o.blockCaps === true,
     blockRepeated: o.blockRepeated === true,
+    raidEnabled: o.raidEnabled === true,
+    raidJoinCount: clampNum(o.raidJoinCount, 10, 2, 100),
+    raidWindowSeconds: clampNum(o.raidWindowSeconds, 10, 2, 300),
+    raidAction:
+      o.raidAction === "kick" || o.raidAction === "ban" ? o.raidAction : "alert",
   };
 }
 

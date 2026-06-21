@@ -120,6 +120,10 @@ const autoModSchema = new Schema<AutoModConfig>(
     maxMentions: { type: Number, default: 5 },
     blockCaps: { type: Boolean, default: false },
     blockRepeated: { type: Boolean, default: false },
+    raidEnabled: { type: Boolean, default: false },
+    raidJoinCount: { type: Number, default: 10 },
+    raidWindowSeconds: { type: Number, default: 10 },
+    raidAction: { type: String, enum: ["alert", "kick", "ban"], default: "alert" },
   },
   { _id: false },
 );

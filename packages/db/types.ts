@@ -68,4 +68,12 @@ export type AutoModConfig = {
   blockCaps?: boolean;
   /** Blokuj nadmierne powtarzanie znaków (np. „aaaaaaaaaa"). */
   blockRepeated?: boolean;
+  /** Wykrywanie raidów (wiele wejść w krótkim czasie). */
+  raidEnabled?: boolean;
+  /** Próg wejść uznawany za raid (domyślnie 10). */
+  raidJoinCount?: number;
+  /** Okno czasowe raidu w sekundach (domyślnie 10). */
+  raidWindowSeconds?: number;
+  /** Reakcja na raid: tylko alert, albo dodatkowo kick/ban świeżych wejść. */
+  raidAction?: "alert" | "kick" | "ban";
 };
