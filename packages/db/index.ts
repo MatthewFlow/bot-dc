@@ -3,6 +3,7 @@ export type { DiscordEmbed, EmbedConfig, EmbedFieldConfig } from "./embed";
 export { isEmbedEmpty, toDiscordEmbed } from "./embed";
 export {
   activityEventRepository,
+  botJobRepository,
   botStatusRepository,
   buttonRoleRepository,
   configAuditRepository,
@@ -20,6 +21,13 @@ export type {
   ActivityEventType,
   AddActivityEventOpts,
 } from "./repositories/activityEventRepository";
+export type {
+  BotJob,
+  BotJobType,
+  CreateBotJobOpts,
+  JobRecurrence,
+  JobStatus,
+} from "./repositories/botJobRepository";
 export type {
   BotHeartbeat,
   BotStatusSnapshot,

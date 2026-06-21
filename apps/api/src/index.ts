@@ -8,6 +8,7 @@ import { authRoutes } from "./routes/authRoutes";
 import { buttonRoleRoutes } from "./routes/buttonRoles";
 import { feedbackRoutes } from "./routes/feedback";
 import { guildRoutes } from "./routes/guilds";
+import { jobRoutes } from "./routes/jobs";
 import { moderationRoutes } from "./routes/moderation";
 import { reactionRoleRoutes } from "./routes/reactionRoles";
 import { statusRoutes } from "./routes/status";
@@ -48,6 +49,7 @@ app.route("/guilds", guildRoutes);
 app.route("/guilds", reactionRoleRoutes);
 app.route("/guilds", buttonRoleRoutes);
 app.route("/guilds", moderationRoutes);
+app.route("/guilds", jobRoutes);
 app.route("/feedback", feedbackRoutes);
 app.route("/bot", statusRoutes);
 

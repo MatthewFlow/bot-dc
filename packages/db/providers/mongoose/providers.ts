@@ -1,4 +1,5 @@
 import type { IActivityEventRepository } from "../../repositories/activityEventRepository";
+import type { IBotJobRepository } from "../../repositories/botJobRepository";
 import type { IBotStatusRepository } from "../../repositories/botStatusRepository";
 import type { IButtonRoleRepository } from "../../repositories/buttonRoleRepository";
 import type { IConfigAuditRepository } from "../../repositories/configAuditRepository";
@@ -11,6 +12,7 @@ import type { ITicketRepository } from "../../repositories/ticketRepository";
 import type { IWarnRepository } from "../../repositories/warnRepository";
 import type { IXpRepository } from "../../repositories/xpRepository";
 import { ActivityEventProvider } from "./activityEventProvider";
+import { BotJobProvider } from "./botJobProvider";
 import { BotStatusProvider } from "./botStatusProvider";
 import { ButtonRoleProvider } from "./buttonRoleProvider";
 import { ConfigAuditProvider } from "./configAuditProvider";
@@ -36,3 +38,4 @@ export const botStatusRepository: IBotStatusRepository = new BotStatusProvider()
 export const activityEventRepository: IActivityEventRepository =
   new ActivityEventProvider();
 export const configAuditRepository: IConfigAuditRepository = new ConfigAuditProvider();
+export const botJobRepository: IBotJobRepository = new BotJobProvider();

@@ -25,6 +25,7 @@ import { onMessageReactionRemove } from "./events/messageReactionRemove";
 import { onThreadDelete } from "./events/threadDelete";
 import { onThreadUpdate } from "./events/threadUpdate";
 import { handleFeedbackSubmit, showFeedbackModal } from "./feedback/feedback";
+import { startJobWorker } from "./jobs/worker";
 import { startVoiceXp } from "./levels/voiceXp";
 import {
   onGuildMemberUpdateLog,
@@ -139,6 +140,9 @@ export function createBot() {
 
     // Okresowe wygasanie ostrzeżeń (decay) zgodnie z konfiguracją serwerów.
     startWarnDecay(client);
+
+    // Worker kolejki zadań bot↔panel (zaplanowane/cykliczne ogłoszenia itd.).
+    startJobWorker(client);
   });
 
   client.on("guildCreate", onGuildCreate);

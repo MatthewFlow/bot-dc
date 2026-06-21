@@ -3,6 +3,7 @@ import {
   Gift,
   LayoutDashboard,
   type LucideIcon,
+  Megaphone,
   MessageSquareHeart,
   MousePointerClick,
   ScrollText,
@@ -98,6 +99,12 @@ export const NAV_GROUPS: NavGroup[] = [
         href: "/tickets",
         desc: "Obsługa zgłoszeń użytkowników",
         icon: Ticket,
+      },
+      {
+        label: "Ogłoszenia",
+        href: "/announce",
+        desc: "Wyślij lub zaplanuj wiadomość embed",
+        icon: Megaphone,
       },
       {
         label: "Giveawaye",

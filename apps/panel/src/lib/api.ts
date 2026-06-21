@@ -135,6 +135,32 @@ export type GuildConfig = {
   prefix?: string;
 };
 
+/** Zaplanowane zadanie bota (kolejka) — na razie tylko wysyłka embeda. */
+export type JobRecurrence = "once" | "daily" | "weekly";
+export type BotJob = {
+  id: string;
+  guildId: string;
+  type: "sendEmbed";
+  runAt: string;
+  recurrence: JobRecurrence;
+  status: "pending" | "done" | "error" | "cancelled";
+  channelId?: string;
+  embed?: EmbedConfig;
+  lastError?: string;
+  lastRunAt?: string;
+  createdBy: string;
+  createdAt: string;
+};
+
+export type CreateJobInput = {
+  channelId: string;
+  embed: EmbedConfig;
+  mode: "now" | "schedule" | "recurring";
+  /** ISO — wymagane dla schedule/recurring. */
+  runAt?: string;
+  recurrence?: "daily" | "weekly";
+};
+
 /** Wpis audytu zmian configu (kto/kiedy/które pola). */
 export type ConfigAuditEntry = {
   id: string;
@@ -481,6 +507,7 @@ export const queryKeys = {
   warnings: (g: string, userId: string) => ["warnings", g, userId] as const,
   botStatus: () => ["bot-status"] as const,
   configAudit: (g: string) => ["config-audit", g] as const,
+  jobs: (g: string) => ["jobs", g] as const,
   guildFeedback: (g: string) => ["guild-feedback", g] as const,
   myFeedback: () => ["my-feedback"] as const,
 };
@@ -764,6 +791,35 @@ export async function getActivity(guildId: string, limit = 8): Promise<ActivityI
   );
   if (!res.ok) throw new Error("Failed to fetch activity");
   return res.json();
+}
+
+export async function getJobs(guildId: string): Promise<BotJob[]> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/jobs`);
+  if (!res.ok) throw new Error("Failed to fetch jobs");
+  return res.json();
+}
+
+export async function createJob(
+  guildId: string,
+  input: CreateJobInput,
+): Promise<{ sent: true } | BotJob> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/jobs`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const err = (await res.json().catch(() => null)) as { error?: string } | null;
+    throw new Error(err?.error || "Nie udało się zapisać zadania.");
+  }
+  return res.json();
+}
+
+export async function deleteJob(guildId: string, id: string): Promise<void> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/jobs/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete job");
 }
 
 export async function getConfigAudit(

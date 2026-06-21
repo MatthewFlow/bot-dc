@@ -14,6 +14,7 @@ import {
   getButtonRoles,
   getConfigAudit,
   getGuildFeedback,
+  getJobs,
   getMemberHistory,
   getMemberProfile,
   getModActions,
@@ -157,6 +158,14 @@ export function useActivity(guildId: string, limit = 8) {
     queryFn: () => getActivity(guildId, limit),
     refetchInterval: 20_000,
     staleTime: 20_000,
+  });
+}
+
+export function useJobs(guildId: string) {
+  return useQuery({
+    queryKey: queryKeys.jobs(guildId),
+    queryFn: () => getJobs(guildId),
+    staleTime: 30_000,
   });
 }
 
