@@ -20,6 +20,14 @@ import {
   handleCfgSyncVerify,
   handleCfgSyncXp,
 } from "./admin";
+import {
+  handleGameAnnounce,
+  handleGameBan,
+  handleGameKick,
+  handleGamePlayers,
+  handleGameSave,
+  handleGameStatus,
+} from "./game";
 import { requireAdminRole } from "./guard";
 import {
   handleModBan,
@@ -76,6 +84,12 @@ const handlers: Record<string, Handler> = {
   ticket_delete: handleTicketDelete,
   test_welcome: handleTestWelcome,
   test_goodbye: handleTestGoodbye,
+  game_status: handleGameStatus,
+  game_players: handleGamePlayers,
+  game_announce: handleGameAnnounce,
+  game_save: handleGameSave,
+  game_kick: handleGameKick,
+  game_ban: handleGameBan,
 };
 
 export async function handleCommand(interaction: ChatInputCommandInteraction) {
@@ -115,6 +129,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction) {
     interaction.commandName.startsWith("cfg_") ||
     interaction.commandName.startsWith("test_") ||
     interaction.commandName.startsWith("mod_") ||
+    interaction.commandName.startsWith("game_") ||
     interaction.commandName === "ticket_setup" ||
     interaction.commandName === "ticket_delete";
 

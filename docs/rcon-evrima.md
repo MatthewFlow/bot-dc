@@ -80,8 +80,12 @@ Zakładka **„Serwer gry"** (na razie placeholder „wkrótce", jak Giveaways).
 
 ## Etapy
 
-1. **Teraz (przygotowanie):** ten dokument, interfejs `RconClient` (stub), placeholder
-   w panelu, szkielet env. ← jesteśmy tutaj.
-2. **Faza 1:** implementacja protokołu (moduł w bocie) + status/lista graczy read-only.
-3. **Faza 2:** akcje (announce/kick/ban/save) za guardem + zadania `gameAnnounce`/`gameRestart`.
-4. **Faza 3 (opcjonalnie):** wycięcie do osobnej usługi (kandydat na Go), kontrakt bez zmian.
+1. ✅ **Przygotowanie:** ten dokument, interfejs `RconClient`, placeholder w panelu, szkielet env.
+2. ✅ **Faza 1:** protokół (`protocol.ts`/`evrimaClient.ts`) + status/lista graczy read-only;
+   testy jednostkowe + mock (`mock:rcon`/`probe:rcon`) — zweryfikowane lokalnie.
+3. ✅ **Faza 2 (strona bota):** komendy `game_*` (admin-gated, rejestrowane tylko gdy RCON w env) —
+   `game_status`/`game_players`/`game_announce`/`game_save`/`game_kick`/`game_ban`; zadanie
+   `gameAnnounce` na kolejce `botJob` (opcja `za_minut`). ⏳ Kalibracja protokołu czeka na realny serwer.
+4. **Faza 3:** panel „Serwer gry" na żywych danych (wzorzec: bot pisze snapshot statusu do DB,
+   panel czyta — jak heartbeat bota), akcje z panelu przez kolejkę; ew. wycięcie do osobnej
+   usługi (kandydat na Go), kontrakt bez zmian.

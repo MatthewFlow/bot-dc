@@ -6,6 +6,7 @@ import {
 } from "@jurassic-haven/db";
 import type { Client } from "discord.js";
 
+import { getRcon } from "../gameserver/manager";
 import { sendModLog } from "../modlog";
 
 /** Co ile worker sprawdza zaległe zadania. */
@@ -56,12 +57,21 @@ async function runUnban(client: Client, job: BotJob): Promise<void> {
   }
 }
 
+/** Wykonanie zadania `gameAnnounce`: ogłoszenie in-game przez RCON serwera gry. */
+async function runGameAnnounce(job: BotJob): Promise<void> {
+  if (!job.text) throw new Error("brak treści ogłoszenia");
+  const rcon = getRcon();
+  if (!rcon) throw new Error("RCON serwera gry nie jest skonfigurowany");
+  await rcon.announce(job.text);
+}
+
 async function tick(client: Client): Promise<void> {
   const due = await botJobRepository.getDue(new Date(), BATCH).catch(() => []);
   for (const job of due) {
     try {
       if (job.type === "sendEmbed") await runSendEmbed(client, job);
       else if (job.type === "unban") await runUnban(client, job);
+      else if (job.type === "gameAnnounce") await runGameAnnounce(job);
 
       if (job.recurrence === "once") await botJobRepository.markDone(job.id);
       else

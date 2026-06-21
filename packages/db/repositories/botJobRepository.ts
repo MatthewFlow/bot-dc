@@ -17,6 +17,7 @@ export type BotJob = {
   channelId?: string;
   embed?: EmbedConfig;
   userId?: string;
+  text?: string;
   lastError?: string;
   lastRunAt?: Date;
   createdBy: string;
@@ -31,6 +32,7 @@ export type CreateBotJobOpts = {
   channelId?: string;
   embed?: EmbedConfig;
   userId?: string;
+  text?: string;
   createdBy: string;
 };
 

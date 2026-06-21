@@ -1,6 +1,53 @@
 import { type Client, REST, Routes, SlashCommandBuilder } from "discord.js";
 
 import { guildId, token } from "../config/env";
+import { isGameServerConfigured } from "../gameserver/manager";
+
+// Komendy serwera gry (RCON) — rejestrowane TYLKO gdy RCON jest skonfigurowany
+// (env), żeby nie zaśmiecać listy komend na serwerach bez integracji z grą.
+const gameCommands = [
+  new SlashCommandBuilder()
+    .setName("game_status")
+    .setDescription("Status serwera gry (The Isle: Evrima)"),
+  new SlashCommandBuilder()
+    .setName("game_players")
+    .setDescription("Lista graczy online na serwerze gry"),
+  new SlashCommandBuilder()
+    .setName("game_announce")
+    .setDescription("Ogłoszenie in-game na serwerze gry")
+    .addStringOption((opt) =>
+      opt.setName("message").setDescription("Treść ogłoszenia").setRequired(true),
+    )
+    .addIntegerOption((opt) =>
+      opt
+        .setName("za_minut")
+        .setDescription("Zaplanuj za X minut (puste = teraz)")
+        .setRequired(false)
+        .setMinValue(1)
+        .setMaxValue(10080),
+    ),
+  new SlashCommandBuilder()
+    .setName("game_save")
+    .setDescription("Zapis świata na serwerze gry"),
+  new SlashCommandBuilder()
+    .setName("game_kick")
+    .setDescription("Wyrzuć gracza z serwera gry")
+    .addStringOption((opt) =>
+      opt.setName("player").setDescription("ID gracza").setRequired(true),
+    )
+    .addStringOption((opt) =>
+      opt.setName("reason").setDescription("Powód").setRequired(false),
+    ),
+  new SlashCommandBuilder()
+    .setName("game_ban")
+    .setDescription("Zbanuj gracza na serwerze gry")
+    .addStringOption((opt) =>
+      opt.setName("player").setDescription("ID gracza").setRequired(true),
+    )
+    .addStringOption((opt) =>
+      opt.setName("reason").setDescription("Powód").setRequired(false),
+    ),
+];
 
 export const commands = [
   // ===== USER =====
@@ -287,6 +334,8 @@ export const commands = [
   new SlashCommandBuilder()
     .setName("test_goodbye")
     .setDescription("Testowe pożegnanie (wysyła na ustawiony kanał)"),
+
+  ...(isGameServerConfigured() ? gameCommands : []),
 ].map((c) => c.toJSON());
 
 export async function clearGuildCommands(client: Client) {

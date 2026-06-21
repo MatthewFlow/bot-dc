@@ -18,6 +18,7 @@ function toJob(doc: LeanBotJob): BotJob {
     channelId: doc.channelId,
     embed: doc.embed,
     userId: doc.userId,
+    text: doc.text,
     lastError: doc.lastError,
     lastRunAt: doc.lastRunAt,
     createdBy: doc.createdBy,
