@@ -425,23 +425,18 @@ export type ReactionRoleInput = {
 
 export type ButtonRoleEntry = { label: string; emoji?: string; roleId: string };
 
-/** Forma panelu self-roli: przyciski (domyślnie) lub menu rozwijane. */
-export type SelfRoleStyle = "buttons" | "select";
-
 export type ButtonRole = {
   guildId: string;
   channelId: string;
   messageId: string;
   embed?: EmbedConfig;
   entries: ButtonRoleEntry[];
-  style?: SelfRoleStyle;
 };
 
 export type ButtonRoleInput = {
   channelId: string;
   embed: EmbedConfig;
   entries: ButtonRoleEntry[];
-  style?: SelfRoleStyle;
 };
 
 export type LeaderboardEntry = {

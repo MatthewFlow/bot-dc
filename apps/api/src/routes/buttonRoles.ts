@@ -50,32 +50,6 @@ function buildComponents(entries: ButtonRoleInputEntry[]) {
   return rows;
 }
 
-/**
- * Menu rozwijane (string select) — jeden komponent z opcjami = rolami. `custom_id`
- * "sr" rozpoznaje bot; wartości opcji to roleId, więc i tu bez odczytu z bazy.
- */
-function buildSelectComponents(entries: ButtonRoleInputEntry[]) {
-  return [
-    {
-      type: 1,
-      components: [
-        {
-          type: 3,
-          custom_id: "sr",
-          placeholder: "Wybierz role…",
-          min_values: 0,
-          max_values: entries.length,
-          options: entries.map((e) => ({
-            label: e.label.slice(0, 100),
-            value: e.roleId,
-            ...(buildEmoji(e.emoji) ? { emoji: buildEmoji(e.emoji) } : {}),
-          })),
-        },
-      ],
-    },
-  ];
-}
-
 export const buttonRoleRoutes = new Hono<{ Variables: AppVariables }>();
 
 buttonRoleRoutes.use("*", authMiddleware);
@@ -91,7 +65,7 @@ buttonRoleRoutes.post("/:guildId/button-roles", async (c) => {
   const guildId = c.req.param("guildId");
   const parsed = await parseBody(c, buttonRolesSchema);
   if (!parsed.ok) return parsed.res;
-  const { channelId, embed: rawEmbed, entries, style } = parsed.data;
+  const { channelId, embed: rawEmbed, entries } = parsed.data;
 
   const botToken = requireBotToken(c);
   if (botToken instanceof Response) return botToken;
@@ -104,9 +78,7 @@ buttonRoleRoutes.post("/:guildId/button-roles", async (c) => {
   const embed = toDiscordEmbed(rawEmbed as EmbedConfig);
   if (isEmbedEmpty(embed)) return c.json({ error: "Embed is empty" }, 400);
 
-  const components =
-    style === "select" ? buildSelectComponents(entries) : buildComponents(entries);
-  const payload = { embeds: [embed], components };
+  const payload = { embeds: [embed], components: buildComponents(entries) };
 
   const msg = await sendDiscordMessage(channelId, botToken, payload, "button-roles");
   if (!msg) return c.json({ error: "Failed to send message" }, 502);
@@ -117,7 +89,6 @@ buttonRoleRoutes.post("/:guildId/button-roles", async (c) => {
     messageId: msg.id,
     embed: rawEmbed as EmbedConfig,
     entries,
-    style: style ?? "buttons",
   });
 
   return c.json(created, 201);

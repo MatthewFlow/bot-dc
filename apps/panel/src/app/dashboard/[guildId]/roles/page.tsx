@@ -1,6 +1,6 @@
 "use client";
 
-import { List, MousePointerClick, SmilePlus } from "lucide-react";
+import { MousePointerClick, SmilePlus } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { type CSSProperties, useState } from "react";
@@ -30,7 +30,6 @@ import type {
   EmbedConfig,
   ReactionRole,
   Role,
-  SelfRoleStyle,
 } from "@/lib/api";
 import {
   deleteButtonRole,
@@ -66,8 +65,6 @@ type EntryRow = { label: string; emoji: string; roleId: string };
 
 type FormState = {
   type: RoleType;
-  /** Forma przycisków (tylko gdy `type === "button"`): przyciski lub menu rozwijane. */
-  style: SelfRoleStyle;
   channelId: string;
   embed: EmbedConfig;
   entries: EntryRow[];
@@ -75,7 +72,6 @@ type FormState = {
 
 const EMPTY_FORM: FormState = {
   type: "button",
-  style: "buttons",
   channelId: "",
   embed: { color: 0xd4a843 },
   entries: [{ label: "", emoji: "", roleId: "" }],
@@ -171,7 +167,6 @@ export default function RolesPage() {
     if (item.kind === "button") {
       setForm({
         type: "button",
-        style: item.style ?? "buttons",
         channelId: item.channelId,
         embed: item.embed ?? { color: 0xd4a843 },
         entries: item.entries.length
@@ -185,7 +180,6 @@ export default function RolesPage() {
     } else {
       setForm({
         type: "reaction",
-        style: "buttons",
         channelId: item.channelId,
         embed: item.embed ?? {
           title: item.title,
@@ -239,7 +233,6 @@ export default function RolesPage() {
             channelId,
             embed,
             entries,
-            style: form.style,
           })),
         };
       } else {
@@ -357,29 +350,6 @@ export default function RolesPage() {
                   Reakcje
                 </button>
               </div>
-
-              {/* Forma — tylko dla przycisków: klasyczne przyciski albo menu rozwijane */}
-              {form.type === "button" && (
-                <div>
-                  <label className="mb-1 block text-xs text-gray-400">Forma</label>
-                  <div className="flex gap-1 rounded-lg bg-background p-1">
-                    <button
-                      onClick={() => setForm((f) => ({ ...f, style: "buttons" }))}
-                      className={typeTab(form.style === "buttons")}
-                    >
-                      <MousePointerClick size={15} />
-                      Przyciski
-                    </button>
-                    <button
-                      onClick={() => setForm((f) => ({ ...f, style: "select" }))}
-                      className={typeTab(form.style === "select")}
-                    >
-                      <List size={15} />
-                      Menu rozwijane
-                    </button>
-                  </div>
-                </div>
-              )}
 
               <div>
                 <label className="mb-1 block text-xs text-gray-400">Kanał</label>
@@ -549,11 +519,7 @@ export default function RolesPage() {
                                 : "bg-discord/20 text-discord"
                             }`}
                           >
-                            {item.kind === "button"
-                              ? item.style === "select"
-                                ? "Menu"
-                                : "Przyciski"
-                              : "Reakcje"}
+                            {item.kind === "button" ? "Przyciski" : "Reakcje"}
                           </span>
                           <p className="text-xs text-gray-400">
                             # {channelName(item.channelId)}

@@ -14,8 +14,6 @@ export type ButtonRoleDocument = {
   messageId: string;
   embed?: EmbedConfig;
   entries: ButtonRoleEntry[];
-  /** Forma panelu: przyciski (domyślnie) lub menu rozwijane. */
-  style?: "buttons" | "select";
 };
 
 const buttonRoleEntrySchema = new Schema<ButtonRoleEntry>(
@@ -34,7 +32,6 @@ const buttonRoleSchema = new Schema<ButtonRoleDocument>(
     messageId: { type: String, required: true, unique: true },
     embed: { type: Schema.Types.Mixed, default: undefined },
     entries: { type: [buttonRoleEntrySchema], default: [] },
-    style: { type: String, enum: ["buttons", "select"], default: undefined },
   },
   { versionKey: false },
 );

@@ -6,13 +6,11 @@ import {
   type ModalSubmitInteraction,
   Options,
   Partials,
-  type StringSelectMenuInteraction,
 } from "discord.js";
 
 import { startAutoModSweep } from "./automod/automod";
 import { checkRaid } from "./automod/raid";
 import { handleButtonRoleClick } from "./buttonroles/handler";
-import { handleSelectRole } from "./buttonroles/selectHandler";
 import { handleCommand } from "./commands/handlers/handler";
 import { clearGuildCommands, registerCommands } from "./commands/register";
 import { onGuildCreate } from "./events/guildCreate";
@@ -51,7 +49,7 @@ import { startWarnDecay } from "./warnDecay";
  * Zwraca `true`, gdy zablokowano — wtedy handler nie powinien się wykonać.
  */
 async function moduleBlocked(
-  interaction: ButtonInteraction | ModalSubmitInteraction | StringSelectMenuInteraction,
+  interaction: ButtonInteraction | ModalSubmitInteraction,
   key: ModuleKey,
 ): Promise<boolean> {
   if (!interaction.guildId) return false;
@@ -192,13 +190,6 @@ export function createBot() {
       } else if (customId.startsWith("br:")) {
         if (await moduleBlocked(interaction, "selfroles")) return;
         await handleButtonRoleClick(interaction);
-      }
-      return;
-    }
-    if (interaction.isStringSelectMenu()) {
-      if (interaction.customId === "sr") {
-        if (await moduleBlocked(interaction, "selfroles")) return;
-        await handleSelectRole(interaction);
       }
       return;
     }
