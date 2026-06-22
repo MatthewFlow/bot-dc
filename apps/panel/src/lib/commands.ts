@@ -204,6 +204,11 @@ const RAW_CATALOG: CommandCategory[] = [
         desc: "Testowe pożegnanie",
         usage: "/test_goodbye",
       },
+      {
+        name: "test_translate",
+        desc: "Testuje tłumaczenie DeepL (próbka albo wybrana wiadomość)",
+        usage: "/test_translate [wiadomosc_id]",
+      },
     ],
   },
 ];
