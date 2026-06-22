@@ -14,6 +14,7 @@ import { PanelCard } from "@/components/PanelCard";
 import { Skeleton } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { Button } from "@/components/ui/button";
+import { SegmentedControl, type SegmentOption } from "@/components/ui/SegmentedControl";
 import {
   Select,
   SelectContent,
@@ -55,10 +56,11 @@ function toIso(local: string): string | null {
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
-const TAB = (active: boolean) =>
-  `flex flex-1 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition ${
-    active ? "bg-primary text-primary-foreground" : "text-gray-300 hover:text-white"
-  }`;
+const MODE_OPTIONS: SegmentOption<Mode>[] = [
+  { value: "now", label: "Teraz", icon: Send },
+  { value: "schedule", label: "Zaplanuj", icon: Clock },
+  { value: "recurring", label: "Cyklicznie", icon: Repeat },
+];
 
 export default function AnnouncePage() {
   const params = useParams();
@@ -181,26 +183,7 @@ export default function AnnouncePage() {
           {/* Tryb wysyłki */}
           <div className="border-t border-border pt-4">
             <label className="mb-1 block text-xs text-gray-400">Kiedy wysłać</label>
-            <div className="flex gap-1 rounded-lg bg-background p-1">
-              <button onClick={() => setMode("now")} className={TAB(mode === "now")}>
-                <Send size={15} />
-                Teraz
-              </button>
-              <button
-                onClick={() => setMode("schedule")}
-                className={TAB(mode === "schedule")}
-              >
-                <Clock size={15} />
-                Zaplanuj
-              </button>
-              <button
-                onClick={() => setMode("recurring")}
-                className={TAB(mode === "recurring")}
-              >
-                <Repeat size={15} />
-                Cyklicznie
-              </button>
-            </div>
+            <SegmentedControl options={MODE_OPTIONS} value={mode} onChange={setMode} />
 
             {mode !== "now" && (
               <div className="mt-3 flex flex-wrap items-end gap-3">

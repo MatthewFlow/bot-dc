@@ -29,6 +29,7 @@ import { ModLog } from "@/components/moderation/ModLog";
 import { PageHeader } from "@/components/PageHeader";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
+import { NumberField } from "@/components/ui/NumberField";
 import { ToggleRow } from "@/components/ui/ToggleRow";
 import { useActivePunishments, useChannels, useModStats } from "@/hooks/queries";
 import { useSeedOnce } from "@/hooks/queryDraft";
@@ -220,21 +221,17 @@ export default function ModerationPage() {
                   {(config.autoBanThreshold ?? 0) > 0 && (
                     <div className="mt-3 flex items-center gap-2">
                       <span className="text-xs text-gray-400">Próg:</span>
-                      <input
-                        type="number"
+                      <NumberField
+                        ariaLabel="Próg ostrzeżeń do auto-bana"
                         min={1}
                         max={20}
                         value={config.autoBanThreshold ?? 5}
-                        onChange={(e) =>
+                        onChange={(v) =>
                           setConfig((c) => ({
                             ...c,
-                            autoBanThreshold: Math.min(
-                              20,
-                              Math.max(1, Number(e.target.value) || 1),
-                            ),
+                            autoBanThreshold: Math.min(20, Math.max(1, v || 1)),
                           }))
                         }
-                        className="w-20 rounded-lg bg-background px-2 py-1.5 text-center text-sm text-white outline-none focus:ring-2 focus:ring-primary"
                       />
                       <span className="text-xs text-gray-400">ostrzeżeń</span>
                     </div>
@@ -253,21 +250,17 @@ export default function ModerationPage() {
                   {(config.warnDecayDays ?? 0) > 0 && (
                     <div className="mt-3 flex items-center gap-2">
                       <span className="text-xs text-gray-400">Po:</span>
-                      <input
-                        type="number"
+                      <NumberField
+                        ariaLabel="Dni do wygaśnięcia ostrzeżeń"
                         min={1}
                         max={365}
                         value={config.warnDecayDays ?? 30}
-                        onChange={(e) =>
+                        onChange={(v) =>
                           setConfig((c) => ({
                             ...c,
-                            warnDecayDays: Math.min(
-                              365,
-                              Math.max(1, Number(e.target.value) || 1),
-                            ),
+                            warnDecayDays: Math.min(365, Math.max(1, v || 1)),
                           }))
                         }
-                        className="w-20 rounded-lg bg-background px-2 py-1.5 text-center text-sm text-white outline-none focus:ring-2 focus:ring-primary"
                       />
                       <span className="text-xs text-gray-400">dniach</span>
                     </div>

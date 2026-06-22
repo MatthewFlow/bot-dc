@@ -22,6 +22,8 @@ import { PageHeader } from "@/components/PageHeader";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
 import { TipsCard } from "@/components/TipsCard";
+import { ChoiceChips } from "@/components/ui/ChoiceChips";
+import { NumberField } from "@/components/ui/NumberField";
 import { ToggleRow } from "@/components/ui/ToggleRow";
 import { useChannels, useRoles } from "@/hooks/queries";
 import { useSeedOnce } from "@/hooks/queryDraft";
@@ -69,9 +71,6 @@ const RAID_ACTIONS: { value: RaidAction; label: string }[] = [
 function AutoModSkeleton() {
   return <Skeleton className="h-96 w-full rounded-xl" />;
 }
-
-const NUM_INPUT =
-  "w-20 rounded-lg bg-background px-2 py-1.5 text-center text-sm text-white outline-none focus:ring-2 focus:ring-primary";
 
 export default function AutoModPage() {
   const params = useParams();
@@ -227,17 +226,13 @@ export default function AutoModPage() {
                         {am.blockMassMention && (
                           <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-gray-300">
                             <span>Maks.</span>
-                            <input
-                              type="number"
+                            <NumberField
                               name="maxMentions"
-                              aria-label="Maksymalna liczba oznaczeń"
+                              ariaLabel="Maksymalna liczba oznaczeń"
                               min={1}
                               max={50}
                               value={am.maxMentions ?? 5}
-                              onChange={(e) =>
-                                setAm({ maxMentions: Number(e.target.value) })
-                              }
-                              className={NUM_INPUT}
+                              onChange={(v) => setAm({ maxMentions: v })}
                             />
                             <span>oznaczeń.</span>
                           </div>
@@ -268,30 +263,22 @@ export default function AutoModPage() {
                         {am.spamEnabled && (
                           <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-gray-300">
                             <span>Maks.</span>
-                            <input
-                              type="number"
+                            <NumberField
                               name="spamMaxMessages"
-                              aria-label="Maksymalna liczba wiadomości"
+                              ariaLabel="Maksymalna liczba wiadomości"
                               min={2}
                               max={50}
                               value={am.spamMaxMessages}
-                              onChange={(e) =>
-                                setAm({ spamMaxMessages: Number(e.target.value) })
-                              }
-                              className={NUM_INPUT}
+                              onChange={(v) => setAm({ spamMaxMessages: v })}
                             />
                             <span>wiadomości w</span>
-                            <input
-                              type="number"
+                            <NumberField
                               name="spamWindowSeconds"
-                              aria-label="Okno czasowe w sekundach"
+                              ariaLabel="Okno czasowe w sekundach"
                               min={1}
                               max={60}
                               value={am.spamWindowSeconds}
-                              onChange={(e) =>
-                                setAm({ spamWindowSeconds: Number(e.target.value) })
-                              }
-                              className={NUM_INPUT}
+                              onChange={(v) => setAm({ spamWindowSeconds: v })}
                             />
                             <span>sekund.</span>
                           </div>
@@ -308,51 +295,31 @@ export default function AutoModPage() {
                         {am.raidEnabled && (
                           <div className="mt-3 flex flex-col gap-3">
                             <div className="flex flex-wrap items-center gap-2 text-sm text-gray-300">
-                              <input
-                                type="number"
+                              <NumberField
                                 name="raidJoinCount"
-                                aria-label="Liczba wejść"
+                                ariaLabel="Liczba wejść"
                                 min={2}
                                 max={100}
                                 value={am.raidJoinCount ?? 10}
-                                onChange={(e) =>
-                                  setAm({ raidJoinCount: Number(e.target.value) })
-                                }
-                                className={NUM_INPUT}
+                                onChange={(v) => setAm({ raidJoinCount: v })}
                               />
                               <span>wejść w</span>
-                              <input
-                                type="number"
+                              <NumberField
                                 name="raidWindowSeconds"
-                                aria-label="Okno czasowe w sekundach"
+                                ariaLabel="Okno czasowe w sekundach"
                                 min={2}
                                 max={300}
                                 value={am.raidWindowSeconds ?? 10}
-                                onChange={(e) =>
-                                  setAm({ raidWindowSeconds: Number(e.target.value) })
-                                }
-                                className={NUM_INPUT}
+                                onChange={(v) => setAm({ raidWindowSeconds: v })}
                               />
                               <span>sekund.</span>
                             </div>
-                            <div className="flex flex-wrap gap-2">
-                              {RAID_ACTIONS.map((ra) => {
-                                const active = (am.raidAction ?? "alert") === ra.value;
-                                return (
-                                  <button
-                                    key={ra.value}
-                                    onClick={() => setAm({ raidAction: ra.value })}
-                                    className={`rounded-lg px-3 py-1.5 text-xs transition ${
-                                      active
-                                        ? "bg-primary font-semibold text-primary-foreground"
-                                        : "border border-border bg-background text-gray-300 hover:text-white"
-                                    }`}
-                                  >
-                                    {ra.label}
-                                  </button>
-                                );
-                              })}
-                            </div>
+                            <ChoiceChips
+                              options={RAID_ACTIONS}
+                              value={am.raidAction ?? "alert"}
+                              onChange={(v) => setAm({ raidAction: v })}
+                              size="sm"
+                            />
                           </div>
                         )}
                       </div>
@@ -401,39 +368,21 @@ export default function AutoModPage() {
                   subtitle="Co bot robi, gdy filtr coś złapie"
                 />
                 <div className="flex flex-col gap-4 p-6">
-                  <div className="flex flex-wrap gap-2">
-                    {ACTIONS.map((a) => {
-                      const active = am.action === a.value;
-                      return (
-                        <button
-                          key={a.value}
-                          onClick={() => setAm({ action: a.value })}
-                          className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm transition ${
-                            active
-                              ? "bg-primary font-semibold text-primary-foreground"
-                              : "border border-border bg-background text-gray-300 hover:text-white"
-                          }`}
-                        >
-                          <a.icon className="size-4" />
-                          {a.label}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  <ChoiceChips
+                    options={ACTIONS}
+                    value={am.action}
+                    onChange={(v) => setAm({ action: v })}
+                  />
                   {am.action === "mute" && (
                     <div className="flex flex-wrap items-center gap-2 text-sm text-gray-300">
                       <span>Czas timeoutu:</span>
-                      <input
-                        type="number"
+                      <NumberField
                         name="muteDurationSeconds"
-                        aria-label="Czas timeoutu w sekundach"
+                        ariaLabel="Czas timeoutu w sekundach"
                         min={10}
                         max={2419200}
                         value={am.muteDurationSeconds}
-                        onChange={(e) =>
-                          setAm({ muteDurationSeconds: Number(e.target.value) })
-                        }
-                        className={NUM_INPUT}
+                        onChange={(v) => setAm({ muteDurationSeconds: v })}
                       />
                       <span>sekund.</span>
                     </div>

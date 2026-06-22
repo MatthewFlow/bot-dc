@@ -4,7 +4,7 @@
 // więc świadomie używamy zwykłego <img> (jak w EmbedPreview).
 /* eslint-disable @next/next/no-img-element */
 
-import { DoorClosed, DoorOpen, type LucideIcon } from "lucide-react";
+import { DoorClosed, DoorOpen } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useParams } from "next/navigation";
 import { useRef, useState } from "react";
@@ -15,6 +15,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { PanelCard } from "@/components/PanelCard";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
+import { SegmentedControl, type SegmentOption } from "@/components/ui/SegmentedControl";
 import { VariablesCard } from "@/components/VariablesCard";
 import { WelcomeGuide } from "@/components/WelcomeGuide";
 import { useBotStatus, useChannels } from "@/hooks/queries";
@@ -33,9 +34,9 @@ const EmbedEditor = dynamic(
 type Tab = "welcome" | "goodbye";
 
 /** Zakładki z osobnymi ikonami: otwarte drzwi = wejście, zamknięte = wyjście. */
-const TABS: { id: Tab; label: string; Icon: LucideIcon }[] = [
-  { id: "welcome", label: "Welcome", Icon: DoorOpen },
-  { id: "goodbye", label: "Goodbye", Icon: DoorClosed },
+const TABS: SegmentOption<Tab>[] = [
+  { value: "welcome", label: "Welcome", icon: DoorOpen },
+  { value: "goodbye", label: "Goodbye", icon: DoorClosed },
 ];
 
 const VARIABLES = [
@@ -186,18 +187,7 @@ export default function WelcomePage() {
               description="Treść wysyłana, gdy ktoś dołączy lub opuści serwer"
             >
               {/* Welcome / Goodbye */}
-              <div className="flex gap-1 rounded-lg bg-background p-1">
-                {TABS.map(({ id, label, Icon }) => (
-                  <button
-                    key={id}
-                    onClick={() => setTab(id)}
-                    className={`flex flex-1 items-center justify-center gap-2 rounded-md py-2 text-sm font-medium transition ${tab === id ? "bg-primary text-black" : "text-gray-300 hover:text-white"}`}
-                  >
-                    <Icon size={15} />
-                    {label}
-                  </button>
-                ))}
-              </div>
+              <SegmentedControl options={TABS} value={tab} onChange={setTab} />
 
               {/* Kanał */}
               <ChannelField
