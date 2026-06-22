@@ -113,6 +113,7 @@ export const NAV_GROUPS: NavGroup[] = [
         href: "/translation",
         desc: "Auto-tłumaczenie wiadomości ze śledzonego kanału",
         icon: Languages,
+        soon: true,
       },
       {
         label: "Giveawaye",
