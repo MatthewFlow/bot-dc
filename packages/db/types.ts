@@ -45,6 +45,21 @@ export type LevelingConfig = {
   levelUpDm: boolean;
 };
 
+/** Docelowe języki tłumaczenia (kody DeepL). */
+export type TranslationLang = "PL" | "EN-GB" | "DE" | "ES" | "FR";
+
+/**
+ * Auto-tłumaczenie wiadomości z kanału-źródła (np. śledzone ogłoszenia gry).
+ * Brak obiektu = wyłączone. Tłumaczenie publikuje bot jako embed pod oryginałem.
+ */
+export type TranslationConfig = {
+  enabled: boolean;
+  /** Kanał, którego nowe wiadomości bot tłumaczy. */
+  sourceChannelId?: string;
+  /** Język docelowy (kod DeepL). */
+  targetLang: TranslationLang;
+};
+
 export type AutoModAction = "delete" | "warn" | "mute";
 
 /** Konfiguracja auto-moderacji (filtry + akcja). Brak obiektu = wyłączone. */

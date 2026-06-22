@@ -10,6 +10,7 @@ import type {
   RoleReward,
   ServerLogConfig,
   TicketPanelButton,
+  TranslationConfig,
 } from "../../../types";
 
 export type {
@@ -19,6 +20,7 @@ export type {
   RoleReward,
   ServerLogConfig,
   TicketPanelButton,
+  TranslationConfig,
 } from "../../../types";
 
 export type GuildConfigDocument = {
@@ -52,6 +54,8 @@ export type GuildConfigDocument = {
   autoMod?: AutoModConfig;
   serverLog?: ServerLogConfig;
   leveling?: LevelingConfig;
+  /** Auto-tłumaczenie wiadomości z kanału-źródła (śledzone ogłoszenia gry). */
+  translation?: TranslationConfig;
   /** Nazwy komend wyłączonych na tym serwerze (egzekwowane w runtime przez bota). */
   disabledCommands?: string[];
   /** Klucze modułów wyłączonych na tym serwerze (leveling/welcome/tickets/feedback/selfroles). */
@@ -141,6 +145,19 @@ const levelingSchema = new Schema<LevelingConfig>(
   { _id: false },
 );
 
+const translationSchema = new Schema<TranslationConfig>(
+  {
+    enabled: { type: Boolean, default: false },
+    sourceChannelId: { type: String },
+    targetLang: {
+      type: String,
+      enum: ["PL", "EN-GB", "DE", "ES", "FR"],
+      default: "PL",
+    },
+  },
+  { _id: false },
+);
+
 const serverLogSchema = new Schema<ServerLogConfig>(
   {
     enabled: { type: Boolean, default: false },
@@ -186,6 +203,7 @@ const guildConfigSchema = new Schema<GuildConfigDocument>(
     autoMod: { type: autoModSchema, default: undefined },
     serverLog: { type: serverLogSchema, default: undefined },
     leveling: { type: levelingSchema, default: undefined },
+    translation: { type: translationSchema, default: undefined },
     disabledCommands: { type: [String], default: undefined },
     disabledModules: { type: [String], default: undefined },
     prefix: { type: String, default: undefined },

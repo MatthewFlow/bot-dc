@@ -40,6 +40,7 @@ import {
   handleTicketSubmit,
   showTicketModal,
 } from "./tickets/handler";
+import { onTranslateMessage } from "./translation/handler";
 import { getCachedGuildConfig } from "./utils/configCache";
 import { isModuleEnabled, type ModuleKey } from "./utils/modules";
 import { BOT_VERSION } from "./version";
@@ -155,6 +156,8 @@ export function createBot() {
   client.on("guildMemberAdd", checkRaid); // wykrywanie raidów (decoupled)
   client.on("guildMemberRemove", onMemberRemove);
   client.on("messageCreate", onMessageCreate);
+  // Auto-tłumaczenie (osobny listener — łapie też webhooki/boty, które XP/automod pomija).
+  client.on("messageCreate", onTranslateMessage);
   client.on("messageReactionAdd", onMessageReactionAdd);
   client.on("messageReactionRemove", onMessageReactionRemove);
   client.on("threadDelete", onThreadDelete);

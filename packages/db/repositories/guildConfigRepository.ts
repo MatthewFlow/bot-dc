@@ -5,9 +5,16 @@ import type {
   RoleReward,
   ServerLogConfig,
   TicketPanelButton,
+  TranslationConfig,
 } from "../types";
 
-export type { AutoModConfig, LevelingConfig, ServerLogConfig, TicketPanelButton };
+export type {
+  AutoModConfig,
+  LevelingConfig,
+  ServerLogConfig,
+  TicketPanelButton,
+  TranslationConfig,
+};
 
 export type GuildConfig = {
   guildId: string;
@@ -40,6 +47,8 @@ export type GuildConfig = {
   autoMod?: AutoModConfig;
   serverLog?: ServerLogConfig;
   leveling?: LevelingConfig;
+  /** Auto-tłumaczenie wiadomości z kanału-źródła (śledzone ogłoszenia gry). */
+  translation?: TranslationConfig;
   disabledCommands?: string[];
   /** Klucze modułów wyłączonych na tym serwerze. */
   disabledModules?: string[];

@@ -67,6 +67,7 @@ const CONFIG_ALLOWED_FIELDS = [
   "autoMod",
   "serverLog",
   "leveling",
+  "translation",
   "disabledCommands",
   "disabledModules",
   "prefix",

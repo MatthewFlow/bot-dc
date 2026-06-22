@@ -79,6 +79,16 @@ export type ServerLogConfig = {
   exemptChannelIds: string[];
 };
 
+/** Docelowe języki tłumaczenia (kody DeepL). */
+export type TranslationLang = "PL" | "EN-GB" | "DE" | "ES" | "FR";
+
+/** Auto-tłumaczenie wiadomości z kanału-źródła (śledzone ogłoszenia gry). */
+export type TranslationConfig = {
+  enabled: boolean;
+  sourceChannelId?: string;
+  targetLang: TranslationLang;
+};
+
 export type LevelingConfig = {
   /** Płaskie XP za wiadomość (0–8). */
   messageXp?: number;
@@ -122,6 +132,8 @@ export type GuildConfig = {
   autoMod?: AutoModConfig;
   serverLog?: ServerLogConfig;
   leveling?: LevelingConfig;
+  /** Auto-tłumaczenie wiadomości z kanału-źródła (śledzone ogłoszenia gry). */
+  translation?: TranslationConfig;
   /** Nazwy komend wyłączonych na tym serwerze. */
   disabledCommands?: string[];
   /** Klucze modułów wyłączonych na tym serwerze. */

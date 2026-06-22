@@ -281,6 +281,7 @@ Next.js 16 App Router; all dashboard pages are client components (`"use client"`
 | bot   | `PANEL_URL`                | Panel URL shown in the onboarding intro message                                     |
 | bot   | `CFG_ADMIN_ROLE_ID`        | Legacy fallback admin role (prefer native Administrator or per-guild `adminRoleId`) |
 | bot   | `RESET_COMMANDS`           | Set `true` once to clear & re-register slash commands                               |
+| bot   | `DEEPL_API_KEY`            | DeepL free-tier key for auto-translation (optional — feature no-ops if unset)        |
 | api   | `API_PORT`                 | API port (default 3002)                                                             |
 | api   | `DISCORD_TOKEN`            | Bot token — proxies channel/role/leaderboard/stats/panel requests                   |
 | api   | `DISCORD_CLIENT_ID/SECRET` | OAuth2 credentials                                                                  |

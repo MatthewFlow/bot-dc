@@ -59,6 +59,7 @@ export type {
   LevelingConfig,
   ServerLogConfig,
   TicketPanelButton,
+  TranslationConfig,
 } from "./repositories/guildConfigRepository";
 export type {
   AddModActionOpts,

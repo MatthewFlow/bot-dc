@@ -3,7 +3,10 @@ import type {
   EmbedConfig,
   LevelingConfig,
   ServerLogConfig,
+  TranslationConfig,
 } from "@jurassic-haven/db";
+
+const TRANSLATION_LANGS = new Set(["PL", "EN-GB", "DE", "ES", "FR"]);
 
 const ID_FIELDS = new Set([
   "welcomeChannelId",
@@ -196,6 +199,23 @@ function sanitizeServerLog(v: unknown): ServerLogConfig | undefined {
   };
 }
 
+function sanitizeTranslation(v: unknown): TranslationConfig | undefined {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return undefined;
+  const o = v as Record<string, unknown>;
+  const targetLang =
+    typeof o.targetLang === "string" && TRANSLATION_LANGS.has(o.targetLang)
+      ? (o.targetLang as TranslationConfig["targetLang"])
+      : "PL";
+  return {
+    enabled: o.enabled === true,
+    sourceChannelId:
+      typeof o.sourceChannelId === "string" && o.sourceChannelId.length <= 32
+        ? o.sourceChannelId
+        : undefined,
+    targetLang,
+  };
+}
+
 /**
  * Validates and clamps an allowlisted config patch before it reaches the DB.
  * `null` clears a field; malformed values are dropped rather than stored raw.
@@ -232,6 +252,9 @@ export function sanitizeConfigPatch(
     } else if (key === "leveling") {
       const l = sanitizeLeveling(value);
       if (l) out[key] = l;
+    } else if (key === "translation") {
+      const t = sanitizeTranslation(value);
+      if (t) out[key] = t;
     } else if (key === "disabledCommands") {
       // Lista nazw wyłączonych komend; nazwy slash-komend to [a-z0-9_], do 32 znaków.
       out[key] = strArray(value, 100, 32);

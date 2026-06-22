@@ -2,6 +2,7 @@ import {
   DoorOpen,
   Gamepad2,
   Gift,
+  Languages,
   LayoutDashboard,
   type LucideIcon,
   Megaphone,
@@ -106,6 +107,12 @@ export const NAV_GROUPS: NavGroup[] = [
         href: "/announce",
         desc: "Wyślij lub zaplanuj wiadomość embed",
         icon: Megaphone,
+      },
+      {
+        label: "Tłumaczenia",
+        href: "/translation",
+        desc: "Auto-tłumaczenie wiadomości ze śledzonego kanału",
+        icon: Languages,
       },
       {
         label: "Giveawaye",
