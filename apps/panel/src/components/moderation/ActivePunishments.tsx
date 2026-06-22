@@ -9,6 +9,7 @@ import { SkeletonRow } from "@/components/Skeleton";
 import { useToast } from "@/components/toast";
 import { useActivePunishments } from "@/hooks/queries";
 import { unbanUser, unmuteUser } from "@/lib/api";
+import { CARD } from "@/lib/cn";
 
 /** Ile banów renderujemy — rejestr banów potrafi być ogromny, nie rozdymamy karty. */
 const MAX_BANS = 25;
@@ -71,7 +72,7 @@ export function ActivePunishments({
   const now = Date.now();
 
   return (
-    <div className="surface-raised rounded-xl border border-border bg-card">
+    <div className={CARD}>
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
         <div className="flex items-center gap-2">
           <ShieldOff className="h-4 w-4 text-primary" />

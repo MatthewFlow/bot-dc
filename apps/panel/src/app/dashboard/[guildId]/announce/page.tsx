@@ -25,6 +25,7 @@ import { useBotStatus, useChannels, useJobs } from "@/hooks/queries";
 import { useSeedOnce } from "@/hooks/queryDraft";
 import type { BotJob, Channel, EmbedConfig } from "@/lib/api";
 import { createJob, deleteJob, queryKeys } from "@/lib/api";
+import { CARD } from "@/lib/cn";
 import { isEmbedEmpty, previewReplacer } from "@/lib/embed";
 import { relativeTime } from "@/lib/time";
 
@@ -255,7 +256,7 @@ export default function AnnouncePage() {
             }}
           />
 
-          <div className="surface-raised rounded-xl border border-border bg-card">
+          <div className={CARD}>
             <div className="flex items-center gap-2 border-b border-border px-5 py-4">
               <Clock className="h-4 w-4 text-primary" />
               <p className="text-sm font-semibold text-white">Zaplanowane</p>

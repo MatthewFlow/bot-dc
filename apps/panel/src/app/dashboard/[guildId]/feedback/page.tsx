@@ -37,21 +37,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  useBotStatus,
-  useChannels,
-  useGuildConfig,
-  useGuildFeedback,
-} from "@/hooks/queries";
-import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
+import { useBotStatus, useChannels, useGuildFeedback } from "@/hooks/queries";
+import { useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import type {
-  Channel,
-  Feedback,
-  FeedbackCategory,
-  FeedbackStatus,
-  GuildConfig,
-} from "@/lib/api";
+import { useConfigDraft } from "@/hooks/useConfigDraft";
+import type { Channel, Feedback, FeedbackCategory, FeedbackStatus } from "@/lib/api";
 import {
   addGuildFeedbackReply,
   deleteGuildFeedback,
@@ -375,21 +365,24 @@ export default function FeedbackPage() {
   const listRef = useRef(list);
   listRef.current = list;
 
-  // Panel feedbacku (sekcja admina) — config + kanały
-  const [config, setConfig] = useState<GuildConfig>({});
+  // Panel feedbacku (sekcja admina) — config + kanały. Draft + bramkę dostępu
+  // dostarcza useConfigDraft; własny zapis panelu niżej (handleSavePanel).
+  const {
+    config,
+    setConfig,
+    configReady,
+    loading: configLoading,
+  } = useConfigDraft(guildId);
   const [channels, setChannels] = useState<Channel[]>([]);
   const [sendingPanel, setSendingPanel] = useState(false);
 
   const feedbackQ = useGuildFeedback(guildId);
-  const configQ = useGuildConfig(guildId);
   const channelsQ = useChannels(guildId);
   // Tożsamość bota (avatar + nazwa) do podglądu „jak wystawi to bot serwera".
   const botStatusQ = useBotStatus();
   // Każda sekcja czeka tylko na swoje dane (ładowanie z góry na dół): statyczna część
   // (nagłówek, „Jak to działa", formularz) maluje się natychmiast, dane dochodzą sekcjami.
-  useRedirectOnError(configQ.isError, configQ.error);
   useSeedOnce(feedbackQ.data, (fb) => setList(fb.items));
-  const configReady = useSeedOnce(configQ.data, setConfig);
   useSeedOnce(channelsQ.data, setChannels);
 
   async function handleSubmit() {
@@ -839,7 +832,7 @@ export default function FeedbackPage() {
       </div>
 
       {/* Panel feedbacku — leniwie ładowana sekcja; wchodzi, gdy config gotowy */}
-      {configQ.isLoading ? (
+      {configLoading ? (
         <Skeleton className="h-96 w-full rounded-xl" />
       ) : (
         <FeedbackPanelSection

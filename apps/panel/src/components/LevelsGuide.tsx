@@ -8,6 +8,8 @@ import {
 } from "lucide-react";
 import { memo } from "react";
 
+import { CARD } from "@/lib/cn";
+
 const STEPS: { icon: LucideIcon; title: string; desc: string }[] = [
   {
     icon: MessageSquare,
@@ -38,7 +40,7 @@ const STEPS: { icon: LucideIcon; title: string; desc: string }[] = [
  */
 export const LevelsGuide = memo(function LevelsGuide() {
   return (
-    <div className="surface-raised rounded-xl border border-border bg-card p-5">
+    <div className={`${CARD} p-5`}>
       <div className="mb-5 flex items-center gap-2">
         <Sparkles size={16} className="mt-0.5 shrink-0 self-start text-primary" />
         <div>

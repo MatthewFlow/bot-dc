@@ -26,6 +26,7 @@ import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import type { GuildConfig, Role } from "@/lib/api";
 import { updateGuildConfig } from "@/lib/api";
+import { CARD } from "@/lib/cn";
 
 /** Szkielet tylko karty z danymi — nagłówek i „Jak to działa" renderują się od razu. */
 function AutoRoleSkeleton() {
@@ -300,7 +301,7 @@ export default function AutoRolePage() {
 
           {/* Prawa kolumna — oś weryfikacji + wskazówki (informacyjnie). */}
           <div className="flex w-full shrink-0 flex-col gap-6 lg:sticky lg:top-6 lg:w-96">
-            <div className="surface-raised rounded-xl border border-border bg-card p-5">
+            <div className={`${CARD} p-5`}>
               <div className="mb-4 flex items-center gap-2">
                 <Sparkles size={16} className="mt-0.5 shrink-0 self-start text-primary" />
                 <div>
@@ -357,7 +358,7 @@ export default function AutoRolePage() {
               </ol>
             </div>
 
-            <div className="surface-raised rounded-xl border border-border bg-card p-5">
+            <div className={`${CARD} p-5`}>
               <div className="mb-4 flex items-center gap-2">
                 <Lightbulb size={16} className="shrink-0 text-primary" />
                 <p className="text-sm font-semibold text-white">Wskazówki</p>

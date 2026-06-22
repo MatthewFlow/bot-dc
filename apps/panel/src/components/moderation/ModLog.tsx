@@ -9,6 +9,7 @@ import { RefreshButton } from "@/components/RefreshButton";
 import { SkeletonRow } from "@/components/Skeleton";
 import { useModActions } from "@/hooks/queries";
 import type { ModActionType } from "@/lib/api";
+import { CARD } from "@/lib/cn";
 
 type FilterKey = "all" | "warn" | "mute" | "kick" | "ban";
 
@@ -30,7 +31,7 @@ export function ModLog({ guildId }: { guildId: string }) {
     active.key === "all" ? actions : actions.filter((a) => active.types.includes(a.type));
 
   return (
-    <div className="surface-raised rounded-xl border border-border bg-card">
+    <div className={CARD}>
       <div className="flex flex-col gap-3 border-b border-border px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div className="flex items-center gap-2">
           <ScrollText className="h-4 w-4 text-primary" />

@@ -29,37 +29,28 @@ import { ModLog } from "@/components/moderation/ModLog";
 import { PageHeader } from "@/components/PageHeader";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
-import { useToast } from "@/components/toast";
-import { Switch } from "@/components/ui/switch";
-import {
-  useActivePunishments,
-  useChannels,
-  useGuildConfig,
-  useModStats,
-} from "@/hooks/queries";
-import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
+import { ToggleRow } from "@/components/ui/ToggleRow";
+import { useActivePunishments, useChannels, useModStats } from "@/hooks/queries";
+import { useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
-import type { Channel, GuildConfig, MemberSearchResult } from "@/lib/api";
-import { queryKeys, updateGuildConfig } from "@/lib/api";
+import { useConfigDraft } from "@/hooks/useConfigDraft";
+import type { Channel, MemberSearchResult } from "@/lib/api";
+import { queryKeys } from "@/lib/api";
+import { CARD } from "@/lib/cn";
 
 type DialogState = { kind: PunishKind; member: MemberSearchResult | null };
 
 export default function ModerationPage() {
   const params = useParams();
   const guildId = params.guildId as string;
-  const toast = useToast();
   const qc = useQueryClient();
 
-  const [config, setConfig] = useState<GuildConfig>({});
+  const { config, setConfig, saving, loading, configReady, saveConfig } =
+    useConfigDraft(guildId);
   const [channels, setChannels] = useState<Channel[]>([]);
-  const [saving, setSaving] = useState(false);
   const [dialog, setDialog] = useState<DialogState | null>(null);
 
-  const configQ = useGuildConfig(guildId);
   const channelsQ = useChannels(guildId);
-  const loading = configQ.isLoading;
-  useRedirectOnError(configQ.isError, configQ.error);
-  const configReady = useSeedOnce(configQ.data, setConfig);
   useSeedOnce(channelsQ.data, setChannels);
 
   /** Po każdej akcji odśwież statystyki, aktywne kary, dziennik i karty użytkowników. */
@@ -72,22 +63,13 @@ export default function ModerationPage() {
     qc.invalidateQueries({ queryKey: ["warnings", guildId] });
   }, [qc, guildId]);
 
-  async function handleSave() {
-    setSaving(true);
-    try {
-      await updateGuildConfig(guildId, {
-        modLogChannelId: config.modLogChannelId,
-        dmOnPunish: config.dmOnPunish ?? false,
-        autoBanThreshold: config.autoBanThreshold ?? 0,
-        warnDecayDays: config.warnDecayDays ?? 0,
-      });
-      toast("Zapisano zmiany.", "success");
-    } catch {
-      toast("Nie udało się zapisać.", "error");
-    } finally {
-      setSaving(false);
-    }
-  }
+  const handleSave = () =>
+    saveConfig({
+      modLogChannelId: config.modLogChannelId,
+      dmOnPunish: config.dmOnPunish ?? false,
+      autoBanThreshold: config.autoBanThreshold ?? 0,
+      warnDecayDays: config.warnDecayDays ?? 0,
+    });
 
   const { status: autoSaveStatus } = useAutoSave(
     JSON.stringify({
@@ -143,7 +125,7 @@ export default function ModerationPage() {
       <ModStatsBar guildId={guildId} />
 
       {/* Szybkie akcje */}
-      <div className="surface-raised rounded-xl border border-border bg-card p-5">
+      <div className={`${CARD} p-5`}>
         <div className="mb-4 flex items-center gap-2">
           <Zap className="h-4 w-4 text-primary" />
           <div>
@@ -193,7 +175,7 @@ export default function ModerationPage() {
             <ActivePunishments guildId={guildId} onChanged={refreshAll} />
 
             {/* Ustawienia */}
-            <div className="surface-raised rounded-xl border border-border bg-card">
+            <div className={CARD}>
               <div className="flex items-center justify-between border-b border-border px-5 py-4">
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="h-4 w-4 text-primary" />
@@ -219,7 +201,7 @@ export default function ModerationPage() {
                   hint="Tutaj trafiają logi: warn, mute, kick, ban. Audyt zapisuje się też do bazy."
                 />
 
-                <Toggle
+                <ToggleRow
                   label="DM przy karze"
                   desc="Informuj użytkownika o nałożonej karze."
                   checked={config.dmOnPunish ?? false}
@@ -227,7 +209,7 @@ export default function ModerationPage() {
                 />
 
                 <div>
-                  <Toggle
+                  <ToggleRow
                     label="Auto-ban po ostrzeżeniach"
                     desc="Eskaluj automatycznie po przekroczeniu progu."
                     checked={(config.autoBanThreshold ?? 0) > 0}
@@ -260,7 +242,7 @@ export default function ModerationPage() {
                 </div>
 
                 <div>
-                  <Toggle
+                  <ToggleRow
                     label="Wygasanie ostrzeżeń"
                     desc="Stare ostrzeżenia znikają z licznika (audyt zostaje)."
                     checked={(config.warnDecayDays ?? 0) > 0}
@@ -384,28 +366,6 @@ function StatCard({
         )}
         <p className="truncate text-xs text-gray-400">{label}</p>
       </div>
-    </div>
-  );
-}
-
-function Toggle({
-  checked,
-  onChange,
-  label,
-  desc,
-}: {
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  label: string;
-  desc?: string;
-}) {
-  return (
-    <div className="flex items-start justify-between gap-4">
-      <div className="min-w-0">
-        <p className="text-sm text-white">{label}</p>
-        {desc && <p className="text-xs text-gray-400">{desc}</p>}
-      </div>
-      <Switch checked={checked} onCheckedChange={onChange} className="mt-0.5" />
     </div>
   );
 }

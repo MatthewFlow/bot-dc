@@ -3,6 +3,7 @@
 import { Gift, Sparkles, Timer, Trophy } from "lucide-react";
 
 import { PageHeader } from "@/components/PageHeader";
+import { CARD } from "@/lib/cn";
 
 const PREVIEW = [
   {
@@ -38,7 +39,7 @@ export default function GiveawaysPage() {
       />
 
       {/* Komunikat „wkrótce" */}
-      <div className="surface-raised rounded-xl border border-border bg-card p-10 text-center">
+      <div className={`${CARD} p-10 text-center`}>
         <span className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
           <Gift className="size-7" />
         </span>
@@ -57,10 +58,7 @@ export default function GiveawaysPage() {
       <div className="pointer-events-none select-none opacity-50">
         <div className="grid gap-4 sm:grid-cols-3">
           {PREVIEW.map((p) => (
-            <div
-              key={p.title}
-              className="surface-raised rounded-xl border border-border bg-card p-5"
-            >
+            <div key={p.title} className={`${CARD} p-5`}>
               <span className="mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-white/5 text-gray-300">
                 <p.icon className="size-5" />
               </span>

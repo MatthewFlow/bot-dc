@@ -9,6 +9,7 @@ import { Avatar } from "@/components/Avatar";
 import { Skeleton } from "@/components/Skeleton";
 import type { Guild, User } from "@/lib/api";
 import { getGuilds, getMe, logout } from "@/lib/api";
+import { CARD } from "@/lib/cn";
 import { discordAvatarUrl } from "@/lib/format";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3002";
@@ -209,7 +210,7 @@ export default function DashboardPage() {
             </a>
           </div>
         ) : filtered.length === 0 ? (
-          <div className="surface-raised rounded-xl border border-border bg-card px-6 py-12 text-center text-sm text-gray-400">
+          <div className={`${CARD} px-6 py-12 text-center text-sm text-gray-400`}>
             Brak serwerów pasujących do „{query}”.
           </div>
         ) : (

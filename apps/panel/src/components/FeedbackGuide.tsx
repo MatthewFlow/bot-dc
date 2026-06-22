@@ -7,6 +7,8 @@ import {
   Star,
 } from "lucide-react";
 
+import { CARD } from "@/lib/cn";
+
 const STEPS: { icon: LucideIcon; title: string; desc: string }[] = [
   {
     icon: LayoutGrid,
@@ -33,7 +35,7 @@ const STEPS: { icon: LucideIcon; title: string; desc: string }[] = [
 /** „Jak to działa?" — cztery statyczne karty-kroki (informacyjne, bez progresji). */
 export function FeedbackGuide() {
   return (
-    <div className="surface-raised rounded-xl border border-border bg-card p-5">
+    <div className={`${CARD} p-5`}>
       <div className="mb-5 flex items-center gap-2">
         <Sparkles size={16} className="mt-0.5 shrink-0 self-start text-primary" />
         <div>

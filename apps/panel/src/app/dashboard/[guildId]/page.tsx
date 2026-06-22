@@ -37,11 +37,11 @@ import type {
   Ticket as TicketType,
 } from "@/lib/api";
 import { closeTicket, getMe, getTickets, queryKeys, TokenExpiredError } from "@/lib/api";
+import { CARD } from "@/lib/cn";
 import { formatCount as fmt } from "@/lib/format";
 import { relativeTime as timeAgo } from "@/lib/time";
 
-const CARD_BASE =
-  "surface-raised rounded-xl border border-border bg-card transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40";
+const CARD_BASE = `${CARD} transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40`;
 
 // ── Statystyki ──────────────────────────────────────────────────────────────
 

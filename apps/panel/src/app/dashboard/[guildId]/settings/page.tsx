@@ -44,12 +44,12 @@ import {
   useBotStatus,
   useChannels,
   useConfigAudit,
-  useGuildConfig,
   useGuildStats,
   useRoles,
 } from "@/hooks/queries";
-import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
+import { useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";
+import { useConfigDraft } from "@/hooks/useConfigDraft";
 import type { Channel, GuildConfig, Role } from "@/lib/api";
 import { queryKeys, updateGuildConfig } from "@/lib/api";
 import { CARD } from "@/lib/cn";
@@ -318,39 +318,26 @@ function SettingsSkeleton() {
 export default function SettingsPage() {
   const params = useParams();
   const guildId = params.guildId as string;
-  const toast = useToast();
   const qc = useQueryClient();
 
-  const [config, setConfig] = useState<GuildConfig>({});
+  const { config, setConfig, saving, loading, configReady, saveConfig } =
+    useConfigDraft(guildId);
   const [roles, setRoles] = useState<Role[]>([]);
   const [channels, setChannels] = useState<Channel[]>([]);
-  const [saving, setSaving] = useState(false);
 
-  const configQ = useGuildConfig(guildId);
   const rolesQ = useRoles(guildId);
   const channelsQ = useChannels(guildId);
-  // Bramka tylko na config; role/kanały (proxy do Discorda) dopełnią selekty w tle.
-  const loading = configQ.isLoading;
-  useRedirectOnError(configQ.isError, configQ.error);
-  const configReady = useSeedOnce(configQ.data, setConfig);
+  // Role/kanały (proxy do Discorda) dopełnią selekty w tle — nie blokują formularza.
   useSeedOnce(rolesQ.data, setRoles);
   useSeedOnce(channelsQ.data, setChannels);
 
   async function handleSave() {
-    setSaving(true);
-    try {
-      await updateGuildConfig(guildId, {
-        adminRoleId: config.adminRoleId,
-        modLogChannelId: config.modLogChannelId,
-        disabledModules: config.disabledModules ?? [],
-      });
-      qc.invalidateQueries({ queryKey: queryKeys.configAudit(guildId) });
-      toast("Zapisano zmiany.", "success");
-    } catch {
-      toast("Nie udało się zapisać.", "error");
-    } finally {
-      setSaving(false);
-    }
+    await saveConfig({
+      adminRoleId: config.adminRoleId,
+      modLogChannelId: config.modLogChannelId,
+      disabledModules: config.disabledModules ?? [],
+    });
+    qc.invalidateQueries({ queryKey: queryKeys.configAudit(guildId) });
   }
 
   const { status: autoSaveStatus } = useAutoSave(

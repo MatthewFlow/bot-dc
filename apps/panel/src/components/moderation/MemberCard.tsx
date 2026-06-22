@@ -19,6 +19,7 @@ import { ConfirmModal } from "@/components/confirmModal";
 import { useToast } from "@/components/toast";
 import { useMemberHistory, useMemberProfile } from "@/hooks/queries";
 import { clearWarnings, type MemberSearchResult } from "@/lib/api";
+import { CARD } from "@/lib/cn";
 import { relativeTime } from "@/lib/time";
 
 import { PUNISH_META, PUNISH_ORDER, type PunishKind } from "./actionMeta";
@@ -124,7 +125,7 @@ export function MemberCard({
   }
 
   return (
-    <div className="surface-raised rounded-xl border border-border bg-card">
+    <div className={CARD}>
       <div className="flex items-center gap-2 border-b border-border px-5 py-4">
         <UserSearch className="h-4 w-4 text-primary" />
         <div>
