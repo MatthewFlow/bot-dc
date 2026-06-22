@@ -108,15 +108,6 @@ export function createBot() {
 
     console.log(`Zalogowano jako ${client.user.tag}`);
 
-    try {
-      if (process.env.RESET_COMMANDS === "true") {
-        await clearGuildCommands(client);
-      }
-      await registerCommands(client);
-    } catch (e) {
-      console.error("Rejestracja komend nie wyszła:", e);
-    }
-
     // Heartbeat do bazy — panel pokazuje na jego podstawie status online/offline.
     const beat = () =>
       botStatusRepository
@@ -148,6 +139,20 @@ export function createBot() {
 
     // Migawka stanu serwera gry (RCON) do DB — tylko gdy skonfigurowany.
     startGameStatusSweep();
+
+    // Rejestracja komend leci NA KOŃCU i w tle: to wolny, podatny na rate-limit PUT do
+    // Discorda. Gdyby się zawiesił, nie może blokować heartbeatu ani zadań tła powyżej
+    // (wcześniej był przed nimi i jeden zawieszony PUT zostawiał bota jako "offline").
+    void (async () => {
+      try {
+        if (process.env.RESET_COMMANDS === "true") {
+          await clearGuildCommands(client);
+        }
+        await registerCommands(client);
+      } catch (e) {
+        console.error("Rejestracja komend nie wyszła:", e);
+      }
+    })();
   });
 
   client.on("guildCreate", onGuildCreate);
