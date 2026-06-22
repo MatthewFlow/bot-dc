@@ -16,8 +16,11 @@ const BATCH = 20;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-/** Następny termin zadania cyklicznego — przeskakuje pominięte przebiegi (catch-up). */
-function nextRun(from: Date, recurrence: JobRecurrence): Date {
+/**
+ * Następny termin zadania cyklicznego — przeskakuje pominięte przebiegi (catch-up).
+ * Eksportowane na potrzeby testów jednostkowych.
+ */
+export function nextRun(from: Date, recurrence: JobRecurrence): Date {
   const step = recurrence === "weekly" ? 7 * DAY_MS : DAY_MS;
   let next = from.getTime() + step;
   const now = Date.now();

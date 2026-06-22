@@ -6,6 +6,19 @@ import { getCachedGuildConfig } from "../utils/configCache";
 // Sanity cap na okno (raidWindowSeconds clampowane do 300 s w sanitize).
 const RAID_MAX_WINDOW_MS = 5 * 60_000;
 
+/**
+ * Okno detekcji w ms: min. 2 s, maks. {@link RAID_MAX_WINDOW_MS}. Eksportowane,
+ * by przetestować granice clampu (defensywnie wobec wartości spoza sanitize).
+ */
+export function raidWindowMs(raidWindowSeconds?: number): number {
+  return Math.min(Math.max(2, raidWindowSeconds ?? 10) * 1000, RAID_MAX_WINDOW_MS);
+}
+
+/** Próg wejść: min. 2 (domyślnie 10). Eksportowane na potrzeby testów. */
+export function raidThreshold(raidJoinCount?: number): number {
+  return Math.max(2, raidJoinCount ?? 10);
+}
+
 type Join = { at: number; member: GuildMember };
 // guildId -> ostatnie wejścia w oknie; guildId -> czas ostatniego alertu (cooldown).
 const joins = new Map<string, Join[]>();
@@ -80,11 +93,8 @@ export async function checkRaid(member: GuildMember): Promise<void> {
 
   const guildId = member.guild.id;
   const now = Date.now();
-  const windowMs = Math.min(
-    Math.max(2, am.raidWindowSeconds ?? 10) * 1000,
-    RAID_MAX_WINDOW_MS,
-  );
-  const threshold = Math.max(2, am.raidJoinCount ?? 10);
+  const windowMs = raidWindowMs(am.raidWindowSeconds);
+  const threshold = raidThreshold(am.raidJoinCount);
 
   const recent = (joins.get(guildId) ?? []).filter((j) => now - j.at < windowMs);
   recent.push({ at: now, member });
