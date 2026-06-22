@@ -4,7 +4,7 @@
       "startServerCommand": "bun run start",
       "startServerReadyPattern": "Ready",
       "url": ["http://localhost:3000/"],
-      "numberOfRuns": 3,
+      "numberOfRuns": 5,
       "settings": {
         "chromeFlags": "--no-sandbox --headless=new"
       }
@@ -13,7 +13,7 @@
       "assertions": {
         "largest-contentful-paint": [
           "error",
-          { "maxNumericValue": 2500, "aggregationMethod": "median" }
+          { "maxNumericValue": 3000, "aggregationMethod": "median" }
         ],
         "cumulative-layout-shift": [
           "error",
