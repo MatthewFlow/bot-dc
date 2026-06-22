@@ -22,6 +22,14 @@ type LogCategory =
   | "roleChanges"
   | "nicknameChanges";
 
+/**
+ * Edycje starsze niż ten próg nie są logowane. Świeża edycja treści dociera przez
+ * gateway w ułamku sekundy; większy timestamp to ponownie dostarczone MESSAGE_UPDATE
+ * dawnej wiadomości (np. odświeżenie embedu), którego nie chcemy raportować jako "edycję".
+ * Godzinny zapas spokojnie łapie każdą realną edycję, a odcina triggery sprzed miesięcy.
+ */
+const STALE_EDIT_THRESHOLD_MS = 60 * 60 * 1000;
+
 /** Resolves the log config + target channel for a category, or null if disabled. */
 async function resolveContext(
   guild: Guild,
@@ -138,6 +146,23 @@ export async function onMessageUpdateLog(
   newMessage: Message | PartialMessage,
 ) {
   if (!newMessage.guild || newMessage.author?.bot) return;
+
+  // Discord wysyła messageUpdate także dla zdarzeń niebędących edycją treści:
+  // doładowanie podglądu linku/embedów, przypięcie, zmiana flag. Prawdziwa edycja
+  // treści ustawia editedTimestamp — jego brak oznacza, że nie ma czego logować.
+  const editedAt = newMessage.editedTimestamp;
+  if (editedAt === null) return;
+
+  // Pomiń "stare" edycje. Discord potrafi ponownie dostarczyć MESSAGE_UPDATE dla
+  // dawnej wiadomości (np. odświeżenie embedu starego formularza), a editedTimestamp
+  // wskazuje wtedy na edycję sprzed miesięcy/lat. Świeża edycja dociera w czasie
+  // rzeczywistym, więc logujemy tylko zmiany z ostatniej chwili.
+  if (Date.now() - editedAt > STALE_EDIT_THRESHOLD_MS) return;
+
+  // Bez starej wersji (wiadomość spoza cache) nie znamy treści "Przed" ani tego, czy
+  // tekst faktycznie się zmienił — pomijamy zamiast logować bezużyteczne "(niedostępna)".
+  if (oldMessage.partial) return;
+
   if (oldMessage.content === newMessage.content) return; // ignore non-content edits
   const ctx = await resolveContext(newMessage.guild, "messageEdit");
   if (!ctx) return;
