@@ -14,6 +14,8 @@ interface HowItWorksProps {
   title?: string;
   /** Podtytuł pod nagłówkiem (tylko wariant kartowy). */
   subtitle?: string;
+  /** Ikona nagłówka (domyślnie żarówka; guidy używają `Sparkles`). */
+  icon?: LucideIcon;
   className?: string;
 }
 
@@ -26,6 +28,7 @@ export function HowItWorks({
   cards,
   title = "Jak to działa?",
   subtitle,
+  icon: Icon = Lightbulb,
   className = "",
 }: HowItWorksProps) {
   if (cards) {
@@ -35,7 +38,7 @@ export function HowItWorks({
         className={`surface-raised rounded-xl border border-border bg-card p-5 ${className}`}
       >
         <div className="mb-5 flex items-center gap-2">
-          <Lightbulb size={16} className="mt-0.5 shrink-0 self-start text-primary" />
+          <Icon size={16} className="mt-0.5 shrink-0 self-start text-primary" />
           <div>
             <p className="text-sm font-semibold text-white">{title}</p>
             {subtitle && <p className="text-xs text-gray-400">{subtitle}</p>}
