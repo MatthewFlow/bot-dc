@@ -335,6 +335,16 @@ export const commands = [
     .setName("test_goodbye")
     .setDescription("Testowe pożegnanie (wysyła na ustawiony kanał)"),
 
+  new SlashCommandBuilder()
+    .setName("test_translate")
+    .setDescription("Testuje tłumaczenie DeepL (próbka albo wybrana wiadomość)")
+    .addStringOption((opt) =>
+      opt
+        .setName("wiadomosc_id")
+        .setDescription("ID wiadomości z tego kanału do przetłumaczenia (puste = próbka)")
+        .setRequired(false),
+    ),
+
   ...(isGameServerConfigured() ? gameCommands : []),
 ].map((c) => c.toJSON());
 

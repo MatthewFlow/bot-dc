@@ -38,7 +38,12 @@ import {
   handleModWarn,
   handleModWarnings,
 } from "./mod";
-import { handleCfgAddXp, handleTestGoodbye, handleTestWelcome } from "./test";
+import {
+  handleCfgAddXp,
+  handleTestGoodbye,
+  handleTestTranslate,
+  handleTestWelcome,
+} from "./test";
 import { handleFeedback, handleLeaderboard, handleLevel, handleProfile } from "./user";
 
 type Handler = (interaction: ChatInputCommandInteraction) => Promise<void>;
@@ -84,6 +89,7 @@ const handlers: Record<string, Handler> = {
   ticket_delete: handleTicketDelete,
   test_welcome: handleTestWelcome,
   test_goodbye: handleTestGoodbye,
+  test_translate: handleTestTranslate,
   game_status: handleGameStatus,
   game_players: handleGamePlayers,
   game_announce: handleGameAnnounce,

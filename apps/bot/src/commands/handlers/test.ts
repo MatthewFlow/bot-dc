@@ -8,9 +8,26 @@ import { ChannelType, type ChatInputCommandInteraction, EmbedBuilder } from "dis
 
 import { applyAutoRole } from "../../levels/autorole";
 import { notifyLevelUp } from "../../levels/levelUpNotify";
+import { translate } from "../../translation/deepl";
+import { gatherTranslatable, translationLabel } from "../../translation/handler";
 
 const DEFAULT_WELCOME = "Siema {user}, miło że jesteś 😄";
 const DEFAULT_GOODBYE = "{username} wyszedł z serwera.";
+
+/** Przykładowe ogłoszenie The Isle do testu tłumaczenia (gdy nie podano ID). */
+const SAMPLE_ANNOUNCEMENT = [
+  "Hey Islanders,",
+  "",
+  "We're deploying a new build. You may need to restart your Steam client if the update is not immediately available to download.",
+  "",
+  "**Hordetesting - 0.21.659**",
+  "```",
+  "Additional fixes to palettes and skins",
+  "Fixed tyrannosaurus drink animation not ending correctly",
+  "Improved austroraptor underwater visibility",
+  "```",
+  "Herrerasaurus has been temporarily disabled for this build.",
+].join("\n");
 
 /** Variable replacer for test commands — uses the invoking user as the sample member. */
 function testReplacer(
@@ -71,6 +88,57 @@ export async function handleCfgAddXp(interaction: ChatInputCommandInteraction) {
       `XP: **${oldXp} → ${newXp}**\n` +
       `Level: **${oldLevel} → ${result.newLevel}**`,
   });
+}
+
+/**
+ * `/test_translate` — sprawdza tłumaczenie DeepL. Bez argumentu tłumaczy wbudowaną
+ * próbkę ogłoszenia; z `wiadomosc_id` pobiera tę wiadomość z bieżącego kanału i ją
+ * tłumaczy. Odpowiada ephemerally (nie zaśmieca kanału). Język bierze z configu.
+ */
+export async function handleTestTranslate(interaction: ChatInputCommandInteraction) {
+  const guildId = interaction.guildId!;
+  const cfg = await guildConfigRepository.get(guildId);
+  const targetLang = cfg?.translation?.targetLang ?? "PL";
+  const messageId = interaction.options.getString("wiadomosc_id");
+
+  // DeepL bywa wolniejszy niż 3 s — defer, by nie wygasł token interakcji.
+  await interaction.deferReply({ ephemeral: true });
+
+  let source = SAMPLE_ANNOUNCEMENT;
+  if (messageId) {
+    const channel = interaction.channel;
+    if (!channel || !channel.isTextBased()) {
+      await interaction.editReply("Użyj tej komendy na kanale tekstowym.");
+      return;
+    }
+    const msg = await channel.messages.fetch(messageId).catch(() => null);
+    if (!msg) {
+      await interaction.editReply(
+        "Nie znaleziono wiadomości o tym ID na tym kanale (uruchom komendę tam, gdzie jest wiadomość).",
+      );
+      return;
+    }
+    source = gatherTranslatable(msg);
+    if (!source) {
+      await interaction.editReply("Ta wiadomość nie ma tekstu do przetłumaczenia.");
+      return;
+    }
+  }
+
+  const translated = await translate(source, targetLang);
+  if (!translated) {
+    await interaction.editReply(
+      "Tłumaczenie nie powiodło się — sprawdź, czy ustawiono `DEEPL_API_KEY`.",
+    );
+    return;
+  }
+
+  const embed = new EmbedBuilder()
+    .setColor(0xd4a843)
+    .setAuthor({ name: `${translationLabel(targetLang)} (TEST)` })
+    .setDescription(translated.slice(0, 4096));
+
+  await interaction.editReply({ embeds: [embed] });
 }
 
 export async function handleTestWelcome(interaction: ChatInputCommandInteraction) {

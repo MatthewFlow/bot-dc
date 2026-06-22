@@ -12,6 +12,22 @@ const LANG_LABEL: Record<string, string> = {
   FR: "🇫🇷 Traduction",
 };
 
+/** Tytuł embeda tłumaczenia dla danego języka docelowego. */
+export function translationLabel(lang: string): string {
+  return LANG_LABEL[lang] ?? "🌍 Tłumaczenie";
+}
+
+/** Zbiera tekst źródłowy wiadomości: treść + tytuły/opisy embedów. */
+export function gatherTranslatable(message: Message): string {
+  const parts: string[] = [];
+  if (message.content) parts.push(message.content);
+  for (const e of message.embeds) {
+    if (e.title) parts.push(`**${e.title}**`);
+    if (e.description) parts.push(e.description);
+  }
+  return parts.join("\n\n").trim();
+}
+
 /**
  * Auto-tłumaczenie: gdy na skonfigurowanym kanale-źródle pojawi się wiadomość
  * (zwykle webhook śledzonego kanału ogłoszeń), bot tłumaczy jej treść i embedy
@@ -30,14 +46,7 @@ export async function onTranslateMessage(message: Message): Promise<void> {
     if (!t?.enabled || !t.sourceChannelId) return;
     if (message.channelId !== t.sourceChannelId) return;
 
-    // Zbierz tekst źródłowy: treść + tytuły/opisy embedów.
-    const parts: string[] = [];
-    if (message.content) parts.push(message.content);
-    for (const e of message.embeds) {
-      if (e.title) parts.push(`**${e.title}**`);
-      if (e.description) parts.push(e.description);
-    }
-    const source = parts.join("\n\n").trim();
+    const source = gatherTranslatable(message);
     if (!source) return;
 
     const translated = await translate(source, t.targetLang);
@@ -45,7 +54,7 @@ export async function onTranslateMessage(message: Message): Promise<void> {
 
     const embed = new EmbedBuilder()
       .setColor(0xd4a843)
-      .setAuthor({ name: LANG_LABEL[t.targetLang] ?? "🌍 Tłumaczenie" })
+      .setAuthor({ name: translationLabel(t.targetLang) })
       // Limit opisu embeda Discorda to 4096 znaków.
       .setDescription(translated.slice(0, 4096));
 
