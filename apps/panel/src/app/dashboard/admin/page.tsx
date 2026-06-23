@@ -165,7 +165,7 @@ export default function AdminOverviewPage() {
                   <Glyph src={g.icon} alt={g.name} size={40} rounded="rounded-lg" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold text-white">{g.name}</p>
-                    <p className="text-xs text-gray-500">{g.id}</p>
+                    <p className="truncate text-xs text-gray-500">{g.id}</p>
                   </div>
 
                   <div className="hidden items-center gap-1.5 text-sm text-gray-300 sm:flex">
@@ -173,7 +173,7 @@ export default function AdminOverviewPage() {
                     {g.memberCount != null ? g.memberCount.toLocaleString("pl-PL") : "—"}
                   </div>
 
-                  <div className="flex w-40 shrink-0 items-center justify-end gap-2">
+                  <div className="flex w-28 shrink-0 items-center justify-end gap-2 sm:w-40">
                     {g.owner ? (
                       <>
                         <Glyph
