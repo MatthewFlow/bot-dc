@@ -53,6 +53,7 @@ services:
       PANEL_URL: "${PUBLIC_URL}"
       CORS_ORIGINS: "${PUBLIC_URL}"
       COOKIE_SECURE: "${COOKIE_SECURE:-true}" # ustaw false przy wdrożeniu na samym IP po HTTP
+      OWNER_DISCORD_IDS: ${OWNER_DISCORD_IDS:-} # Discord ID właścicieli owner-panelu (/admin)
     depends_on:
       mongo:
         condition: service_healthy # start dopiero gdy baza odpowiada
