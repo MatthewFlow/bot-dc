@@ -53,7 +53,7 @@ import { useConfigDraft } from "@/hooks/useConfigDraft";
 import type { Channel, GuildConfig, Role } from "@/lib/api";
 import { queryKeys, updateGuildConfig } from "@/lib/api";
 import { CARD } from "@/lib/cn";
-import { relativeTime } from "@/lib/time";
+import { formatUptime, relativeTime } from "@/lib/time";
 
 /** Moduły przełączane przez `disabledModules`. Auto-moderacja i Logi serwera mają
  *  własny master-switch na swoich stronach, więc tu ich nie ma. */
@@ -84,19 +84,6 @@ const MODULES: { key: string; label: string; desc: string; icon: LucideIcon }[] 
     icon: Sparkles,
   },
 ];
-
-/** Formatuje uptime ze startedAt: „14d 06:21" lub „06:21". */
-function formatUptime(startedAt: string | null | undefined): string {
-  if (!startedAt) return "—";
-  const ms = Date.now() - new Date(startedAt).getTime();
-  if (ms < 0) return "—";
-  const totalMin = Math.floor(ms / 60_000);
-  const days = Math.floor(totalMin / 1440);
-  const hours = Math.floor((totalMin % 1440) / 60);
-  const mins = totalMin % 60;
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return days > 0 ? `${days}d ${pad(hours)}:${pad(mins)}` : `${pad(hours)}:${pad(mins)}`;
-}
 
 function StatRow({
   icon: Icon,

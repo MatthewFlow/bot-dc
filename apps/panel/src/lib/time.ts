@@ -31,6 +31,19 @@ export function waitingSince(input: DateInput): string {
   return d === 1 ? "1 dzień" : `${d} dni`;
 }
 
+/** Uptime ze `startedAt`: „14d 06:21" lub „06:21". `—` gdy brak/niepoprawne. */
+export function formatUptime(startedAt: string | null | undefined): string {
+  if (!startedAt) return "—";
+  const ms = Date.now() - new Date(startedAt).getTime();
+  if (ms < 0) return "—";
+  const totalMin = Math.floor(ms / 60_000);
+  const days = Math.floor(totalMin / 1440);
+  const hours = Math.floor((totalMin % 1440) / 60);
+  const mins = totalMin % 60;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return days > 0 ? `${days}d ${pad(hours)}:${pad(mins)}` : `${pad(hours)}:${pad(mins)}`;
+}
+
 /** Czas dzienny: „dziś", „wczoraj", „N dni temu", a starsze — data (do feedbacku). */
 export function dayAgo(input: DateInput): string {
   const date = toDate(input);

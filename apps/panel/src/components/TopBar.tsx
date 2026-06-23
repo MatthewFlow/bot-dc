@@ -74,7 +74,10 @@ export function TopBar({ guildName }: { guildName: string }) {
             <ServerCog size={17} />
           </Link>
         )}
-        <BotStatusBadge />
+        {/* Status bota: na desktopie żyje w sidebarze, w TopBarze tylko na mobile. */}
+        <div className="md:hidden">
+          <BotStatusBadge />
+        </div>
         <NotificationBell guildId={guildId} />
         {user ? (
           <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card/60 py-1.5 pl-2.5 pr-1.5">

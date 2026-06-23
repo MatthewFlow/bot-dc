@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { SidebarBotStatus } from "@/components/SidebarBotStatus";
 import { prefetchGuildData } from "@/lib/api";
 import { NAV_GROUPS, NAV_TOP, type NavItem } from "@/lib/nav";
 
@@ -136,6 +137,11 @@ export function Sidebar({
           <p className="truncate text-sm font-semibold text-white">{guildName}</p>
           <p className="text-xs text-gray-400">Discord Bot</p>
         </div>
+      </div>
+
+      {/* Status bota — przeniesiony tu z TopBara (na desktopie); na mobile zostaje w TopBarze. */}
+      <div className="px-3 pt-3">
+        <SidebarBotStatus />
       </div>
 
       {/* Nav */}
