@@ -64,17 +64,19 @@ export function useLeaderboard(guildId: string, limit = 10) {
   });
 }
 
-export function useTickets(guildId: string, status?: TicketStatus) {
+export function useTickets(guildId: string, status?: TicketStatus, poll = false) {
   return useQuery({
     queryKey: queryKeys.tickets(guildId, status),
     queryFn: () => getTickets(guildId, status),
+    refetchInterval: poll ? 60_000 : undefined,
   });
 }
 
-export function useModActions(guildId: string, limit = 25) {
+export function useModActions(guildId: string, limit = 25, poll = false) {
   return useQuery({
     queryKey: queryKeys.modActions(guildId, limit),
     queryFn: () => getModActions(guildId, limit),
+    refetchInterval: poll ? 60_000 : undefined,
   });
 }
 
@@ -225,7 +227,7 @@ export function useButtonRoles(guildId: string) {
   });
 }
 
-export function useGuildFeedback(guildId: string) {
+export function useGuildFeedback(guildId: string, poll = false) {
   return useQuery({
     queryKey: queryKeys.guildFeedback(guildId),
     queryFn: () => getGuildFeedback(guildId),
@@ -233,5 +235,6 @@ export function useGuildFeedback(guildId: string) {
     // refetchuj jej przy każdym powrocie/refocusie. 30 s świeżości + jawny „Odśwież".
     staleTime: 30_000,
     refetchOnWindowFocus: false,
+    refetchInterval: poll ? 60_000 : undefined,
   });
 }

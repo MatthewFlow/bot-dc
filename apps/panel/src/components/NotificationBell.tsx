@@ -87,9 +87,10 @@ export function NotificationBell({ guildId }: { guildId: string }) {
   const [lastSeen, setLastSeen] = useState<number | null>(null);
   const seenKey = `jh_notif_seen_${guildId}`;
 
-  const feedbackQ = useGuildFeedback(guildId);
-  const ticketsQ = useTickets(guildId);
-  const modQ = useModActions(guildId, 15);
+  // Polling co 60 s — dzwonek aktualizuje się „na żywo" bez wchodzenia na strony.
+  const feedbackQ = useGuildFeedback(guildId, true);
+  const ticketsQ = useTickets(guildId, undefined, true);
+  const modQ = useModActions(guildId, 15, true);
 
   useEffect(() => {
     try {
