@@ -10,6 +10,7 @@ import {
   fetchRoles,
   getActivePunishments,
   getActivity,
+  getAdminOverview,
   getBotStatus,
   getButtonRoles,
   getConfigAudit,
@@ -142,6 +143,19 @@ export function useBotStatus(poll = false) {
     queryFn: getBotStatus,
     staleTime: poll ? 30_000 : 60_000,
     refetchInterval: poll ? 30_000 : undefined,
+  });
+}
+
+/**
+ * Owner panel — zbiorczy widok serwerów bota. `retry: false`, bo 403 (brak
+ * uprawnień) nie ma sensu ponawiać; strona pokazuje wtedy „brak dostępu".
+ */
+export function useAdminOverview() {
+  return useQuery({
+    queryKey: queryKeys.adminOverview(),
+    queryFn: getAdminOverview,
+    staleTime: 60_000,
+    retry: false,
   });
 }
 

@@ -66,6 +66,7 @@ export const queryKeys = {
   memberSearch: (g: string, q: string) => ["member-search", g, q] as const,
   warnings: (g: string, userId: string) => ["warnings", g, userId] as const,
   botStatus: () => ["bot-status"] as const,
+  adminOverview: () => ["admin-overview"] as const,
   configAudit: (g: string) => ["config-audit", g] as const,
   jobs: (g: string) => ["jobs", g] as const,
   gameServer: (g: string) => ["gameserver", g] as const,

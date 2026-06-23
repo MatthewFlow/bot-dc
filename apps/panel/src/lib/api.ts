@@ -2,6 +2,7 @@
 // domenowe w `lib/api/*` (rdzeń fetch + cache, typy, auth, guilds, self-roles,
 // moderacja, joby/serwer gry, feedback, status). Ten barrel zachowuje jeden
 // import — `@/lib/api` — więc miejsca użycia pozostają bez zmian.
+export * from "./api/admin";
 export * from "./api/auth";
 export * from "./api/core";
 export * from "./api/feedback";

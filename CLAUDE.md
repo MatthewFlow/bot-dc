@@ -231,6 +231,9 @@ variables (`AppVariables` in `types.ts`).
     category/rating/message validated), `GET /feedback/mine`.
   - `src/routes/status.ts` (auth-only): `GET /bot/status` — online if the last heartbeat is
     fresher than 90s, plus tag/avatar/guild count/last seen.
+  - `src/routes/admin.ts` (auth + `ownerGuard`): `GET /admin/overview` — owner-only aggregate of
+    every guild the bot is in (live from Discord: name/icon/member count + resolved owner) plus
+    totals. `src/lib/ownerGuard.ts` gates on `OWNER_DISCORD_IDS`. Panel page: `/dashboard/admin`.
   - `GET /health`.
 - **Channel guard**: endpoints that post to a `channelId` from the request body or config
   (ticket-panel, feedback-panel, reaction/button roles) first verify the channel belongs to the
@@ -281,7 +284,7 @@ Next.js 16 App Router; all dashboard pages are client components (`"use client"`
 | bot   | `PANEL_URL`                | Panel URL shown in the onboarding intro message                                     |
 | bot   | `CFG_ADMIN_ROLE_ID`        | Legacy fallback admin role (prefer native Administrator or per-guild `adminRoleId`) |
 | bot   | `RESET_COMMANDS`           | Set `true` once to clear & re-register slash commands                               |
-| bot   | `DEEPL_API_KEY`            | DeepL free-tier key for auto-translation (optional — feature no-ops if unset)        |
+| bot   | `DEEPL_API_KEY`            | DeepL free-tier key for auto-translation (optional — feature no-ops if unset)       |
 | api   | `API_PORT`                 | API port (default 3002)                                                             |
 | api   | `DISCORD_TOKEN`            | Bot token — proxies channel/role/leaderboard/stats/panel requests                   |
 | api   | `DISCORD_CLIENT_ID/SECRET` | OAuth2 credentials                                                                  |
@@ -291,6 +294,7 @@ Next.js 16 App Router; all dashboard pages are client components (`"use client"`
 | api   | `CORS_ORIGINS`             | Comma-separated allowed browser origins (falls back to `PANEL_URL`)                 |
 | api   | `COOKIE_SECURE`            | Force the Secure flag on the auth cookie (auto-on in production)                    |
 | api   | `TRUST_PROXY`              | Trust `X-Forwarded-For` for rate limiting behind a reverse proxy                    |
+| api   | `OWNER_DISCORD_IDS`        | Comma-separated Discord user IDs allowed into the owner panel (`/admin/overview`)   |
 | both  | `MONGODB_URI`              | MongoDB connection string                                                           |
 | both  | `NODE_ENV`                 | `production` enables fail-fast checks (api) and prod behaviour                      |
 | panel | `NEXT_PUBLIC_API_URL`      | API base URL, baked into the bundle at build (default `http://localhost:3002`)      |

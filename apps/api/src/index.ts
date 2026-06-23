@@ -5,6 +5,7 @@ import { cors } from "hono/cors";
 import { startGuildGuardSweep } from "./lib/guildGuard";
 import { initObservability, isObservabilityEnabled } from "./lib/observability";
 import { rateLimit } from "./middleware/rateLimit";
+import { adminRoutes } from "./routes/admin";
 import { authRoutes } from "./routes/authRoutes";
 import { buttonRoleRoutes } from "./routes/buttonRoles";
 import { eventsRoutes } from "./routes/events";
@@ -60,6 +61,7 @@ app.route("/guilds", gameServerRoutes);
 app.route("/guilds", eventsRoutes);
 app.route("/feedback", feedbackRoutes);
 app.route("/bot", statusRoutes);
+app.route("/admin", adminRoutes);
 
 app.get("/health", (c) => c.json({ ok: true }));
 

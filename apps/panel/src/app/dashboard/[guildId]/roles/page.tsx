@@ -24,13 +24,7 @@ import {
   useRoles,
 } from "@/hooks/queries";
 import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
-import type {
-  ButtonRole,
-  Channel,
-  EmbedConfig,
-  ReactionRole,
-  Role,
-} from "@/lib/api";
+import type { ButtonRole, Channel, EmbedConfig, ReactionRole, Role } from "@/lib/api";
 import {
   deleteButtonRole,
   deleteReactionRole,

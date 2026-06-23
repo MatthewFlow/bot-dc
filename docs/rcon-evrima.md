@@ -93,6 +93,6 @@ Zakładka **„Serwer gry"** (na razie placeholder „wkrótce", jak Giveaways).
 5. ✅ **Faza 4 (UI preview):** panel pokazuje pełny zestaw akcji (ogłoszenie, kick/ban gracza,
    zapis/restart), ale **wyszarzone/zablokowane** („wkrótce"); status i lista graczy działają na
    żywo. Nav ma plakietkę „wkrótce". Backend akcji jest gotowy — odblokowanie = zdjęcie `disabled`
-   + podpięcie istniejących endpointów/komend. Kalibracja protokołu czeka na realny serwer.
+   - podpięcie istniejących endpointów/komend. Kalibracja protokołu czeka na realny serwer.
 6. **Później:** odblokowanie akcji panelu po podłączeniu serwera; ew. wycięcie do osobnej usługi
    (kandydat na Go), kontrakt bez zmian.

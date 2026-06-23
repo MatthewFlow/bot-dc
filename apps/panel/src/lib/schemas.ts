@@ -40,3 +40,27 @@ export const botStatusSchema = z.object({
   startedAt: z.string().nullable().default(null),
   lastSeen: z.string().nullable(),
 });
+
+/** Owner panel: zbiorczy widok serwerów bota (tylko dla właścicieli z env). */
+export const adminOverviewSchema = z.object({
+  totals: z.object({
+    guildCount: z.number(),
+    memberCount: z.number(),
+    botOnline: z.boolean(),
+  }),
+  guilds: z.array(
+    z.object({
+      id: z.string(),
+      name: z.string(),
+      icon: z.string().nullable(),
+      memberCount: z.number().nullable(),
+      owner: z
+        .object({
+          id: z.string(),
+          name: z.string(),
+          avatar: z.string().nullable(),
+        })
+        .nullable(),
+    }),
+  ),
+});
