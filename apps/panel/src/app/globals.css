@@ -311,7 +311,40 @@ body {
     0 0 28px -6px rgba(212, 168, 67, 0.6);
 }
 
+/* `jh-bell-ring` — delikatne „dzwonienie" ikonki dzwonka, gdy są nieprzeczytane.
+   Animujemy tylko wewnętrzny <svg> (transform rotate, kompozytowany przez GPU),
+   więc plakietka licznika stoi w miejscu. Wiggle trwa krótko, potem długa pauza. */
+.jh-bell-ring svg {
+  transform-origin: top center;
+  animation: jh-bell-ring 2.6s var(--ease-out) infinite;
+}
+@keyframes jh-bell-ring {
+  0%,
+  70%,
+  100% {
+    transform: rotate(0);
+  }
+  74% {
+    transform: rotate(12deg);
+  }
+  79% {
+    transform: rotate(-9deg);
+  }
+  84% {
+    transform: rotate(6deg);
+  }
+  89% {
+    transform: rotate(-3deg);
+  }
+  94% {
+    transform: rotate(1deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .jh-bell-ring svg {
+    animation: none;
+  }
   .jh-in,
   .jh-stagger {
     animation: none;
