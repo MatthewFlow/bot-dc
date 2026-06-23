@@ -27,6 +27,8 @@ export const userSchema = z.object({
   username: z.string(),
   displayName: z.string().nullish(),
   avatar: z.string().nullable(),
+  // Starsze API/tokeny mogą nie zwracać tej flagi — domyślnie brak uprawnień właściciela.
+  isOwner: z.boolean().default(false),
 });
 
 export const botStatusSchema = z.object({

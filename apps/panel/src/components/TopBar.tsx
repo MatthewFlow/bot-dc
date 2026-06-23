@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronRight, LogOut } from "lucide-react";
+import { ChevronRight, LogOut, ServerCog } from "lucide-react";
+import Link from "next/link";
 import { useParams, usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -64,6 +65,15 @@ export function TopBar({ guildName }: { guildName: string }) {
 
       {/* Bell + user + logout */}
       <div className="flex shrink-0 items-center gap-3">
+        {user?.isOwner && (
+          <Link
+            href="/dashboard/admin"
+            title="Panel właściciela — wszystkie serwery bota"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card/60 text-gray-300 outline-none transition hover:bg-white/5 hover:text-white focus-visible:ring-2 focus-visible:ring-primary/40"
+          >
+            <ServerCog size={17} />
+          </Link>
+        )}
         <BotStatusBadge />
         <NotificationBell guildId={guildId} />
         {user ? (

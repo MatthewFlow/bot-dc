@@ -4,6 +4,7 @@ import { jwtVerify, SignJWT } from "jose";
 import { z } from "zod";
 
 import { DISCORD_API } from "../lib/discord";
+import { isOwner } from "../lib/ownerGuard";
 import { sessions } from "../lib/sessions";
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000;
@@ -182,6 +183,8 @@ authRoutes.get("/me", async (c) => {
       // Starsze tokeny mogą nie mieć displayName — wtedy null, panel pokaże samą nazwę.
       displayName: payload.displayName ?? null,
       avatar: payload.avatar,
+      // Czy to właściciel bota — panel pokazuje wtedy link do owner-panelu (/dashboard/admin).
+      isOwner: isOwner(userId),
     });
   } catch {
     return c.json({ error: "Invalid or expired token" }, 401);

@@ -402,6 +402,8 @@ export type User = {
   /** Pseudonim (display name) konta; null gdy nieustawiony — wtedy pokazujemy username. */
   displayName?: string | null;
   avatar: string | null;
+  /** Czy to właściciel bota (z `OWNER_DISCORD_IDS`) — odblokowuje link do owner-panelu. */
+  isOwner?: boolean;
 };
 
 export type ReactionRoleEntry = { emoji: string; roleId: string };
