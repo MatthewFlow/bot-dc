@@ -1,6 +1,7 @@
 "use client";
 
-import { ChevronRight, LogOut, Plus, Search, ServerOff } from "lucide-react";
+import { ChevronRight, LogOut, Plus, Search, ServerCog, ServerOff } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type CSSProperties, useEffect, useMemo, useState } from "react";
 
@@ -110,6 +111,16 @@ export default function DashboardPage() {
           ) : (
             user && (
               <div className="flex items-center gap-3">
+                {user.isOwner && (
+                  <Link
+                    href="/dashboard/admin"
+                    title="Panel właściciela — wszystkie serwery bota"
+                    className="flex h-8 items-center gap-1.5 rounded-lg border border-border bg-card px-3 text-xs font-medium text-gray-300 outline-none transition hover:bg-white/5 hover:text-white focus-visible:ring-2 focus-visible:ring-primary/40"
+                  >
+                    <ServerCog size={15} />
+                    <span className="hidden sm:inline">Owner panel</span>
+                  </Link>
+                )}
                 <Avatar
                   src={discordAvatarUrl(user.userId, user.avatar)}
                   name={user.displayName ?? user.username}
