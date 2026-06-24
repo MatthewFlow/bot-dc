@@ -1,6 +1,7 @@
 {
   "name": "jurassic-haven",
   "private": true,
+  "license": "UNLICENSED",
   "workspaces": [
     "apps/*",
     "packages/*"

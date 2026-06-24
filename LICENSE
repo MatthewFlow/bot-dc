@@ -1,21 +1,31 @@
-MIT License
+Jurassic Haven — Proprietary License
 
-Copyright (c) 2026 Mateusz Dynur
+Copyright (c) 2026 Mateusz Dynur. All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This software, including its source code, assets, and documentation (the
+"Software"), is the proprietary and confidential property of Mateusz Dynur
+(the "Author"). The Software is NOT open-source software.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+No license or right is granted to any person or entity to use, copy, modify,
+merge, publish, distribute, sublicense, sell, host, deploy, or create
+derivative works of the Software, in whole or in part, without the prior
+written permission of the Author.
+
+Where this repository or its source code is made publicly visible, such
+visibility is for reference and transparency only and does not grant any of
+the rights listed above.
+
+Any permitted use is governed solely by a separate written agreement signed by
+the Author. In the absence of such an agreement, all rights are reserved.
+
+Third-party components included in or used by the Software remain subject to
+their own respective licenses.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+For licensing inquiries, contact: matthew.dynur@gmail.com

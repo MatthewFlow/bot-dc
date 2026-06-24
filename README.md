@@ -109,3 +109,10 @@ bun run format
 # Check formatting
 bun run format:check
 ```
+
+## License
+
+Jurassic Haven is **proprietary software** — all rights reserved. See
+[LICENSE](./LICENSE). The source may be visible for reference, but no rights to
+use, copy, modify, deploy or resell are granted without prior written
+permission from the author.
