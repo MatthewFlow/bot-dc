@@ -38,6 +38,11 @@ test("INP na podstronie automod mieści się w budżecie", async ({ page }) => {
     }),
   );
   await page.route("**/guilds/*/feedback", json({ items: [], unread: 0, seenAt: null }));
+  // NotificationBell (w TopBarze layoutu) odpytuje tickety i akcje moderacji — bez tych
+  // mocków catch-all zwracał `{}`, a `for…of {}` w dzwonku wywracał cały layout serwera.
+  // Regex (nie glob), bo mod-actions ma query string (`?limit=15`).
+  await page.route(/\/guilds\/[^/]+\/tickets(\?|$)/, json([]));
+  await page.route(/\/guilds\/[^/]+\/mod-actions/, json([]));
 
   // 2) Mierz INP wprost przez Event Timing API (to samo źródło, z którego liczy web-vitals):
   //    najgorszy `duration` wśród zdarzeń z interactionId. Zero zależności i problemów z ESM.

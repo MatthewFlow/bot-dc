@@ -12,12 +12,15 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3002";
  * pollingu). Serwer wysyła lekkie sygnały — tu zamieniamy je na invalidację zapytań,
  * więc dane lecą przez istniejące endpointy. Polling hooków zostaje jako fallback,
  * gdyby SSE padło. Mountowane raz w layoucie serwera.
+ *
+ * `enabled` gatuje subskrypcję do momentu potwierdzenia dostępu do serwera —
+ * inaczej EventSource odpaliłby do `/events`, na które bramka API zwróci 403.
  */
-export function useGuildEvents(guildId: string) {
+export function useGuildEvents(guildId: string, enabled = true) {
   const qc = useQueryClient();
 
   useEffect(() => {
-    if (!guildId) return;
+    if (!guildId || !enabled) return;
 
     const es = new EventSource(`${API_URL}/guilds/${guildId}/events`, {
       withCredentials: true,
@@ -35,5 +38,5 @@ export function useGuildEvents(guildId: string) {
     });
 
     return () => es.close();
-  }, [guildId, qc]);
+  }, [guildId, enabled, qc]);
 }

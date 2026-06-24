@@ -3,10 +3,14 @@
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
+import { AccessDenied } from "@/components/AccessDenied";
 import { Sidebar } from "@/components/Sidebar";
 import { TopBar } from "@/components/TopBar";
 import { useGuildEvents } from "@/hooks/useGuildEvents";
-import { getGuilds, prefetchGuildData } from "@/lib/api";
+import { getGuilds, prefetchGuildData, TokenExpiredError } from "@/lib/api";
+
+/** Stan bramki dostępu do serwera (zanim zamontujemy podstrony). */
+type Access = "checking" | "granted" | "denied";
 
 export default function GuildLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -14,32 +18,63 @@ export default function GuildLayout({ children }: { children: React.ReactNode })
   const guildId = params.guildId as string;
   const [guildName, setGuildName] = useState("...");
   const [guildIcon, setGuildIcon] = useState<string | null>(null);
+  const [access, setAccess] = useState<Access>("checking");
 
-  // Real-time: odświeżanie statusu bota i aktywności przez SSE (zamiast pollingu).
-  useGuildEvents(guildId);
+  const granted = access === "granted";
+
+  // Real-time (SSE) tylko po potwierdzeniu dostępu — inaczej `/events` zwróci 403.
+  useGuildEvents(guildId, granted);
 
   useEffect(() => {
-    // Rozgrzej cache (config/role/kanały) raz przy wejściu na serwer — wtedy
-    // przełączanie między podstronami jest natychmiastowe (trafia w cache).
-    prefetchGuildData(guildId);
+    let cancelled = false;
+    setAccess("checking");
 
+    // Lista z API zawiera WYŁĄCZNIE serwery, do których user ma dostęp (ten sam
+    // warunek co bramka `guildAccessGuard`: Administrator / Zarządzanie serwerem /
+    // rola admina bota). Brak na liście = brak uprawnień → ekran „brak dostępu".
     getGuilds()
       .then((guilds) => {
+        if (cancelled) return;
         const guild = guilds.find((g) => g.id === guildId);
-        if (guild) {
-          setGuildName(guild.name);
-          setGuildIcon(guild.icon);
+        if (!guild) {
+          setAccess("denied");
+          return;
         }
+        setGuildName(guild.name);
+        setGuildIcon(guild.icon);
+        setAccess("granted");
+        // Rozgrzej cache (config/role/kanały) dopiero po potwierdzeniu dostępu,
+        // żeby nie strzelać zapytaniami, które i tak dostałyby 403.
+        prefetchGuildData(guildId);
       })
-      .catch(() => router.replace("/"));
+      .catch((e) => {
+        // 401 obsługuje warstwa api (redirect na "/"). Inny błąd → powrót do listy.
+        if (!cancelled && !(e instanceof TokenExpiredError)) router.replace("/dashboard");
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [guildId, router]);
+
+  if (access === "denied") return <AccessDenied />;
 
   return (
     <div className="flex h-dvh overflow-hidden bg-background">
       <Sidebar guildName={guildName} guildIcon={guildIcon} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <TopBar guildName={guildName} />
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="flex-1 overflow-auto">
+          {granted ? (
+            children
+          ) : (
+            // Podstron nie montujemy przed potwierdzeniem dostępu — inaczej ich własne
+            // zapytania (np. /stats) odpaliłyby 403 i przekierowały zanim bramka zdąży zareagować.
+            <div className="flex h-full items-center justify-center">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-border border-t-primary" />
+            </div>
+          )}
+        </main>
       </div>
     </div>
   );

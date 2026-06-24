@@ -111,7 +111,9 @@ export function NotificationBell({ guildId }: { guildId: string }) {
     const out: NotifItem[] = [];
 
     // Tickety wymagające uwagi (nie zamknięte) — „oczekujące".
-    for (const t of ticketsQ.data ?? []) {
+    // Array.isArray, nie `?? []`: dzwonek żyje w globalnym layoucie, więc jeden
+    // endpoint zwracający nie-tablicę nie może wywrócić całego dashboardu serwera.
+    for (const t of Array.isArray(ticketsQ.data) ? ticketsQ.data : []) {
       if (t.status === "closed") continue;
       out.push({
         key: `ticket-${t.id}`,
@@ -126,7 +128,7 @@ export function NotificationBell({ guildId }: { guildId: string }) {
     }
 
     // Feedback z serwera.
-    for (const f of feedbackQ.data?.items ?? []) {
+    for (const f of Array.isArray(feedbackQ.data?.items) ? feedbackQ.data.items : []) {
       const meta = CAT_ICON[f.category];
       out.push({
         key: `feedback-${f.id}`,
@@ -142,7 +144,7 @@ export function NotificationBell({ guildId }: { guildId: string }) {
     }
 
     // Ostatnie akcje moderacji.
-    for (const m of modQ.data ?? []) {
+    for (const m of Array.isArray(modQ.data) ? modQ.data : []) {
       const meta = MOD_ICON[m.type];
       const who = m.displayName ?? m.username ?? m.userId;
       out.push({
