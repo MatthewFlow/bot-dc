@@ -3,7 +3,7 @@
 import { X } from "lucide-react";
 import { useState } from "react";
 
-import { useToast } from "@/components/toast";
+import { useToast } from "@/components/Toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 

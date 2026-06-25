@@ -6,7 +6,7 @@ import {
 } from "@jurassic-haven/db";
 import type { Client } from "discord.js";
 
-import { getRcon } from "../gameserver/manager";
+import { getRcon } from "../gameServer/manager";
 import { sendModLog } from "../modlog";
 
 /** Co ile worker sprawdza zaległe zadania. */

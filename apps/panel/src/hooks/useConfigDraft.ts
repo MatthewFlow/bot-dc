@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { useToast } from "@/components/toast";
+import { useToast } from "@/components/Toast";
 import { useGuildConfig } from "@/hooks/queries";
 import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import type { GuildConfig, GuildConfigUpdate } from "@/lib/api";

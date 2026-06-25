@@ -80,6 +80,28 @@ enforced by the `@typescript-eslint/consistent-type-imports` lint rule.
   `@/*` → `src/*` alias.
 - `packages/db` — adds `declaration` + `isolatedDeclarations`.
 
+## Naming conventions
+
+File names follow their **role**, consistently across the repo:
+
+- **packages/db** — schemas `xxx.schema.ts`, repository interfaces `xxxRepository.ts`,
+  Mongoose providers `xxxProvider.ts`; root modules camelCase (`client.ts`, `embed.ts`,
+  `xpHelpers.ts`).
+- **apps/api** — route modules are the bare resource noun in camelCase (`guilds.ts`,
+  `buttonRoles.ts`, `gameServer.ts`, `auth.ts`) — **no** `Routes` suffix on the file (the
+  exported router still ends in `Routes`, e.g. `gameServerRoutes`). `lib/` and `middleware/`
+  are camelCase (`guildGuard.ts`, `authMiddleware.ts`).
+- **apps/bot** — one directory per feature in camelCase (`buttonRoles/`, `serverLog/`,
+  `gameServer/`, `levels/`, `tickets/`); files are camelCase, named after their job
+  (`statusSweep.ts`, `voiceXp.ts`) or `handler.ts` for a feature's entry dispatcher.
+- **apps/panel** — React components **PascalCase** (`NotificationBell.tsx`, `ConfirmModal.tsx`,
+  `Toast.tsx`); the shadcn-style primitives in `components/ui/` stay lowercase intentionally
+  (`button.tsx`, `dialog.tsx`). Hooks `useXxx.ts`, `lib/` camelCase.
+- **Everywhere** — unit tests sit next to the module as `*.test.ts`; Playwright e2e as `*.e2e.ts`.
+- **Not file names** — HTTP route paths (e.g. `/guilds/:id/gameserver/announce`) and per-guild
+  module keys (e.g. `serverlog`) are part of the API/config contract and stay as-is regardless
+  of file casing.
+
 ## packages/db — shared database layer
 
 All MongoDB access goes through this package. Both `apps/bot` and `apps/api` depend on it as a

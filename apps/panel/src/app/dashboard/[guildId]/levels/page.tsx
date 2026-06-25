@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { useId, useState } from "react";
 
 import { ChannelSelect } from "@/components/ChannelSelect";
-import { ConfirmModal } from "@/components/confirmModal";
+import { ConfirmModal } from "@/components/ConfirmModal";
 import { CreateRoleButton } from "@/components/CreateRoleButton";
 import { EmbedEditor } from "@/components/EmbedEditor";
 import { EmbedPreviewCard } from "@/components/EmbedPreviewCard";

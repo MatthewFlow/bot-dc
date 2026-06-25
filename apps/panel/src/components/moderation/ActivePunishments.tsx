@@ -6,7 +6,7 @@ import { type CSSProperties, useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { RefreshButton } from "@/components/RefreshButton";
 import { SkeletonRow } from "@/components/Skeleton";
-import { useToast } from "@/components/toast";
+import { useToast } from "@/components/Toast";
 import { useActivePunishments } from "@/hooks/queries";
 import { unbanUser, unmuteUser } from "@/lib/api";
 import { CARD } from "@/lib/cn";

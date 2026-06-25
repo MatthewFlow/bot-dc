@@ -10,7 +10,7 @@ import {
 
 import { startAutoModSweep } from "./automod/automod";
 import { checkRaid } from "./automod/raid";
-import { handleButtonRoleClick } from "./buttonroles/handler";
+import { handleButtonRoleClick } from "./buttonRoles/handler";
 import { handleCommand } from "./commands/handlers/handler";
 import { clearGuildCommands, registerCommands } from "./commands/register";
 import { onGuildCreate } from "./events/guildCreate";
@@ -23,7 +23,7 @@ import { onMessageReactionRemove } from "./events/messageReactionRemove";
 import { onThreadDelete } from "./events/threadDelete";
 import { onThreadUpdate } from "./events/threadUpdate";
 import { handleFeedbackSubmit, showFeedbackModal } from "./feedback/feedback";
-import { startGameStatusSweep } from "./gameserver/statusSweep";
+import { startGameStatusSweep } from "./gameServer/statusSweep";
 import { startJobWorker } from "./jobs/worker";
 import { startVoiceXp } from "./levels/voiceXp";
 import {
@@ -32,7 +32,7 @@ import {
   onMemberLeaveLog,
   onMessageDeleteLog,
   onMessageUpdateLog,
-} from "./serverlog/serverlog";
+} from "./serverLog/serverLog";
 import {
   handleTicketClaim,
   handleTicketSubmit,

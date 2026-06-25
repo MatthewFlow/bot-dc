@@ -1,7 +1,7 @@
 import { type Client, REST, Routes, SlashCommandBuilder } from "discord.js";
 
 import { guildId, token } from "../config/env";
-import { isGameServerConfigured } from "../gameserver/manager";
+import { isGameServerConfigured } from "../gameServer/manager";
 
 // Komendy serwera gry (RCON) — rejestrowane TYLKO gdy RCON jest skonfigurowany
 // (env), żeby nie zaśmiecać listy komend na serwerach bez integracji z grą.

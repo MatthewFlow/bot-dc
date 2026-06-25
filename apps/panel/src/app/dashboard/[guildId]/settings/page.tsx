@@ -37,7 +37,7 @@ import { RoleSelect } from "@/components/RoleSelect";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
 import { TipsCard } from "@/components/TipsCard";
-import { useToast } from "@/components/toast";
+import { useToast } from "@/components/Toast";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {

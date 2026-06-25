@@ -22,12 +22,12 @@ import Image from "next/image";
 import { useParams } from "next/navigation";
 import { type CSSProperties, memo, useCallback, useMemo, useRef, useState } from "react";
 
-import { ConfirmModal } from "@/components/confirmModal";
+import { ConfirmModal } from "@/components/ConfirmModal";
 import { FeedbackGuide } from "@/components/FeedbackGuide";
 import { PageHeader } from "@/components/PageHeader";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
-import { useToast } from "@/components/toast";
+import { useToast } from "@/components/Toast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {

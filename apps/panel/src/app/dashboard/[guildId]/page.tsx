@@ -24,11 +24,11 @@ import {
 import { useParams, useRouter } from "next/navigation";
 import { type CSSProperties, useEffect, useState } from "react";
 
-import { MOD_ACTION } from "@/components/badges";
+import { MOD_ACTION } from "@/components/Badges";
 import { LeaderboardRows } from "@/components/Leaderboard";
 import { Skeleton } from "@/components/Skeleton";
 import { TicketCard } from "@/components/TicketCard";
-import { useToast } from "@/components/toast";
+import { useToast } from "@/components/Toast";
 import { useActivity, useGuildStats, useLeaderboard } from "@/hooks/queries";
 import type {
   ActivityItem,

@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { useState } from "react";
 
 import { ChannelField } from "@/components/ChannelField";
-import { ConfirmModal } from "@/components/confirmModal";
+import { ConfirmModal } from "@/components/ConfirmModal";
 import { CreateRoleButton } from "@/components/CreateRoleButton";
 import { EmbedPreviewCard } from "@/components/EmbedPreviewCard";
 import { PageHeader } from "@/components/PageHeader";
@@ -16,7 +16,7 @@ import { SaveButton } from "@/components/SaveButton";
 import { Skeleton, SkeletonRow } from "@/components/Skeleton";
 import { TicketCard } from "@/components/TicketCard";
 import { TicketsGuide } from "@/components/TicketsGuide";
-import { useToast } from "@/components/toast";
+import { useToast } from "@/components/Toast";
 import { Button } from "@/components/ui/button";
 import { VariablesCard } from "@/components/VariablesCard";
 import {

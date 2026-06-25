@@ -2,7 +2,7 @@
  * Sonda RCON — uruchamiana ręcznie do WERYFIKACJI protokołu przeciw realnemu serwerowi
  * The Isle: Evrima. Nie jest częścią bota.
  *
- *   cd apps/bot && bun run src/gameserver/probe.ts
+ *   cd apps/bot && bun run src/gameServer/probe.ts
  *
  * Wymaga RCON_HOST / RCON_PORT / RCON_PASSWORD w env. Jeśli wynik nie zgadza się z grą,
  * popraw bajty komend / parsery w `protocol.ts` (to jedyne miejsce zależne od patcha).

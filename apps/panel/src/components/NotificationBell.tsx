@@ -20,9 +20,9 @@ import {
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-import { MOD_ACTION, TICKET_STATUS } from "@/components/badges";
-import { ConfirmModal } from "@/components/confirmModal";
-import { useToast } from "@/components/toast";
+import { MOD_ACTION, TICKET_STATUS } from "@/components/Badges";
+import { ConfirmModal } from "@/components/ConfirmModal";
+import { useToast } from "@/components/Toast";
 import { useGuildFeedback, useModActions, useTickets } from "@/hooks/queries";
 import {
   deleteGuildFeedback,

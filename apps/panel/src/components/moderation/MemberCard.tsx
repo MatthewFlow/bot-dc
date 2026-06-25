@@ -14,9 +14,9 @@ import {
 import { type CSSProperties, type ReactNode, useState } from "react";
 
 import { Avatar } from "@/components/Avatar";
-import { ModActionBadge } from "@/components/badges";
-import { ConfirmModal } from "@/components/confirmModal";
-import { useToast } from "@/components/toast";
+import { ModActionBadge } from "@/components/Badges";
+import { ConfirmModal } from "@/components/ConfirmModal";
+import { useToast } from "@/components/Toast";
 import { useMemberHistory, useMemberProfile } from "@/hooks/queries";
 import { clearWarnings, type MemberSearchResult } from "@/lib/api";
 import { CARD } from "@/lib/cn";

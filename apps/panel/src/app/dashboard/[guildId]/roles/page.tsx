@@ -6,7 +6,7 @@ import { useParams } from "next/navigation";
 import { type CSSProperties, useState } from "react";
 
 import { ChannelSelect } from "@/components/ChannelSelect";
-import { ConfirmModal } from "@/components/confirmModal";
+import { ConfirmModal } from "@/components/ConfirmModal";
 import { EmbedPreviewCard } from "@/components/EmbedPreviewCard";
 import { PageHeader } from "@/components/PageHeader";
 import { PanelCard } from "@/components/PanelCard";
@@ -14,7 +14,7 @@ import { RoleSelect } from "@/components/RoleSelect";
 import { SelfRolesGuide } from "@/components/SelfRolesGuide";
 import { Skeleton, SkeletonForm, SkeletonTable } from "@/components/Skeleton";
 import { TipsCard } from "@/components/TipsCard";
-import { useToast } from "@/components/toast";
+import { useToast } from "@/components/Toast";
 import { Button } from "@/components/ui/button";
 import {
   useBotStatus,

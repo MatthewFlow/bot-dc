@@ -4,7 +4,7 @@ import { Trash2 } from "lucide-react";
 import type { CSSProperties } from "react";
 
 import { Avatar } from "@/components/Avatar";
-import { TicketStatusBadge } from "@/components/badges";
+import { TicketStatusBadge } from "@/components/Badges";
 import type { Ticket, TicketStatus } from "@/lib/api";
 import { relativeTime, waitingSince } from "@/lib/time";
 

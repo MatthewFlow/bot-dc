@@ -12,7 +12,7 @@ import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
 import { PanelCard } from "@/components/PanelCard";
 import { Skeleton } from "@/components/Skeleton";
-import { useToast } from "@/components/toast";
+import { useToast } from "@/components/Toast";
 import { Button } from "@/components/ui/button";
 import { SegmentedControl, type SegmentOption } from "@/components/ui/SegmentedControl";
 import {

@@ -9,7 +9,7 @@ import { HowItWorks } from "@/components/HowItWorks";
 import { PageHeader } from "@/components/PageHeader";
 import { SaveButton } from "@/components/SaveButton";
 import { Skeleton } from "@/components/Skeleton";
-import { useToast } from "@/components/toast";
+import { useToast } from "@/components/Toast";
 import { useGuildConfig } from "@/hooks/queries";
 import { useRedirectOnError, useSeedOnce } from "@/hooks/queryDraft";
 import { useAutoSave } from "@/hooks/useAutoSave";

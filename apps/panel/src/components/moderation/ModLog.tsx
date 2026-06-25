@@ -4,7 +4,7 @@ import { ScrollText } from "lucide-react";
 import { type CSSProperties, useState } from "react";
 
 import { Avatar } from "@/components/Avatar";
-import { ModActionBadge } from "@/components/badges";
+import { ModActionBadge } from "@/components/Badges";
 import { RefreshButton } from "@/components/RefreshButton";
 import { SkeletonRow } from "@/components/Skeleton";
 import { useModActions } from "@/hooks/queries";

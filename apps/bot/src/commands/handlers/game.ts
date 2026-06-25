@@ -1,7 +1,7 @@
 import { botJobRepository } from "@jurassic-haven/db";
 import { type ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
 
-import { getRcon } from "../../gameserver/manager";
+import { getRcon } from "../../gameServer/manager";
 
 async function notConfigured(interaction: ChatInputCommandInteraction): Promise<void> {
   await interaction.editReply(
