@@ -14,15 +14,19 @@ const COLLAPSED_KEY = "jh_nav_collapsed";
 export function Sidebar({
   guildName,
   guildIcon,
+  open,
+  onClose,
 }: {
   guildName: string;
   guildIcon?: string | null;
+  /** Otwarcie szuflady na mobile (stan trzyma layout). */
+  open: boolean;
+  onClose: () => void;
 }) {
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
   const guildId = params.guildId as string;
-  const [open, setOpen] = useState(false);
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
   // Ikona serwera z CDN Discorda (gif dla animowanych „a_…"); fallback to inicjał.
@@ -73,7 +77,7 @@ export function Sidebar({
 
   function navigate(href: string) {
     router.push(href);
-    setOpen(false);
+    onClose();
   }
 
   function isItemActive(item: NavItem) {
@@ -199,43 +203,22 @@ export function Sidebar({
         {navContent}
       </aside>
 
-      {/* Mobile — hamburger button */}
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed left-4 top-4 z-50 flex h-9 w-9 items-center justify-center rounded-lg bg-card text-white md:hidden"
-      >
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <line x1="3" y1="6" x2="21" y2="6" />
-          <line x1="3" y1="12" x2="21" y2="12" />
-          <line x1="3" y1="18" x2="21" y2="18" />
-        </svg>
-      </button>
-
       {/* Mobile — overlay */}
       {open && (
-        <div
-          className="fixed inset-0 z-40 bg-black/60 md:hidden"
-          onClick={() => setOpen(false)}
-        />
+        <div className="fixed inset-0 z-40 bg-black/60 md:hidden" onClick={onClose} />
       )}
 
-      {/* Mobile — drawer */}
+      {/* Mobile — drawer (pt pod notch przez safe-area-inset) */}
       <aside
-        className={`fixed left-0 top-0 z-50 flex h-dvh w-56 flex-col border-r border-border bg-sidebar transition-transform duration-200 md:hidden ${
+        className={`fixed left-0 top-0 z-50 flex h-dvh w-[17rem] max-w-[85vw] flex-col border-r border-border bg-sidebar pt-[env(safe-area-inset-top)] transition-transform duration-200 md:hidden ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         {/* Close button */}
         <button
-          onClick={() => setOpen(false)}
-          className="absolute right-3 top-3 text-gray-400 hover:text-white"
+          onClick={onClose}
+          aria-label="Zamknij menu"
+          className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 transition hover:bg-white/5 hover:text-white"
         >
           ✕
         </button>

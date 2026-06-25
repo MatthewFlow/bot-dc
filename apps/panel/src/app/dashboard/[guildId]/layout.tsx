@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { AccessDenied } from "@/components/AccessDenied";
+import { CommandPalette } from "@/components/CommandPalette";
 import { Sidebar } from "@/components/Sidebar";
 import { TopBar } from "@/components/TopBar";
 import { useGuildEvents } from "@/hooks/useGuildEvents";
@@ -19,6 +20,9 @@ export default function GuildLayout({ children }: { children: React.ReactNode })
   const [guildName, setGuildName] = useState("...");
   const [guildIcon, setGuildIcon] = useState<string | null>(null);
   const [access, setAccess] = useState<Access>("checking");
+  // Szuflada nawigacji na mobile — stan tu (a nie w Sidebarze), żeby hamburger w
+  // TopBarze otwierał ją bez pływającego przycisku nachodzącego na treść.
+  const [navOpen, setNavOpen] = useState(false);
 
   const granted = access === "granted";
 
@@ -61,9 +65,14 @@ export default function GuildLayout({ children }: { children: React.ReactNode })
 
   return (
     <div className="flex h-dvh overflow-hidden bg-background">
-      <Sidebar guildName={guildName} guildIcon={guildIcon} />
+      <Sidebar
+        guildName={guildName}
+        guildIcon={guildIcon}
+        open={navOpen}
+        onClose={() => setNavOpen(false)}
+      />
       <div className="flex flex-1 flex-col overflow-hidden">
-        <TopBar guildName={guildName} />
+        <TopBar guildName={guildName} onMenuClick={() => setNavOpen(true)} />
         <main className="flex-1 overflow-auto">
           {granted ? (
             children
@@ -76,6 +85,8 @@ export default function GuildLayout({ children }: { children: React.ReactNode })
           )}
         </main>
       </div>
+      {/* Command palette (⌘K) — montowana po przyznaniu dostępu (ma guildId). */}
+      {granted && <CommandPalette guildId={guildId} />}
     </div>
   );
 }
