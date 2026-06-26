@@ -41,8 +41,8 @@ const reactionRoleSchema = new Schema<ReactionRoleDocument>(
   { versionKey: false },
 );
 
+// messageId ma już indeks z `unique: true` na polu — nie duplikujemy go tutaj.
 reactionRoleSchema.index({ guildId: 1 });
-reactionRoleSchema.index({ messageId: 1 });
 
 export const ReactionRoleModel: Model<ReactionRoleDocument> = model<ReactionRoleDocument>(
   "ReactionRole",

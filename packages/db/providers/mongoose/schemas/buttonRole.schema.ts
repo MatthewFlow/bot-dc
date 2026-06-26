@@ -36,8 +36,8 @@ const buttonRoleSchema = new Schema<ButtonRoleDocument>(
   { versionKey: false },
 );
 
+// messageId ma już indeks z `unique: true` na polu — nie duplikujemy go tutaj.
 buttonRoleSchema.index({ guildId: 1 });
-buttonRoleSchema.index({ messageId: 1 });
 
 export const ButtonRoleModel: Model<ButtonRoleDocument> = model<ButtonRoleDocument>(
   "ButtonRole",
