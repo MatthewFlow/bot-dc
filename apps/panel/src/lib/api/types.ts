@@ -192,6 +192,58 @@ export type CreateJobInput = {
   recurrence?: "daily" | "weekly";
 };
 
+export type GiveawayStatus = "active" | "ended" | "cancelled";
+
+/** Giveaway (konkurs z losowaniem). Daty jako ISO (JSON). */
+export type Giveaway = {
+  id: string;
+  guildId: string;
+  channelId: string;
+  messageId?: string;
+  prize: string;
+  winnerCount: number;
+  endsAt: string;
+  requiredRoleId?: string;
+  hostId: string;
+  status: GiveawayStatus;
+  entrants: string[];
+  winners: string[];
+  createdAt: string;
+  endedAt?: string;
+};
+
+export type CreateGiveawayInput = {
+  channelId: string;
+  prize: string;
+  winnerCount: number;
+  /** ISO — czas zakończenia (panel liczy z czasu trwania). */
+  endsAt: string;
+};
+
+export type StickyMode = "text" | "embed";
+
+/** Sticky message — utrzymywana na dole kanału. Daty jako ISO (JSON). */
+export type StickyMessage = {
+  id: string;
+  guildId: string;
+  channelId: string;
+  enabled: boolean;
+  mode: StickyMode;
+  content?: string;
+  embed?: EmbedConfig;
+  lastMessageId?: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type StickyUpsertInput = {
+  enabled: boolean;
+  mode: StickyMode;
+  content?: string;
+  embed?: EmbedConfig;
+};
+
 /** Gracz na serwerze gry (The Isle: Evrima). */
 export type GamePlayer = { id: string; name: string; dino?: string };
 

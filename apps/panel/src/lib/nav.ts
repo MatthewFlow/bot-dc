@@ -8,6 +8,7 @@ import {
   Megaphone,
   MessageSquareHeart,
   MousePointerClick,
+  Pin,
   ScrollText,
   Settings,
   ShieldAlert,
@@ -109,6 +110,12 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: Megaphone,
       },
       {
+        label: "Sticky",
+        href: "/sticky",
+        desc: "Przypięta wiadomość trzymana na dole kanału",
+        icon: Pin,
+      },
+      {
         label: "Tłumaczenia",
         href: "/translation",
         desc: "Auto-tłumaczenie wiadomości ze śledzonego kanału",
@@ -120,7 +127,6 @@ export const NAV_GROUPS: NavGroup[] = [
         href: "/giveaways",
         desc: "Konkursy z losowaniem nagród",
         icon: Gift,
-        soon: true,
       },
     ],
   },

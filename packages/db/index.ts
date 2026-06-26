@@ -1,6 +1,7 @@
 export { connectDb } from "./client";
 export type { DiscordEmbed, EmbedConfig, EmbedFieldConfig } from "./embed";
 export { isEmbedEmpty, toDiscordEmbed } from "./embed";
+export { giveawayEmbed } from "./giveawayEmbed";
 export {
   activityEventRepository,
   botJobRepository,
@@ -9,10 +10,12 @@ export {
   configAuditRepository,
   feedbackRepository,
   gameServerStatusRepository,
+  giveawayRepository,
   guildConfigRepository,
   modActionRepository,
   reactionRoleRepository,
   sessionRepository,
+  stickyMessageRepository,
   ticketRepository,
   warnRepository,
   xpRepository,
@@ -53,6 +56,13 @@ export type {
   GameServerWrite,
 } from "./repositories/gameServerStatusRepository";
 export type {
+  CreateGiveawayOpts,
+  Giveaway,
+  GiveawayStatus,
+  IGiveawayRepository,
+} from "./repositories/giveawayRepository";
+export { pickWinners } from "./repositories/giveawayRepository";
+export type {
   AutoModConfig,
   GuildConfig,
   GuildConfigPatch,
@@ -72,6 +82,12 @@ export type {
 } from "./repositories/reactionRoleRepository";
 export type { ISessionRepository } from "./repositories/sessionRepository";
 export type {
+  IStickyMessageRepository,
+  StickyMessage,
+  StickyMode,
+  UpsertStickyOpts,
+} from "./repositories/stickyMessageRepository";
+export type {
   CreateTicketOpts,
   Ticket,
   TicketCounts,
@@ -83,6 +99,7 @@ export type {
   AddXpWithCooldownOpts,
   XpEntry,
 } from "./repositories/xpRepository";
+export { stickyPayload } from "./stickyPayload";
 export {
   clampSliderXp,
   levelFromXp,

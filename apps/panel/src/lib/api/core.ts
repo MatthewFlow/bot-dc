@@ -71,6 +71,8 @@ export const queryKeys = {
   jobs: (g: string) => ["jobs", g] as const,
   gameServer: (g: string) => ["gameserver", g] as const,
   gameAnnounces: (g: string) => ["game-announces", g] as const,
+  giveaways: (g: string) => ["giveaways", g] as const,
+  sticky: (g: string) => ["sticky", g] as const,
   guildFeedback: (g: string) => ["guild-feedback", g] as const,
   myFeedback: () => ["my-feedback"] as const,
 };

@@ -5,10 +5,12 @@ import type { IButtonRoleRepository } from "../../repositories/buttonRoleReposit
 import type { IConfigAuditRepository } from "../../repositories/configAuditRepository";
 import type { IFeedbackRepository } from "../../repositories/feedbackRepository";
 import type { IGameServerStatusRepository } from "../../repositories/gameServerStatusRepository";
+import type { IGiveawayRepository } from "../../repositories/giveawayRepository";
 import type { IGuildConfigRepository } from "../../repositories/guildConfigRepository";
 import type { IModActionRepository } from "../../repositories/modActionRepository";
 import type { IReactionRoleRepository } from "../../repositories/reactionRoleRepository";
 import type { ISessionRepository } from "../../repositories/sessionRepository";
+import type { IStickyMessageRepository } from "../../repositories/stickyMessageRepository";
 import type { ITicketRepository } from "../../repositories/ticketRepository";
 import type { IWarnRepository } from "../../repositories/warnRepository";
 import type { IXpRepository } from "../../repositories/xpRepository";
@@ -19,10 +21,12 @@ import { ButtonRoleProvider } from "./buttonRoleProvider";
 import { ConfigAuditProvider } from "./configAuditProvider";
 import { FeedbackProvider } from "./feedbackProvider";
 import { GameServerStatusProvider } from "./gameServerStatusProvider";
+import { GiveawayProvider } from "./giveawayProvider";
 import { GuildConfigProvider } from "./guildConfigProvider";
 import { ModActionProvider } from "./modActionProvider";
 import { ReactionRoleProvider } from "./reactionRoleProvider";
 import { SessionProvider } from "./sessionProvider";
+import { StickyMessageProvider } from "./stickyMessageProvider";
 import { TicketProvider } from "./ticketProvider";
 import { WarnProvider } from "./warnProvider";
 import { XpProvider } from "./xpProvider";
@@ -43,3 +47,6 @@ export const configAuditRepository: IConfigAuditRepository = new ConfigAuditProv
 export const botJobRepository: IBotJobRepository = new BotJobProvider();
 export const gameServerStatusRepository: IGameServerStatusRepository =
   new GameServerStatusProvider();
+export const giveawayRepository: IGiveawayRepository = new GiveawayProvider();
+export const stickyMessageRepository: IStickyMessageRepository =
+  new StickyMessageProvider();

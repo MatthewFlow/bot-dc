@@ -24,6 +24,8 @@ import { onThreadDelete } from "./events/threadDelete";
 import { onThreadUpdate } from "./events/threadUpdate";
 import { handleFeedbackSubmit, showFeedbackModal } from "./feedback/feedback";
 import { startGameStatusSweep } from "./gameServer/statusSweep";
+import { handleGiveawayJoin } from "./giveaways/handler";
+import { startGiveawaySweep } from "./giveaways/sweep";
 import { startJobWorker } from "./jobs/worker";
 import { startVoiceXp } from "./levels/voiceXp";
 import {
@@ -138,6 +140,9 @@ export function createBot() {
     // Migawka stanu serwera gry (RCON) do DB — tylko gdy skonfigurowany.
     startGameStatusSweep();
 
+    // Auto-kończenie giveawayów po upływie czasu (losowanie + ogłoszenie).
+    startGiveawaySweep(client);
+
     // Rejestracja komend leci NA KOŃCU i w tle: to wolny, podatny na rate-limit PUT do
     // Discorda. Gdyby się zawiesił, nie może blokować heartbeatu ani zadań tła powyżej
     // (wcześniej był przed nimi i jeden zawieszony PUT zostawiał bota jako "offline").
@@ -190,6 +195,9 @@ export function createBot() {
       } else if (customId.startsWith("br:")) {
         if (await moduleBlocked(interaction, "selfroles")) return;
         await handleButtonRoleClick(interaction);
+      } else if (customId.startsWith("gw:")) {
+        if (await moduleBlocked(interaction, "giveaways")) return;
+        await handleGiveawayJoin(interaction);
       }
       return;
     }

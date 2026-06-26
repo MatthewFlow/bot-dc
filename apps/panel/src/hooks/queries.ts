@@ -16,6 +16,7 @@ import {
   getConfigAudit,
   getGameAnnounces,
   getGameServer,
+  getGiveaways,
   getGuildFeedback,
   getJobs,
   getMemberHistory,
@@ -23,6 +24,7 @@ import {
   getModActions,
   getModStats,
   getReactionRoles,
+  getStickies,
   getTickets,
   getWarnings,
   queryKeys,
@@ -202,6 +204,24 @@ export function useGameAnnounces(guildId: string) {
     queryKey: queryKeys.gameAnnounces(guildId),
     queryFn: () => getGameAnnounces(guildId),
     staleTime: 15_000,
+  });
+}
+
+export function useGiveaways(guildId: string) {
+  return useQuery({
+    queryKey: queryKeys.giveaways(guildId),
+    queryFn: () => getGiveaways(guildId),
+    // Odliczanie + auto-koniec → odświeżaj co 20 s, żeby lista nadążała za botem.
+    refetchInterval: 20_000,
+    staleTime: 10_000,
+  });
+}
+
+export function useStickies(guildId: string) {
+  return useQuery({
+    queryKey: queryKeys.sticky(guildId),
+    queryFn: () => getStickies(guildId),
+    staleTime: 30_000,
   });
 }
 

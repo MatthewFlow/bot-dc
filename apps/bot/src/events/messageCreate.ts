@@ -4,12 +4,17 @@ import type { Message } from "discord.js";
 import { runAutoMod } from "../automod/automod";
 import { handlePrefixCommand } from "../commands/prefix";
 import { applyLevelProgress } from "../levels/award";
+import { handleStickyMessage } from "../sticky/handler";
 import { getCachedGuildConfig } from "../utils/configCache";
 import { isModuleEnabled } from "../utils/modules";
 
 export async function onMessageCreate(message: Message) {
   if (!message.guild) return;
   if (message.author.bot) return;
+
+  // Sticky — utrzymanie wiadomości na dole kanału (własny cache + debounce).
+  // Fire-and-forget i przed wczesnymi `return` niżej, by działało niezależnie od XP/automod.
+  void handleStickyMessage(message);
 
   const member = message.member;
   if (!member) return;

@@ -49,6 +49,36 @@ export const feedbackSchema = z.object({
   guildId: idSchema.optional(),
 });
 
+/** Tworzenie giveawaya: nagroda, kanał, liczba zwycięzców, czas zakończenia (ISO). */
+export const giveawayCreateSchema = z.object({
+  channelId: idSchema,
+  prize: z.string().trim().min(1, "Podaj nagrodę").max(256, "Nagroda jest za długa"),
+  winnerCount: z.coerce
+    .number()
+    .int()
+    .min(1, "Minimum 1 zwycięzca")
+    .max(50, "Maksimum 50 zwycięzców"),
+  endsAt: z.coerce
+    .date()
+    .refine(
+      (d) => d.getTime() > Date.now() + 30_000,
+      "Czas zakończenia musi być w przyszłości",
+    )
+    .refine(
+      (d) => d.getTime() < Date.now() + 60 * 24 * 60 * 60 * 1000,
+      "Maksymalny czas trwania to 60 dni",
+    ),
+});
+
+/** Sticky message: tryb tekst/embed + treść (walidacja niepustości w trasie). */
+export const stickyUpsertSchema = z.object({
+  enabled: z.boolean(),
+  mode: z.enum(["text", "embed"]),
+  content: z.string().trim().max(2000, "Treść jest za długa").optional(),
+  // Pełny EmbedConfig — walidowany dalej przez toDiscordEmbed/isEmbedEmpty.
+  embed: z.record(z.string(), z.unknown()).optional(),
+});
+
 /** Button-roles panel: embed + up to 25 buttons, one per role. */
 export const buttonRolesSchema = z.object({
   channelId: z.string().trim().min(1, "Missing required fields"),

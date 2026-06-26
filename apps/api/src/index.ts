@@ -11,11 +11,13 @@ import { buttonRoleRoutes } from "./routes/buttonRoles";
 import { eventsRoutes } from "./routes/events";
 import { feedbackRoutes } from "./routes/feedback";
 import { gameServerRoutes } from "./routes/gameServer";
+import { giveawayRoutes } from "./routes/giveaways";
 import { guildRoutes } from "./routes/guilds";
 import { jobRoutes } from "./routes/jobs";
 import { moderationRoutes } from "./routes/moderation";
 import { reactionRoleRoutes } from "./routes/reactionRoles";
 import { statusRoutes } from "./routes/status";
+import { stickyRoutes } from "./routes/sticky";
 import type { AppVariables } from "./types";
 
 // Raportowanie błędów (Sentry, gdy ustawiono SENTRY_DSN) — jak najwcześniej.
@@ -58,6 +60,8 @@ app.route("/guilds", buttonRoleRoutes);
 app.route("/guilds", moderationRoutes);
 app.route("/guilds", jobRoutes);
 app.route("/guilds", gameServerRoutes);
+app.route("/guilds", giveawayRoutes);
+app.route("/guilds", stickyRoutes);
 app.route("/guilds", eventsRoutes);
 app.route("/feedback", feedbackRoutes);
 app.route("/bot", statusRoutes);
