@@ -1,5 +1,6 @@
 "use client";
 
+import * as Dialog from "@radix-ui/react-dialog";
 import { useQuery } from "@tanstack/react-query";
 import { Command } from "cmdk";
 import { CornerDownLeft, LogOut, Server, ServerCog } from "lucide-react";
@@ -56,6 +57,9 @@ export function CommandPalette({ guildId }: { guildId: string }) {
       overlayClassName="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm"
       contentClassName="fixed left-1/2 top-[14vh] z-[101] w-[92vw] max-w-lg -translate-x-1/2 overflow-hidden rounded-xl border border-border bg-card shadow-popover"
     >
+      {/* Tytuł dla czytników ekranu — Radix Dialog wymaga DialogTitle (label cmdk
+          ustawia tylko aria-label na Command, nie na Content). */}
+      <Dialog.Title className="sr-only">Wyszukiwarka poleceń</Dialog.Title>
       <Command.Input
         placeholder="Szukaj stron i akcji…"
         className="w-full border-b border-border bg-transparent px-4 py-3.5 text-sm text-white outline-none placeholder:text-gray-500"
