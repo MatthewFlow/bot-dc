@@ -11,6 +11,7 @@ import {
   ChannelType,
   type ChatInputCommandInteraction,
   EmbedBuilder,
+  MessageFlags,
   ModalBuilder,
   type ModalSubmitInteraction,
   TextInputBuilder,
@@ -63,7 +64,7 @@ export async function showTicketModal(interaction: ButtonInteraction) {
  * "pending" i pingujemy ekipę z przyciskiem "Przejmij zgłoszenie".
  */
 export async function handleTicketSubmit(interaction: ModalSubmitInteraction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const guild = interaction.guild;
   const channel = interaction.channel;
@@ -148,7 +149,7 @@ export async function handleTicketSubmit(interaction: ModalSubmitInteraction) {
 
 /** Przejęcie zgłoszenia przez osobę z rolą support lub admina. */
 export async function handleTicketClaim(interaction: ButtonInteraction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const guild = interaction.guild;
   const channel = interaction.channel;
@@ -200,7 +201,7 @@ export async function handleTicketSetup(interaction: ChatInputCommandInteraction
 
   if (!channel || channel.type !== ChannelType.GuildText) {
     await interaction.reply({
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
       content: "Tej komendy można użyć tylko na kanale tekstowym.",
     });
     return;
@@ -237,7 +238,10 @@ export async function handleTicketSetup(interaction: ChatInputCommandInteraction
   const row = new ActionRowBuilder<ButtonBuilder>().addComponents(button);
 
   await channel.send({ embeds: [embed], components: [row] });
-  await interaction.reply({ ephemeral: true, content: "Panel ticketów ustawiony ✅" });
+  await interaction.reply({
+    flags: MessageFlags.Ephemeral,
+    content: "Panel ticketów ustawiony ✅",
+  });
 }
 
 export async function handleTicketClose(interaction: ChatInputCommandInteraction) {
@@ -245,7 +249,7 @@ export async function handleTicketClose(interaction: ChatInputCommandInteraction
 
   if (!channel?.isThread()) {
     await interaction.reply({
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
       content: "Tej komendy można użyć tylko wewnątrz wątku ticketu.",
     });
     return;
@@ -254,7 +258,7 @@ export async function handleTicketClose(interaction: ChatInputCommandInteraction
   const ticket = await ticketRepository.getByThread(channel.id);
   if (!ticket || ticket.status === "closed") {
     await interaction.reply({
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
       content: "Ten wątek nie jest aktywnym ticketem.",
     });
     return;
@@ -281,7 +285,7 @@ export async function handleTicketAdd(interaction: ChatInputCommandInteraction) 
 
   if (!channel?.isThread()) {
     await interaction.reply({
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
       content: "Tej komendy można użyć tylko wewnątrz wątku ticketu.",
     });
     return;
@@ -289,19 +293,25 @@ export async function handleTicketAdd(interaction: ChatInputCommandInteraction) 
 
   const ticket = await ticketRepository.getByThread(channel.id);
   if (!ticket) {
-    await interaction.reply({ ephemeral: true, content: "Ten wątek nie jest ticketem." });
+    await interaction.reply({
+      flags: MessageFlags.Ephemeral,
+      content: "Ten wątek nie jest ticketem.",
+    });
     return;
   }
 
   const user = interaction.options.getUser("user", true);
   await channel.members.add(user.id);
 
-  await interaction.reply({ ephemeral: true, content: `${user} dodany do ticketu.` });
+  await interaction.reply({
+    flags: MessageFlags.Ephemeral,
+    content: `${user} dodany do ticketu.`,
+  });
 }
 
 /** Usuwa ticket po ID wątku: kasuje wątek na Discordzie i rekord w bazie. */
 export async function handleTicketDelete(interaction: ChatInputCommandInteraction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const guild = interaction.guild;
   if (!guild) {

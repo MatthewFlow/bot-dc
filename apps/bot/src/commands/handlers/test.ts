@@ -4,7 +4,12 @@ import {
   toDiscordEmbed,
   xpRepository,
 } from "@jurassic-haven/db";
-import { ChannelType, type ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
+import {
+  ChannelType,
+  type ChatInputCommandInteraction,
+  EmbedBuilder,
+  MessageFlags,
+} from "discord.js";
 
 import { applyAutoRole } from "../../levels/autorole";
 import { notifyLevelUp } from "../../levels/levelUpNotify";
@@ -50,7 +55,10 @@ export async function handleCfgAddXp(interaction: ChatInputCommandInteraction) {
   const amount = interaction.options.getInteger("amount", true);
 
   if (amount < 1) {
-    await interaction.reply({ ephemeral: true, content: "Ilość XP musi być >= 1." });
+    await interaction.reply({
+      flags: MessageFlags.Ephemeral,
+      content: "Ilość XP musi być >= 1.",
+    });
     return;
   }
 
@@ -82,7 +90,7 @@ export async function handleCfgAddXp(interaction: ChatInputCommandInteraction) {
   const newXp = await xpRepository.getXp(guildId, targetUser.id);
 
   await interaction.reply({
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
     content:
       `Dodano **+${amount} XP** dla ${targetUser}\n` +
       `XP: **${oldXp} → ${newXp}**\n` +
@@ -102,7 +110,7 @@ export async function handleTestTranslate(interaction: ChatInputCommandInteracti
   const messageId = interaction.options.getString("wiadomosc_id");
 
   // DeepL bywa wolniejszy niż 3 s — defer, by nie wygasł token interakcji.
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   let source = SAMPLE_ANNOUNCEMENT;
   if (messageId) {
@@ -151,7 +159,7 @@ export async function handleTestWelcome(interaction: ChatInputCommandInteraction
   if (!channelId) {
     await interaction.reply({
       content: "Nie ustawiono kanału powitań. Użyj /cfg_setwelcome",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -164,7 +172,7 @@ export async function handleTestWelcome(interaction: ChatInputCommandInteraction
   if (!ok) {
     await interaction.reply({
       content: "Kanał powitań nie istnieje albo nie jest tekstowy.",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -182,7 +190,7 @@ export async function handleTestWelcome(interaction: ChatInputCommandInteraction
     await ch.send({ embeds: [embed] });
   }
 
-  await interaction.reply({ content: "Wysłano ✅", ephemeral: true });
+  await interaction.reply({ content: "Wysłano ✅", flags: MessageFlags.Ephemeral });
 }
 
 export async function handleTestGoodbye(interaction: ChatInputCommandInteraction) {
@@ -195,7 +203,7 @@ export async function handleTestGoodbye(interaction: ChatInputCommandInteraction
   if (!channelId) {
     await interaction.reply({
       content: "Nie ustawiono kanału pożegnań. Użyj /cfg_setgoodbye",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -208,7 +216,7 @@ export async function handleTestGoodbye(interaction: ChatInputCommandInteraction
   if (!ok) {
     await interaction.reply({
       content: "Kanał pożegnań nie istnieje albo nie jest tekstowy.",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -225,5 +233,5 @@ export async function handleTestGoodbye(interaction: ChatInputCommandInteraction
     await ch.send({ embeds: [embed] });
   }
 
-  await interaction.reply({ content: "Wysłano ✅", ephemeral: true });
+  await interaction.reply({ content: "Wysłano ✅", flags: MessageFlags.Ephemeral });
 }

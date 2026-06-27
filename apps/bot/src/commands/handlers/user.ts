@@ -3,6 +3,7 @@ import {
   type ChatInputCommandInteraction,
   EmbedBuilder,
   type Guild,
+  MessageFlags,
   type User,
 } from "discord.js";
 
@@ -82,7 +83,7 @@ export async function buildProfileEmbed(
 export async function handleLevel(interaction: ChatInputCommandInteraction) {
   const guildId = interaction.guildId!;
   await interaction.reply({
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
     content: await buildLevelText(guildId, interaction.user.id),
   });
 }
@@ -101,7 +102,7 @@ export async function handleFeedback(interaction: ChatInputCommandInteraction) {
   const guild = interaction.guild;
   if (!guild) {
     await interaction.reply({
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
       content: "Ta komenda działa tylko na serwerze.",
     });
     return;
@@ -110,7 +111,7 @@ export async function handleFeedback(interaction: ChatInputCommandInteraction) {
   const message = interaction.options.getString("message", true).trim();
   if (!message) {
     await interaction.reply({
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
       content: "Treść opinii nie może być pusta.",
     });
     return;
@@ -122,7 +123,7 @@ export async function handleFeedback(interaction: ChatInputCommandInteraction) {
   await submitFeedback({ guild, user: interaction.user, category, message, rating });
 
   await interaction.reply({
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
     content:
       "✅ Dziękujemy za opinię! Twoje zgłoszenie zostało zapisane. " +
       "Pełną historię swoich zgłoszeń zobaczysz w panelu na stronie **Feedback**.",

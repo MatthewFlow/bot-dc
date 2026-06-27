@@ -7,6 +7,7 @@ import {
   type ChatInputCommandInteraction,
   EmbedBuilder,
   type GuildMember,
+  MessageFlags,
 } from "discord.js";
 
 import { sendModLog, sendPunishDm } from "../../modlog";
@@ -40,7 +41,7 @@ function modGuard(
 }
 
 export async function handleModWarn(interaction: ChatInputCommandInteraction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const guild = interaction.guild!;
   const user = interaction.options.getUser("user", true);
   const reason = interaction.options.getString("reason") ?? "Brak powodu";
@@ -93,7 +94,7 @@ export async function handleModWarn(interaction: ChatInputCommandInteraction) {
 }
 
 export async function handleModWarnings(interaction: ChatInputCommandInteraction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const guild = interaction.guild!;
   const user = interaction.options.getUser("user", true);
 
@@ -121,7 +122,7 @@ export async function handleModWarnings(interaction: ChatInputCommandInteraction
 }
 
 export async function handleModClearWarns(interaction: ChatInputCommandInteraction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const guild = interaction.guild!;
   const user = interaction.options.getUser("user", true);
 
@@ -139,7 +140,7 @@ export async function handleModClearWarns(interaction: ChatInputCommandInteracti
 }
 
 export async function handleModMute(interaction: ChatInputCommandInteraction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const guild = interaction.guild!;
   const user = interaction.options.getUser("user", true);
   const minutes = interaction.options.getInteger("duration", true);
@@ -172,7 +173,7 @@ export async function handleModMute(interaction: ChatInputCommandInteraction) {
 }
 
 export async function handleModUnmute(interaction: ChatInputCommandInteraction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const guild = interaction.guild!;
   const user = interaction.options.getUser("user", true);
   const reason = interaction.options.getString("reason") ?? "Brak powodu";
@@ -195,7 +196,7 @@ export async function handleModUnmute(interaction: ChatInputCommandInteraction) 
 }
 
 export async function handleModKick(interaction: ChatInputCommandInteraction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const guild = interaction.guild!;
   const user = interaction.options.getUser("user", true);
   const reason = interaction.options.getString("reason") ?? "Brak powodu";
@@ -227,7 +228,7 @@ export async function handleModKick(interaction: ChatInputCommandInteraction) {
 }
 
 export async function handleModBan(interaction: ChatInputCommandInteraction) {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const guild = interaction.guild!;
   const user = interaction.options.getUser("user", true);
   const reason = interaction.options.getString("reason") ?? "Brak powodu";

@@ -1,5 +1,5 @@
 import { botJobRepository } from "@jurassic-haven/db";
-import { type ChatInputCommandInteraction, EmbedBuilder } from "discord.js";
+import { type ChatInputCommandInteraction, EmbedBuilder, MessageFlags } from "discord.js";
 
 import { getRcon } from "../../gameServer/manager";
 
@@ -12,7 +12,7 @@ async function notConfigured(interaction: ChatInputCommandInteraction): Promise<
 export async function handleGameStatus(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const rcon = getRcon();
   if (!rcon) return notConfigured(interaction);
   try {
@@ -39,7 +39,7 @@ export async function handleGameStatus(
 export async function handleGamePlayers(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const rcon = getRcon();
   if (!rcon) return notConfigured(interaction);
   try {
@@ -64,7 +64,7 @@ export async function handleGamePlayers(
 export async function handleGameAnnounce(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const rcon = getRcon();
   if (!rcon) return notConfigured(interaction);
   const message = interaction.options.getString("message", true);
@@ -93,7 +93,7 @@ export async function handleGameAnnounce(
 export async function handleGameSave(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const rcon = getRcon();
   if (!rcon) return notConfigured(interaction);
   try {
@@ -107,7 +107,7 @@ export async function handleGameSave(
 export async function handleGameKick(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const rcon = getRcon();
   if (!rcon) return notConfigured(interaction);
   const playerId = interaction.options.getString("player", true);
@@ -123,7 +123,7 @@ export async function handleGameKick(
 export async function handleGameBan(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
   const rcon = getRcon();
   if (!rcon) return notConfigured(interaction);
   const playerId = interaction.options.getString("player", true);

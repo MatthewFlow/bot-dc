@@ -1,4 +1,4 @@
-import type { ButtonInteraction } from "discord.js";
+import { type ButtonInteraction, MessageFlags } from "discord.js";
 
 import { getCachedGuildConfig } from "../utils/configCache";
 
@@ -16,7 +16,10 @@ export async function handleButtonRoleClick(interaction: ButtonInteraction) {
   const member = await guild.members.fetch(interaction.user.id).catch(() => null);
   if (!member) {
     await interaction
-      .reply({ ephemeral: true, content: "Nie udało się pobrać Twojego profilu." })
+      .reply({
+        flags: MessageFlags.Ephemeral,
+        content: "Nie udało się pobrać Twojego profilu.",
+      })
       .catch(() => {});
     return;
   }
@@ -25,7 +28,7 @@ export async function handleButtonRoleClick(interaction: ButtonInteraction) {
     guild.roles.cache.get(roleId) ?? (await guild.roles.fetch(roleId).catch(() => null));
   if (!role) {
     await interaction
-      .reply({ ephemeral: true, content: "Ta rola już nie istnieje." })
+      .reply({ flags: MessageFlags.Ephemeral, content: "Ta rola już nie istnieje." })
       .catch(() => {});
     return;
   }
@@ -35,7 +38,7 @@ export async function handleButtonRoleClick(interaction: ButtonInteraction) {
     if (hasRole) {
       await member.roles.remove(roleId);
       await interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `➖ Zdjęto rolę **${role.name}**.`,
       });
     } else {
@@ -47,14 +50,14 @@ export async function handleButtonRoleClick(interaction: ButtonInteraction) {
         await member.roles.remove(cfg.joinRoleId).catch(() => {});
       }
       await interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `➕ Nadano rolę **${role.name}**.`,
       });
     }
   } catch {
     await interaction
       .reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `Nie udało się zmienić roli **${role.name}** — sprawdź, czy mam uprawnienie „Zarządzanie rolami" i czy moja rola jest wyżej niż **${role.name}**.`,
       })
       .catch(() => {});

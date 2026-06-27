@@ -1,7 +1,7 @@
 import { XP_SYNCALL_DELAY_MS } from "@jurassic-haven/db";
 import { levelFromXp } from "@jurassic-haven/db";
 import { guildConfigRepository, xpRepository } from "@jurassic-haven/db";
-import { ChannelType, type ChatInputCommandInteraction } from "discord.js";
+import { ChannelType, type ChatInputCommandInteraction, MessageFlags } from "discord.js";
 
 import { applyAutoRole } from "../../levels/autorole";
 
@@ -20,7 +20,7 @@ export async function handleCfgSetWelcome(interaction: ChatInputCommandInteracti
   if (!isTextChannel(channel.type)) {
     await interaction.reply({
       content: "Wybierz kanał tekstowy (zwykły) albo ogłoszenia.",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -28,7 +28,7 @@ export async function handleCfgSetWelcome(interaction: ChatInputCommandInteracti
   await guildConfigRepository.set(guildId, { welcomeChannelId: channel.id });
   await interaction.reply({
     content: `Ustawiono kanał powitań na ${channel}`,
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
   });
 }
 
@@ -39,7 +39,7 @@ export async function handleCfgSetGoodbye(interaction: ChatInputCommandInteracti
   if (!isTextChannel(channel.type)) {
     await interaction.reply({
       content: "Wybierz kanał tekstowy (zwykły) albo ogłoszenia.",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -47,7 +47,7 @@ export async function handleCfgSetGoodbye(interaction: ChatInputCommandInteracti
   await guildConfigRepository.set(guildId, { goodbyeChannelId: channel.id });
   await interaction.reply({
     content: `Ustawiono kanał pożegnań na ${channel}`,
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
   });
 }
 
@@ -65,7 +65,7 @@ export async function handleCfgAddReward(interaction: ChatInputCommandInteractio
 
   await guildConfigRepository.set(guildId, { roleRewards: filtered });
   await interaction.reply({
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
     content: `Dodano próg: level **${level}** → ${role}`,
   });
 }
@@ -77,7 +77,7 @@ export async function handleCfgRoleList(interaction: ChatInputCommandInteraction
 
   if (rewards.length === 0) {
     await interaction.reply({
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
       content: "Brak progów ról. Dodaj przez /cfg_addreward",
     });
     return;
@@ -89,7 +89,10 @@ export async function handleCfgRoleList(interaction: ChatInputCommandInteraction
     .map((r) => `Level ${r.level} → <@&${r.roleId}>`)
     .join("\n");
 
-  await interaction.reply({ ephemeral: true, content: `Progi ról:\n${lines}` });
+  await interaction.reply({
+    flags: MessageFlags.Ephemeral,
+    content: `Progi ról:\n${lines}`,
+  });
 }
 
 export async function handleCfgSyncXp(interaction: ChatInputCommandInteraction) {
@@ -106,12 +109,12 @@ export async function handleCfgSyncXp(interaction: ChatInputCommandInteraction) 
     try {
       await applyAutoRole(member, level);
       await interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `Zrobiono sync XP dla ${targetUser}. Level: **${level}**, XP: **${xp}** ✅`,
       });
     } catch (e) {
       await interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `Nie udało się zsynchronizować roli.\nBłąd: ${String(e)}`,
       });
     }
@@ -121,7 +124,7 @@ export async function handleCfgSyncXp(interaction: ChatInputCommandInteraction) 
   const limit = interaction.options.getInteger("limit") ?? 50;
 
   await interaction.reply({
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
     content: `Start syncxp… limit: ${limit}. Pobieram członków…`,
   });
 
@@ -185,7 +188,7 @@ export async function handleCfgCheckRole(interaction: ChatInputCommandInteractio
     ...(userRewardRoles.size ? userRewardRoles.map((r) => `• ${r}`) : ["• brak"]),
   ];
 
-  await interaction.reply({ ephemeral: true, content: lines.join("\n") });
+  await interaction.reply({ flags: MessageFlags.Ephemeral, content: lines.join("\n") });
 }
 
 export async function handleCfgSyncVerify(interaction: ChatInputCommandInteraction) {
@@ -196,7 +199,7 @@ export async function handleCfgSyncVerify(interaction: ChatInputCommandInteracti
 
   if (!cfg?.joinRoleId) {
     await interaction.reply({
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
       content:
         "Nie ustawiono roli niezweryfikowanego. Ustaw ją najpierw w panelu (Auto-role).",
     });
@@ -204,7 +207,7 @@ export async function handleCfgSyncVerify(interaction: ChatInputCommandInteracti
   }
 
   await interaction.reply({
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
     content: "Start syncverify… Pobieram członków…",
   });
 
@@ -255,7 +258,7 @@ export async function handleCfgSetModLog(interaction: ChatInputCommandInteractio
   if (!isTextChannel(channel.type)) {
     await interaction.reply({
       content: "Wybierz kanał tekstowy.",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -263,7 +266,7 @@ export async function handleCfgSetModLog(interaction: ChatInputCommandInteractio
   await guildConfigRepository.set(guildId, { modLogChannelId: channel.id });
   await interaction.reply({
     content: `Ustawiono kanał logów na ${channel}`,
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
   });
 }
 
@@ -274,7 +277,7 @@ export async function handleCfgSetTicketRole(interaction: ChatInputCommandIntera
   await guildConfigRepository.set(guildId, { ticketSupportRoleId: role.id });
   await interaction.reply({
     content: `Ustawiono rolę supportu na ${role}`,
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
   });
 }
 
@@ -285,12 +288,12 @@ export async function handleCfgClear(interaction: ChatInputCommandInteraction) {
   if (!channel || !channel.isTextBased() || channel.isDMBased()) {
     await interaction.reply({
       content: "Tej komendy można użyć tylko na kanale tekstowym.",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   try {
     const deleted = await channel.bulkDelete(amount, true);

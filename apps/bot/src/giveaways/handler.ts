@@ -1,5 +1,5 @@
 import { giveawayRepository } from "@jurassic-haven/db";
-import type { ButtonInteraction } from "discord.js";
+import { type ButtonInteraction, MessageFlags } from "discord.js";
 
 /** Prefiks custom_id przycisku „Dołącz": `gw:<giveawayId>`. */
 const PREFIX = "gw:";
@@ -16,7 +16,7 @@ export async function handleGiveawayJoin(interaction: ButtonInteraction): Promis
 
   if (!giveaway || giveaway.status !== "active") {
     await interaction.reply({
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
       content: "Ten giveaway już się zakończył.",
     });
     return;
@@ -28,7 +28,7 @@ export async function handleGiveawayJoin(interaction: ButtonInteraction): Promis
       .catch(() => null);
     if (!member?.roles.cache.has(giveaway.requiredRoleId)) {
       await interaction.reply({
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
         content: `Aby dołączyć, potrzebujesz roli <@&${giveaway.requiredRoleId}>.`,
       });
       return;
@@ -38,14 +38,14 @@ export async function handleGiveawayJoin(interaction: ButtonInteraction): Promis
   const res = await giveawayRepository.toggleEntry(id, interaction.user.id);
   if (!res) {
     await interaction.reply({
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
       content: "Ten giveaway już się zakończył.",
     });
     return;
   }
 
   await interaction.reply({
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
     content: res.joined
       ? `🎉 Dołączyłeś do giveawaya! Uczestników: **${res.count}**.`
       : `Zrezygnowałeś z udziału. Uczestników: **${res.count}**.`,

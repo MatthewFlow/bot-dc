@@ -1,5 +1,9 @@
 import { guildConfigRepository } from "@jurassic-haven/db";
-import { type ChatInputCommandInteraction, PermissionFlagsBits } from "discord.js";
+import {
+  type ChatInputCommandInteraction,
+  MessageFlags,
+  PermissionFlagsBits,
+} from "discord.js";
 
 /**
  * Authorizes `/cfg_*`, `/mod_*` and other privileged commands. Multi-tenant aware:
@@ -12,7 +16,7 @@ export async function requireAdminRole(interaction: ChatInputCommandInteraction)
   if (!interaction.guild) {
     await interaction.reply({
       content: "Tej komendy można użyć tylko na serwerze.",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return false;
   }
@@ -37,7 +41,7 @@ export async function requireAdminRole(interaction: ChatInputCommandInteraction)
       "⛔ **Nie masz uprawnień do tej komendy.**\n" +
       "Wymagane jest uprawnienie **Administrator** lub **Zarządzanie serwerem**, " +
       "albo rola administratora bota skonfigurowana w panelu.",
-    ephemeral: true,
+    flags: MessageFlags.Ephemeral,
   });
   return false;
 }

@@ -8,6 +8,7 @@ import {
   type ButtonInteraction,
   EmbedBuilder,
   type Guild,
+  MessageFlags,
   ModalBuilder,
   type ModalSubmitInteraction,
   TextInputBuilder,
@@ -125,7 +126,7 @@ export async function showFeedbackModal(interaction: ButtonInteraction): Promise
 export async function handleFeedbackSubmit(
   interaction: ModalSubmitInteraction,
 ): Promise<void> {
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
   const guild = interaction.guild;
   if (!guild) {
