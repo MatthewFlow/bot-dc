@@ -110,6 +110,14 @@ bun run format
 bun run format:check
 ```
 
+## Recent additions
+
+- **Auto voice channels** — join-to-create temp voice channels with per-hub category, name template and user limit
+- **Giveaways** — create in the panel, the bot draws winners and supports reroll
+- **Sticky messages** — keep a message (text or embed) pinned to the bottom of a channel
+- **Reminders** — `/remind` and `/reminders` (with cancel)
+- **Configurable voice XP interval** (5 min – 1 h) and a command palette (⌘K) in the panel
+
 ## License
 
 Jurassic Haven is **proprietary software** — all rights reserved. See
