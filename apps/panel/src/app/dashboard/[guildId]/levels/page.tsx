@@ -30,6 +30,7 @@ import { LEVEL_VARS, previewReplacer, VARIABLE_INFO } from "@/lib/embed";
 const DEFAULT_LEVELING: LevelingConfig = {
   messageXp: 5,
   voiceXp: 0,
+  voiceXpInterval: 5,
   noXpChannelIds: [],
   noXpRoleIds: [],
   levelUpEnabled: true,
@@ -363,11 +364,37 @@ export default function LevelsPage() {
                 onChange={(v) => setLv({ messageXp: v })}
               />
               <XpSlider
-                label="XP za minutę na kanale głosowym"
-                desc="Naliczane co minutę po przekroczeniu 1 min na głosówce (poza AFK / wyciszonymi). 0 = wyłączone."
+                label="XP za czas na kanale głosowym"
+                desc="Naliczane co wybrany interwał obecności na głosówce (poza AFK / wyciszonymi). 0 = wyłączone."
                 value={lv.voiceXp ?? 0}
                 onChange={(v) => setLv({ voiceXp: v })}
               />
+              {/* Interwał naliczania XP głosowego (5 min – 1 h) */}
+              <div>
+                <div className="mb-1.5 flex items-center justify-between gap-2">
+                  <label className="text-xs text-gray-400" htmlFor="voiceInterval">
+                    Co ile naliczać XP głosowe
+                  </label>
+                  <span className="shrink-0 rounded bg-primary/20 px-2 py-0.5 text-xs font-semibold text-primary">
+                    co {lv.voiceXpInterval ?? 5} min
+                  </span>
+                </div>
+                <select
+                  id="voiceInterval"
+                  value={lv.voiceXpInterval ?? 5}
+                  onChange={(e) => setLv({ voiceXpInterval: Number(e.target.value) })}
+                  className="block w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-primary"
+                >
+                  {[5, 10, 15, 20, 30, 45, 60].map((m) => (
+                    <option key={m} value={m}>
+                      {m === 60 ? "1 godzina" : `${m} minut`}
+                    </option>
+                  ))}
+                </select>
+                <p className="mt-1 text-xs text-gray-500">
+                  Co ile minut obecności przyznać powyższe XP (zakres 5 min – 1 h).
+                </p>
+              </div>
               <div className="flex flex-col gap-4 border-t border-border pt-4">
                 <ToggleRow
                   checked={lv.levelUpEnabled}

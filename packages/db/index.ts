@@ -102,8 +102,12 @@ export type {
 export { stickyPayload } from "./stickyPayload";
 export {
   clampSliderXp,
+  clampVoiceInterval,
   levelFromXp,
   messageXpFor,
+  VOICE_XP_INTERVAL_DEFAULT_MINUTES,
+  VOICE_XP_INTERVAL_MAX_MINUTES,
+  VOICE_XP_INTERVAL_MIN_MINUTES,
   VOICE_XP_INTERVAL_MS,
   XP_COOLDOWN_MS,
   XP_PER_LEVEL,

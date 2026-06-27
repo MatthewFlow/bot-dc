@@ -1,5 +1,6 @@
 import {
   clampSliderXp,
+  clampVoiceInterval,
   type GuildConfig,
   VOICE_XP_INTERVAL_MS,
   xpRepository,
@@ -10,8 +11,8 @@ import { getCachedGuildConfig } from "../utils/configCache";
 import { isModuleEnabled } from "../utils/modules";
 import { applyLevelProgress } from "./award";
 
-// Licznik kolejnych „obecnych" ticków na osobę: `${guildId}:${userId}` → liczba ticków.
-// Tick #1 = pierwsza minuta (bez XP), od ticka #2 (powyżej 1 min) naliczamy XP.
+// Licznik kolejnych „obecnych" ticków (minut) na osobę: `${guildId}:${userId}` → minuty.
+// XP naliczamy co `voiceXpInterval` minut obecności (np. przy 5 → w 5., 10., 15. min…).
 const ticks = new Map<string, number>();
 
 const key = (guildId: string, userId: string) => `${guildId}:${userId}`;
@@ -60,6 +61,7 @@ async function sweep(client: Client) {
     const cfg = await getCachedGuildConfig(guild.id);
     if (!isModuleEnabled(cfg, "leveling")) continue;
     const voiceXp = clampSliderXp(cfg?.leveling?.voiceXp);
+    const intervalMin = clampVoiceInterval(cfg?.leveling?.voiceXpInterval);
 
     const present = new Set<string>();
 
@@ -74,8 +76,8 @@ async function sweep(client: Client) {
         const count = (ticks.get(k) ?? 0) + 1;
         ticks.set(k, count);
 
-        // count === 1 → pierwsza minuta (bez XP); od count >= 2 → powyżej 1 min.
-        if (count >= 2 && voiceXp > 0) {
+        // Nagroda co `intervalMin` minut obecności (np. przy 5 → w 5., 10., 15. min…).
+        if (voiceXp > 0 && count % intervalMin === 0) {
           grants.push(grantVoiceXp(member, voiceXp, cfg).catch(() => {}));
         }
       }
@@ -91,9 +93,9 @@ async function sweep(client: Client) {
 }
 
 /**
- * Uruchamia naliczanie XP za obecność na kanałach głosowych. Co
- * {@link VOICE_XP_INTERVAL_MS} przyznaje `leveling.voiceXp` każdej kwalifikującej
- * się osobie, która jest na głosie dłużej niż minutę. Zwraca funkcję zatrzymującą.
+ * Uruchamia naliczanie XP za obecność na kanałach głosowych. Sweep co
+ * {@link VOICE_XP_INTERVAL_MS} (1 minuta) zlicza obecność, a `leveling.voiceXp`
+ * przyznaje co `leveling.voiceXpInterval` minut (5–60). Zwraca funkcję zatrzymującą.
  */
 export function startVoiceXp(client: Client): () => void {
   const timer = setInterval(() => {

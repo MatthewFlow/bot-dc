@@ -173,6 +173,10 @@ function sanitizeLeveling(v: unknown): LevelingConfig | undefined {
   // Płaskie XP 0–8 (za wiadomość / za minutę na głosie).
   if (o.messageXp != null) out.messageXp = clampNum(o.messageXp, 0, 0, 8);
   if (o.voiceXp != null) out.voiceXp = clampNum(o.voiceXp, 0, 0, 8);
+  // Interwał XP głosowego w minutach (5–60).
+  if (o.voiceXpInterval != null) {
+    out.voiceXpInterval = clampNum(o.voiceXpInterval, 5, 5, 60);
+  }
   // Legacy mnożnik — zachowujemy, jeśli ktoś jeszcze go przysyła.
   if (o.xpMultiplier != null) out.xpMultiplier = clampMultiplier(o.xpMultiplier);
   return out;

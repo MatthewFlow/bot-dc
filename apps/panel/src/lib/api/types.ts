@@ -92,8 +92,10 @@ export type TranslationConfig = {
 export type LevelingConfig = {
   /** Płaskie XP za wiadomość (0–8). */
   messageXp?: number;
-  /** Płaskie XP za każdą minutę na kanale głosowym powyżej 1. minuty (0–8). */
+  /** Płaskie XP za każdy interwał na kanale głosowym (0–8). */
   voiceXp?: number;
+  /** Co ile minut naliczać XP głosowe (5–60; domyślnie 5). */
+  voiceXpInterval?: number;
   /** Legacy mnożnik bazowego XP — zastąpiony przez `messageXp`. */
   xpMultiplier?: number;
   noXpChannelIds: string[];

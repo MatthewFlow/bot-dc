@@ -136,6 +136,7 @@ const levelingSchema = new Schema<LevelingConfig>(
   {
     messageXp: { type: Number },
     voiceXp: { type: Number },
+    voiceXpInterval: { type: Number },
     xpMultiplier: { type: Number },
     noXpChannelIds: { type: [String], default: [] },
     noXpRoleIds: { type: [String], default: [] },
