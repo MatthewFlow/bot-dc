@@ -16,6 +16,7 @@ export {
   reactionRoleRepository,
   sessionRepository,
   stickyMessageRepository,
+  tempVoiceChannelRepository,
   ticketRepository,
   warnRepository,
   xpRepository,
@@ -64,6 +65,7 @@ export type {
 export { pickWinners } from "./repositories/giveawayRepository";
 export type {
   AutoModConfig,
+  AutoVoiceHub,
   GuildConfig,
   GuildConfigPatch,
   LevelingConfig,
@@ -87,6 +89,11 @@ export type {
   StickyMode,
   UpsertStickyOpts,
 } from "./repositories/stickyMessageRepository";
+export type {
+  CreateTempVoiceOpts,
+  ITempVoiceChannelRepository,
+  TempVoiceChannel,
+} from "./repositories/tempVoiceChannelRepository";
 export type {
   CreateTicketOpts,
   Ticket,

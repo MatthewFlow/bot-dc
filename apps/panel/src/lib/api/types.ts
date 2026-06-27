@@ -104,6 +104,14 @@ export type LevelingConfig = {
   levelUpDm: boolean;
 };
 
+/** Kanał-twórca (join-to-create) — wejście tworzy temp-kanał głosowy. */
+export type AutoVoiceHub = {
+  channelId: string;
+  categoryId?: string;
+  nameTemplate?: string;
+  userLimit?: number;
+};
+
 export type GuildConfig = {
   welcomeChannelId?: string;
   goodbyeChannelId?: string;
@@ -134,6 +142,8 @@ export type GuildConfig = {
   autoMod?: AutoModConfig;
   serverLog?: ServerLogConfig;
   leveling?: LevelingConfig;
+  /** Kanały-twórcy (join-to-create) — wejście tworzy temp-kanał głosowy. */
+  autoVoice?: AutoVoiceHub[];
   /** Auto-tłumaczenie wiadomości z kanału-źródła (śledzone ogłoszenia gry). */
   translation?: TranslationConfig;
   /** Nazwy komend wyłączonych na tym serwerze. */

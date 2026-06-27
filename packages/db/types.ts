@@ -11,6 +11,18 @@ export type RoleReward = {
   roleId: string;
 };
 
+/** Konfiguracja „kanału-twórcy" (join-to-create) — bot tworzy temp-kanał po wejściu. */
+export type AutoVoiceHub = {
+  /** Kanał głosowy „twórca" — wejście na niego tworzy nowy temp-kanał. */
+  channelId: string;
+  /** Kategoria, w której powstają temp-kanały (domyślnie kategoria twórcy). */
+  categoryId?: string;
+  /** Szablon nazwy temp-kanału: `{user}` = nick, `{count}` = numer kolejny. */
+  nameTemplate?: string;
+  /** Limit osób na temp-kanale (0/brak = bez limitu). */
+  userLimit?: number;
+};
+
 /** Personalizacja przycisku pod embedem panelu ticketów. */
 export type TicketPanelButton = {
   label?: string;

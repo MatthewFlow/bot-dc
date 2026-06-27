@@ -18,6 +18,7 @@ import {
   TrendingUp,
   UserPlus,
   Users,
+  Volume2,
   Wrench,
 } from "lucide-react";
 
@@ -114,6 +115,12 @@ export const NAV_GROUPS: NavGroup[] = [
         href: "/sticky",
         desc: "Przypięta wiadomość trzymana na dole kanału",
         icon: Pin,
+      },
+      {
+        label: "Kanały głosowe",
+        href: "/autovoice",
+        desc: "Auto-kanały: wejście tworzy własny kanał głosowy",
+        icon: Volume2,
       },
       {
         label: "Tłumaczenia",

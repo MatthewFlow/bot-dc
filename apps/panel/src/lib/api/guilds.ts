@@ -57,6 +57,16 @@ export function getChannels(guildId: string): Promise<Channel[]> {
   return swr(queryKeys.channels(guildId), () => fetchChannels(guildId));
 }
 
+/** Kanały danego typu (`voice` | `category` | `text`) — dla selectów auto-voice. */
+export async function fetchChannelsByType(
+  guildId: string,
+  type: "voice" | "category" | "text",
+): Promise<Channel[]> {
+  const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/channels?types=${type}`);
+  if (!res.ok) throw new Error("Failed to fetch channels");
+  return (await res.json()) as Channel[];
+}
+
 /** Surowy fetcher (bez cache) — queryFn dla useQuery; imperatywnie używaj getRoles. */
 export async function fetchRoles(guildId: string): Promise<Role[]> {
   const res = await fetchWithRetry(`${API_URL}/guilds/${guildId}/roles`);

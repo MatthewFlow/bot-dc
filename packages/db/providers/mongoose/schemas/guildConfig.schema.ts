@@ -5,6 +5,7 @@ import { type Model, model, Schema } from "mongoose";
 // bo część importerów sięga po nie z poziomu schematu.
 import type {
   AutoModConfig,
+  AutoVoiceHub,
   EmbedConfig,
   LevelingConfig,
   RoleReward,
@@ -16,6 +17,7 @@ import type {
 export type {
   AutoModAction,
   AutoModConfig,
+  AutoVoiceHub,
   LevelingConfig,
   RoleReward,
   ServerLogConfig,
@@ -54,6 +56,8 @@ export type GuildConfigDocument = {
   autoMod?: AutoModConfig;
   serverLog?: ServerLogConfig;
   leveling?: LevelingConfig;
+  /** Kanały-twórcy (join-to-create) — wejście tworzy temp-kanał głosowy. */
+  autoVoice?: AutoVoiceHub[];
   /** Auto-tłumaczenie wiadomości z kanału-źródła (śledzone ogłoszenia gry). */
   translation?: TranslationConfig;
   /** Nazwy komend wyłączonych na tym serwerze (egzekwowane w runtime przez bota). */
@@ -68,6 +72,16 @@ const roleRewardSchema = new Schema<RoleReward>(
   {
     level: { type: Number, required: true, min: 1 },
     roleId: { type: String, required: true },
+  },
+  { _id: false },
+);
+
+const autoVoiceHubSchema = new Schema<AutoVoiceHub>(
+  {
+    channelId: { type: String, required: true },
+    categoryId: { type: String },
+    nameTemplate: { type: String },
+    userLimit: { type: Number },
   },
   { _id: false },
 );
@@ -204,6 +218,7 @@ const guildConfigSchema = new Schema<GuildConfigDocument>(
     autoMod: { type: autoModSchema, default: undefined },
     serverLog: { type: serverLogSchema, default: undefined },
     leveling: { type: levelingSchema, default: undefined },
+    autoVoice: { type: [autoVoiceHubSchema], default: undefined },
     translation: { type: translationSchema, default: undefined },
     disabledCommands: { type: [String], default: undefined },
     disabledModules: { type: [String], default: undefined },

@@ -46,6 +46,7 @@ import { onTranslateMessage } from "./translation/handler";
 import { getCachedGuildConfig } from "./utils/configCache";
 import { isModuleEnabled, type ModuleKey } from "./utils/modules";
 import { BOT_VERSION } from "./version";
+import { cleanupOrphanTempChannels, handleVoiceStateUpdate } from "./voice/autoChannel";
 import { startWarnDecay } from "./warnDecay";
 
 /**
@@ -148,6 +149,11 @@ export function createBot() {
     // Auto-kończenie giveawayów po upływie czasu (losowanie + ogłoszenie).
     startGiveawaySweep(client);
 
+    // Auto-voice: sprzątnij temp-kanały osierocone podczas przestoju bota.
+    void cleanupOrphanTempChannels(client).catch((e) =>
+      console.error("[autovoice] sprzątanie po restarcie — błąd:", e),
+    );
+
     // Rejestracja komend leci NA KOŃCU i w tle: to wolny, podatny na rate-limit PUT do
     // Discorda. Gdyby się zawiesił, nie może blokować heartbeatu ani zadań tła powyżej
     // (wcześniej był przed nimi i jeden zawieszony PUT zostawiał bota jako "offline").
@@ -175,6 +181,13 @@ export function createBot() {
   client.on("messageReactionRemove", onMessageReactionRemove);
   client.on("threadDelete", onThreadDelete);
   client.on("threadUpdate", onThreadUpdate);
+
+  // Auto-voice (join-to-create): tworzenie/kasowanie temp-kanałów głosowych.
+  client.on("voiceStateUpdate", (oldState, newState) => {
+    void handleVoiceStateUpdate(oldState, newState).catch((e) =>
+      console.error("[autovoice] voiceStateUpdate — błąd:", e),
+    );
+  });
 
   // Server logging (separate listeners so logging stays decoupled).
   client.on("messageDelete", onMessageDeleteLog);

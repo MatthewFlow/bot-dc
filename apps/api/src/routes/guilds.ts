@@ -37,8 +37,35 @@ import type { AppVariables } from "../types";
 
 const DISCORD_CHANNEL_TYPES = {
   GuildText: 0,
+  GuildVoice: 2,
+  GuildCategory: 4,
   GuildAnnouncement: 5,
 } as const;
+
+/** Mapuje `?types=` (text|voice|category) na numery typów Discorda; domyślnie tekstowe. */
+function requestedChannelTypes(raw: string | undefined): Set<number> {
+  const names = (raw ?? "text")
+    .split(",")
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  const set = new Set<number>();
+  for (const n of names) {
+    if (n === "text") {
+      set.add(DISCORD_CHANNEL_TYPES.GuildText);
+      set.add(DISCORD_CHANNEL_TYPES.GuildAnnouncement);
+    } else if (n === "voice") {
+      set.add(DISCORD_CHANNEL_TYPES.GuildVoice);
+    } else if (n === "category") {
+      set.add(DISCORD_CHANNEL_TYPES.GuildCategory);
+    }
+  }
+  // Pusty/nieznany → fallback do tekstowych (zachowanie wsteczne).
+  if (set.size === 0) {
+    set.add(DISCORD_CHANNEL_TYPES.GuildText);
+    set.add(DISCORD_CHANNEL_TYPES.GuildAnnouncement);
+  }
+  return set;
+}
 
 const CONFIG_ALLOWED_FIELDS = [
   "welcomeChannelId",
@@ -67,6 +94,7 @@ const CONFIG_ALLOWED_FIELDS = [
   "autoMod",
   "serverLog",
   "leveling",
+  "autoVoice",
   "translation",
   "disabledCommands",
   "disabledModules",
@@ -177,15 +205,13 @@ guildRoutes.get("/:guildId/channels", async (c) => {
   );
   if (channels instanceof Response) return channels;
 
-  const textChannels = channels
-    .filter(
-      (ch) =>
-        ch.type === DISCORD_CHANNEL_TYPES.GuildText ||
-        ch.type === DISCORD_CHANNEL_TYPES.GuildAnnouncement,
-    )
+  // `?types=text,voice,category` (domyślnie tekstowe — zero zmian dla istniejących selectów).
+  const types = requestedChannelTypes(c.req.query("types"));
+  const filtered = channels
+    .filter((ch) => types.has(ch.type))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  return c.json(textChannels);
+  return c.json(filtered);
 });
 
 guildRoutes.post("/:guildId/channels", async (c) => {

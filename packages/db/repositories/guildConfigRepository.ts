@@ -1,5 +1,6 @@
 import type {
   AutoModConfig,
+  AutoVoiceHub,
   EmbedConfig,
   LevelingConfig,
   RoleReward,
@@ -10,6 +11,7 @@ import type {
 
 export type {
   AutoModConfig,
+  AutoVoiceHub,
   LevelingConfig,
   ServerLogConfig,
   TicketPanelButton,
@@ -47,6 +49,8 @@ export type GuildConfig = {
   autoMod?: AutoModConfig;
   serverLog?: ServerLogConfig;
   leveling?: LevelingConfig;
+  /** Kanały-twórcy (join-to-create) — wejście tworzy temp-kanał głosowy. */
+  autoVoice?: AutoVoiceHub[];
   /** Auto-tłumaczenie wiadomości z kanału-źródła (śledzone ogłoszenia gry). */
   translation?: TranslationConfig;
   disabledCommands?: string[];

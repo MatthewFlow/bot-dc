@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 
 import {
   fetchChannels,
+  fetchChannelsByType,
   fetchGuildConfig,
   fetchGuildStats,
   fetchLeaderboard,
@@ -49,6 +50,22 @@ export function useChannels(guildId: string) {
   return useQuery({
     queryKey: queryKeys.channels(guildId),
     queryFn: () => fetchChannels(guildId),
+  });
+}
+
+export function useVoiceChannels(guildId: string) {
+  return useQuery({
+    queryKey: queryKeys.channelsByType(guildId, "voice"),
+    queryFn: () => fetchChannelsByType(guildId, "voice"),
+    staleTime: 300_000,
+  });
+}
+
+export function useCategories(guildId: string) {
+  return useQuery({
+    queryKey: queryKeys.channelsByType(guildId, "category"),
+    queryFn: () => fetchChannelsByType(guildId, "category"),
+    staleTime: 300_000,
   });
 }
 

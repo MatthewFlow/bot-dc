@@ -51,6 +51,7 @@ export const queryKeys = {
   guilds: () => ["guilds"] as const,
   config: (g: string) => ["config", g] as const,
   channels: (g: string) => ["channels", g] as const,
+  channelsByType: (g: string, type: string) => ["channels", g, type] as const,
   roles: (g: string) => ["roles", g] as const,
   leaderboard: (g: string, limit: number) => ["leaderboard", g, limit] as const,
   stats: (g: string) => ["stats", g] as const,

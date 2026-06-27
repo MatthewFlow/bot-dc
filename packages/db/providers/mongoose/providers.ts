@@ -11,6 +11,7 @@ import type { IModActionRepository } from "../../repositories/modActionRepositor
 import type { IReactionRoleRepository } from "../../repositories/reactionRoleRepository";
 import type { ISessionRepository } from "../../repositories/sessionRepository";
 import type { IStickyMessageRepository } from "../../repositories/stickyMessageRepository";
+import type { ITempVoiceChannelRepository } from "../../repositories/tempVoiceChannelRepository";
 import type { ITicketRepository } from "../../repositories/ticketRepository";
 import type { IWarnRepository } from "../../repositories/warnRepository";
 import type { IXpRepository } from "../../repositories/xpRepository";
@@ -27,6 +28,7 @@ import { ModActionProvider } from "./modActionProvider";
 import { ReactionRoleProvider } from "./reactionRoleProvider";
 import { SessionProvider } from "./sessionProvider";
 import { StickyMessageProvider } from "./stickyMessageProvider";
+import { TempVoiceChannelProvider } from "./tempVoiceChannelProvider";
 import { TicketProvider } from "./ticketProvider";
 import { WarnProvider } from "./warnProvider";
 import { XpProvider } from "./xpProvider";
@@ -50,3 +52,5 @@ export const gameServerStatusRepository: IGameServerStatusRepository =
 export const giveawayRepository: IGiveawayRepository = new GiveawayProvider();
 export const stickyMessageRepository: IStickyMessageRepository =
   new StickyMessageProvider();
+export const tempVoiceChannelRepository: ITempVoiceChannelRepository =
+  new TempVoiceChannelProvider();

@@ -1,5 +1,6 @@
 import type {
   AutoModConfig,
+  AutoVoiceHub,
   EmbedConfig,
   LevelingConfig,
   ServerLogConfig,
@@ -161,6 +162,25 @@ function clampMultiplier(v: unknown): number {
   return Math.min(10, Math.max(0.1, Math.round(n * 10) / 10));
 }
 
+function sanitizeAutoVoice(v: unknown): AutoVoiceHub[] {
+  if (!Array.isArray(v)) return [];
+  return v
+    .slice(0, 25)
+    .map((h) => {
+      const o = (h ?? {}) as Record<string, unknown>;
+      const hub: AutoVoiceHub = { channelId: String(o.channelId ?? "") };
+      if (typeof o.categoryId === "string" && o.categoryId && o.categoryId.length <= 32) {
+        hub.categoryId = o.categoryId;
+      }
+      if (typeof o.nameTemplate === "string" && o.nameTemplate.trim()) {
+        hub.nameTemplate = o.nameTemplate.slice(0, 100);
+      }
+      if (o.userLimit != null) hub.userLimit = clampNum(o.userLimit, 0, 0, 99);
+      return hub;
+    })
+    .filter((h) => h.channelId.length > 0 && h.channelId.length <= 32);
+}
+
 function sanitizeLeveling(v: unknown): LevelingConfig | undefined {
   if (!v || typeof v !== "object" || Array.isArray(v)) return undefined;
   const o = v as Record<string, unknown>;
@@ -256,6 +276,8 @@ export function sanitizeConfigPatch(
     } else if (key === "leveling") {
       const l = sanitizeLeveling(value);
       if (l) out[key] = l;
+    } else if (key === "autoVoice") {
+      out[key] = sanitizeAutoVoice(value);
     } else if (key === "translation") {
       const t = sanitizeTranslation(value);
       if (t) out[key] = t;
