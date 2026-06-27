@@ -3,6 +3,7 @@ import {
   type ButtonInteraction,
   Client,
   GatewayIntentBits,
+  MessageFlags,
   type ModalSubmitInteraction,
   Options,
   Partials,
@@ -28,6 +29,7 @@ import { handleGiveawayJoin } from "./giveaways/handler";
 import { startGiveawaySweep } from "./giveaways/sweep";
 import { startJobWorker } from "./jobs/worker";
 import { startVoiceXp } from "./levels/voiceXp";
+import { handleReminderCancel } from "./reminders/handler";
 import {
   onGuildMemberUpdateLog,
   onMemberJoinLog,
@@ -58,7 +60,10 @@ async function moduleBlocked(
   const cfg = await getCachedGuildConfig(interaction.guildId);
   if (isModuleEnabled(cfg, key)) return false;
   await interaction
-    .reply({ content: "Ten moduł jest wyłączony na tym serwerze.", ephemeral: true })
+    .reply({
+      content: "Ten moduł jest wyłączony na tym serwerze.",
+      flags: MessageFlags.Ephemeral,
+    })
     .catch(() => {});
   return true;
 }
@@ -198,6 +203,8 @@ export function createBot() {
       } else if (customId.startsWith("gw:")) {
         if (await moduleBlocked(interaction, "giveaways")) return;
         await handleGiveawayJoin(interaction);
+      } else if (customId.startsWith("rem:cancel:")) {
+        await handleReminderCancel(interaction);
       }
       return;
     }

@@ -42,6 +42,13 @@ export interface IBotJobRepository {
   getActiveByGuild(guildId: string, limit: number): Promise<BotJob[]>;
   /** Oczekujące zadania danego typu na serwerze (np. zaplanowane unbany temp-banów). */
   getPendingByType(guildId: string, type: BotJobType): Promise<BotJob[]>;
+  /** Oczekujące zadania danego typu konkretnego użytkownika (np. jego przypomnienia). */
+  getPendingByTypeForUser(
+    guildId: string,
+    type: BotJobType,
+    userId: string,
+    limit: number,
+  ): Promise<BotJob[]>;
   /** Usuwa oczekujące zadania danego typu dla użytkownika (np. przy ręcznym odbanowaniu). */
   cancelPending(guildId: string, type: BotJobType, userId: string): Promise<number>;
   /** Zaległe zadania do wykonania (pending + runAt <= now) — dla workera bota. */

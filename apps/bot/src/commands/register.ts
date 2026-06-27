@@ -99,6 +99,27 @@ export const commands = [
         .setMaxValue(5),
     ),
 
+  new SlashCommandBuilder()
+    .setName("remind")
+    .setDescription("Ustaw przypomnienie")
+    .addStringOption((opt) =>
+      opt
+        .setName("time")
+        .setDescription("Za ile, np. 10m, 2h, 1d, 1h30m")
+        .setRequired(true),
+    )
+    .addStringOption((opt) =>
+      opt
+        .setName("message")
+        .setDescription("Treść przypomnienia")
+        .setRequired(true)
+        .setMaxLength(1000),
+    ),
+
+  new SlashCommandBuilder()
+    .setName("reminders")
+    .setDescription("Pokaż swoje aktywne przypomnienia"),
+
   // ===== CONFIG: WELCOME / GOODBYE =====
   new SlashCommandBuilder()
     .setName("cfg_setwelcome")

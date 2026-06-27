@@ -47,6 +47,19 @@ export class BotJobProvider implements IBotJobRepository {
     return docs.map(toJob);
   }
 
+  async getPendingByTypeForUser(
+    guildId: string,
+    type: BotJob["type"],
+    userId: string,
+    limit: number,
+  ): Promise<BotJob[]> {
+    const docs = await BotJobModel.find({ guildId, type, userId, status: "pending" })
+      .sort({ runAt: 1 })
+      .limit(limit)
+      .lean<LeanBotJob[]>();
+    return docs.map(toJob);
+  }
+
   async cancelPending(
     guildId: string,
     type: BotJob["type"],

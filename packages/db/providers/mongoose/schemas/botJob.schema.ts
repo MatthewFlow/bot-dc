@@ -3,7 +3,7 @@ import { type Model, model, Schema } from "mongoose";
 import type { EmbedConfig } from "../../../embed";
 
 /** Typ zadania w kolejce bot↔panel (rozszerzalny). */
-export type BotJobType = "sendEmbed" | "unban" | "gameAnnounce";
+export type BotJobType = "sendEmbed" | "unban" | "gameAnnounce" | "reminder";
 export type JobRecurrence = "once" | "daily" | "weekly";
 export type JobStatus = "pending" | "done" | "error" | "cancelled";
 
@@ -32,7 +32,7 @@ const botJobSchema = new Schema<BotJobDocument>(
     guildId: { type: String, required: true },
     type: {
       type: String,
-      enum: ["sendEmbed", "unban", "gameAnnounce"],
+      enum: ["sendEmbed", "unban", "gameAnnounce", "reminder"],
       required: true,
     },
     runAt: { type: Date, required: true },

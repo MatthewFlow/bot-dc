@@ -1,5 +1,6 @@
-import type { ChatInputCommandInteraction } from "discord.js";
+import { type ChatInputCommandInteraction, MessageFlags } from "discord.js";
 
+import { handleRemind, handleReminders } from "../../reminders/handler";
 import {
   handleTicketAdd,
   handleTicketClose,
@@ -65,6 +66,8 @@ const handlers: Record<string, Handler> = {
   leaderboard: handleLeaderboard,
   profile: handleProfile,
   feedback: handleFeedback,
+  remind: handleRemind,
+  reminders: handleReminders,
   cfg_setwelcome: handleCfgSetWelcome,
   cfg_setgoodbye: handleCfgSetGoodbye,
   cfg_addreward: handleCfgAddReward,
@@ -103,7 +106,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction) {
   if (!guildId || !interaction.guild) {
     await interaction.reply({
       content: "Ta komenda działa tylko na serwerze.",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -114,7 +117,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction) {
   if (cfg?.disabledCommands?.includes(interaction.commandName)) {
     await interaction.reply({
       content: "Ta komenda jest wyłączona na tym serwerze.",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -124,7 +127,7 @@ export async function handleCommand(interaction: ChatInputCommandInteraction) {
   if (moduleKey && !isModuleEnabled(cfg, moduleKey)) {
     await interaction.reply({
       content: "Ten moduł jest wyłączony na tym serwerze.",
-      ephemeral: true,
+      flags: MessageFlags.Ephemeral,
     });
     return;
   }
@@ -146,7 +149,10 @@ export async function handleCommand(interaction: ChatInputCommandInteraction) {
 
   const handler = handlers[interaction.commandName];
   if (!handler) {
-    await interaction.reply({ content: "Nieznana komenda.", ephemeral: true });
+    await interaction.reply({
+      content: "Nieznana komenda.",
+      flags: MessageFlags.Ephemeral,
+    });
     return;
   }
 

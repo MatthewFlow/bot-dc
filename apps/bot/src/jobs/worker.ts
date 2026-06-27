@@ -68,6 +68,27 @@ async function runGameAnnounce(job: BotJob): Promise<void> {
   await rcon.announce(job.text);
 }
 
+/** Wykonanie zadania `reminder`: ping na kanale (fallback DM), gdzie ustawiono przypomnienie. */
+async function runReminder(client: Client, job: BotJob): Promise<void> {
+  if (!job.userId || !job.text) throw new Error("brak danych przypomnienia");
+
+  const channel = job.channelId
+    ? await client.channels.fetch(job.channelId).catch(() => null)
+    : null;
+
+  if (channel && channel.isTextBased() && !channel.isDMBased()) {
+    await channel.send({
+      content: `⏰ <@${job.userId}>, przypomnienie: ${job.text}`,
+      allowedMentions: { users: [job.userId] },
+    });
+    return;
+  }
+
+  // Kanał niedostępny (usunięty / brak uprawnień) → próbujemy DM.
+  const user = await client.users.fetch(job.userId).catch(() => null);
+  await user?.send(`⏰ Przypomnienie: ${job.text}`).catch(() => {});
+}
+
 async function tick(client: Client): Promise<void> {
   const due = await botJobRepository.getDue(new Date(), BATCH).catch(() => []);
   for (const job of due) {
@@ -75,6 +96,7 @@ async function tick(client: Client): Promise<void> {
       if (job.type === "sendEmbed") await runSendEmbed(client, job);
       else if (job.type === "unban") await runUnban(client, job);
       else if (job.type === "gameAnnounce") await runGameAnnounce(job);
+      else if (job.type === "reminder") await runReminder(client, job);
 
       if (job.recurrence === "once") await botJobRepository.markDone(job.id);
       else

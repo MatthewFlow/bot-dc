@@ -22,7 +22,10 @@ jobRoutes.use("/:guildId/*", guildAccessGuard);
 
 jobRoutes.get("/:guildId/jobs", async (c) => {
   const guildId = c.req.param("guildId");
-  return c.json(await botJobRepository.getActiveByGuild(guildId, 50));
+  // Panel „Ogłoszenia" zarządza tylko zaplanowanymi embedami — odfiltrowujemy inne
+  // typy z kolejki (unbany temp-banów, reminders userów, ogłoszenia in-game).
+  const jobs = await botJobRepository.getActiveByGuild(guildId, 50);
+  return c.json(jobs.filter((j) => j.type === "sendEmbed"));
 });
 
 const jobBodySchema = z.object({
