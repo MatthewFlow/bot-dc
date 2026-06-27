@@ -1,11 +1,12 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   Ban,
   Bell,
   Bug,
+  Check,
   CheckCheck,
   Lightbulb,
   type LucideIcon,
@@ -14,18 +15,14 @@ import {
   MicOff,
   ShieldCheck,
   Ticket as TicketIcon,
-  Trash2,
   UserMinus,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { MOD_ACTION, TICKET_STATUS } from "@/components/Badges";
-import { ConfirmModal } from "@/components/ConfirmModal";
-import { useToast } from "@/components/Toast";
 import { useGuildFeedback, useModActions, useTickets } from "@/hooks/queries";
 import {
-  deleteGuildFeedback,
   type FeedbackCategory,
   type GuildFeedback,
   markFeedbackSeen,
@@ -75,17 +72,18 @@ const TABS: { id: NotifKind | "all"; label: string }[] = [
 ];
 
 export function NotificationBell({ guildId }: { guildId: string }) {
-  const toast = useToast();
   const qc = useQueryClient();
   const fbKey = queryKeys.guildFeedback(guildId);
 
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<NotifKind | "all">("all");
-  const [confirmId, setConfirmId] = useState<string | null>(null);
-  // Znacznik „ostatnio widziane" (ms) per serwer — liczy nieprzeczytane ponad wszystkie
-  // typy bez zmian w backendzie. `null` = jeszcze nieodczytane z localStorage (brak migania).
+  // Znacznik „ostatnio widziane" (ms) per serwer — baseline: starsze pozycje nie są
+  // nieprzeczytane. `null` = jeszcze nieodczytane z localStorage (brak migania).
   const [lastSeen, setLastSeen] = useState<number | null>(null);
   const seenKey = `jh_notif_seen_${guildId}`;
+  // Pojedyncze pozycje oznaczone jako przeczytane (po kliknięciu/„✓") — per serwer.
+  const [readKeys, setReadKeys] = useState<Set<string>>(new Set());
+  const readKey = `jh_notif_read_${guildId}`;
 
   // Polling co 60 s — dzwonek aktualizuje się „na żywo" bez wchodzenia na strony.
   const feedbackQ = useGuildFeedback(guildId, true);
@@ -106,6 +104,31 @@ export function NotificationBell({ guildId }: { guildId: string }) {
       setLastSeen(Date.now());
     }
   }, [seenKey]);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(readKey);
+      if (raw) setReadKeys(new Set(JSON.parse(raw) as string[]));
+    } catch {
+      /* ignore */
+    }
+  }, [readKey]);
+
+  /** Oznacza pozycje jako przeczytane (po kliknięciu lub „✓"); zapisuje per serwer. */
+  function markRead(keys: string[]): void {
+    setReadKeys((prev) => {
+      const next = new Set(prev);
+      for (const k of keys) next.add(k);
+      // Ogranicz wzrost — trzymamy ostatnie 500 kluczy.
+      const arr = [...next].slice(-500);
+      try {
+        localStorage.setItem(readKey, JSON.stringify(arr));
+      } catch {
+        /* ignore */
+      }
+      return new Set(arr);
+    });
+  }
 
   const items = useMemo<NotifItem[]>(() => {
     const out: NotifItem[] = [];
@@ -162,37 +185,28 @@ export function NotificationBell({ guildId }: { guildId: string }) {
     return out.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }, [ticketsQ.data, feedbackQ.data, modQ.data, guildId]);
 
+  /** Nieprzeczytane: nowsze niż baseline i niezaznaczone ręcznie jako przeczytane. */
+  const isUnread = (n: NotifItem): boolean =>
+    lastSeen !== null &&
+    new Date(n.createdAt).getTime() > lastSeen &&
+    !readKeys.has(n.key);
+
   const unreadByKind = useMemo(() => {
     const m = { ticket: 0, feedback: 0, mod: 0 };
     if (lastSeen === null) return m;
     for (const i of items) {
-      if (new Date(i.createdAt).getTime() > lastSeen) m[i.kind] += 1;
+      if (new Date(i.createdAt).getTime() > lastSeen && !readKeys.has(i.key)) {
+        m[i.kind] += 1;
+      }
     }
     return m;
-  }, [items, lastSeen]);
+  }, [items, lastSeen, readKeys]);
   const unreadTotal = unreadByKind.ticket + unreadByKind.feedback + unreadByKind.mod;
 
   const visible = (tab === "all" ? items : items.filter((i) => i.kind === tab)).slice(
     0,
     12,
   );
-
-  const del = useMutation({
-    mutationFn: (id: string) => deleteGuildFeedback(guildId, id),
-    onMutate: async (id) => {
-      await qc.cancelQueries({ queryKey: fbKey });
-      const prev = qc.getQueryData<GuildFeedback>(fbKey);
-      qc.setQueryData<GuildFeedback>(fbKey, (old) =>
-        old ? { ...old, items: old.items.filter((x) => x.id !== id) } : old,
-      );
-      return { prev };
-    },
-    onError: (_e, _id, ctx) => {
-      if (ctx?.prev) qc.setQueryData(fbKey, ctx.prev);
-      toast("Nie udało się usunąć.", "error");
-    },
-    onSuccess: () => toast("Feedback usunięty.", "success"),
-  });
 
   function markAllSeen() {
     const now = Date.now();
@@ -205,11 +219,6 @@ export function NotificationBell({ guildId }: { guildId: string }) {
     // Wyzeruj też serwerowy licznik feedbacku, żeby strona Feedback była spójna.
     qc.setQueryData<GuildFeedback>(fbKey, (old) => (old ? { ...old, unread: 0 } : old));
     markFeedbackSeen(guildId).catch(() => {});
-  }
-
-  function handleDelete(id: string) {
-    setConfirmId(null);
-    del.mutate(id);
   }
 
   return (
@@ -285,18 +294,21 @@ export function NotificationBell({ guildId }: { guildId: string }) {
               ) : (
                 visible.map((n) => {
                   const Icon = n.icon;
-                  const isNew =
-                    lastSeen !== null && new Date(n.createdAt).getTime() > lastSeen;
+                  const unread = isUnread(n);
                   return (
                     <Link
                       key={n.key}
                       href={n.href}
-                      onClick={() => setOpen(false)}
+                      // Wejście w powiadomienie = oznaczenie go jako przeczytane.
+                      onClick={() => {
+                        markRead([n.key]);
+                        setOpen(false);
+                      }}
                       className="group relative flex gap-3 border-b border-border px-4 py-3 transition last:border-0 hover:bg-white/5"
                     >
-                      {/* Akcent „nowe" */}
+                      {/* Akcent „nieprzeczytane" */}
                       <span
-                        className={`absolute left-0 top-0 h-full w-0.5 ${isNew ? "bg-primary" : "bg-transparent"}`}
+                        className={`absolute left-0 top-0 h-full w-0.5 ${unread ? "bg-primary" : "bg-transparent"}`}
                       />
                       <Icon size={16} className={`mt-0.5 shrink-0 ${n.iconCls}`} />
                       <div className="min-w-0 flex-1">
@@ -305,17 +317,17 @@ export function NotificationBell({ guildId }: { guildId: string }) {
                           {n.subtitle} · {relativeTime(n.createdAt)}
                         </p>
                       </div>
-                      {n.feedbackId && (
+                      {unread && (
                         <button
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            setConfirmId(n.feedbackId!);
+                            markRead([n.key]);
                           }}
-                          title="Usuń"
-                          className="flex size-7 shrink-0 items-center justify-center rounded-md text-gray-400 opacity-0 transition-all hover:bg-red-500/10 hover:text-red-400 focus-visible:opacity-100 active:scale-90 group-hover:opacity-100"
+                          title="Oznacz jako przeczytane"
+                          className="flex size-7 shrink-0 items-center justify-center rounded-md text-gray-400 opacity-0 transition-all hover:bg-primary/10 hover:text-primary focus-visible:opacity-100 active:scale-90 group-hover:opacity-100"
                         >
-                          <Trash2 size={14} />
+                          <Check size={14} />
                         </button>
                       )}
                     </Link>
@@ -325,14 +337,6 @@ export function NotificationBell({ guildId }: { guildId: string }) {
             </div>
           </div>
         </>
-      )}
-
-      {confirmId && (
-        <ConfirmModal
-          message="Na pewno usunąć to zgłoszenie? Tej operacji nie można cofnąć."
-          onConfirm={() => handleDelete(confirmId)}
-          onCancel={() => setConfirmId(null)}
-        />
       )}
     </div>
   );
