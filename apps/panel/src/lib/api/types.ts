@@ -286,13 +286,7 @@ export type ConfigAuditEntry = {
 };
 
 export type ModActionType =
-  | "warn"
-  | "mute"
-  | "unmute"
-  | "kick"
-  | "ban"
-  | "unban"
-  | "clearwarns";
+  "warn" | "mute" | "unmute" | "kick" | "ban" | "unban" | "clearwarns";
 
 export type ModAction = {
   id: string;
