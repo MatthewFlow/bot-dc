@@ -93,12 +93,13 @@ function maybeStopPoller(): void {
 /**
  * Strumień zdarzeń SSE dla panelu. Wykrywa zmiany (heartbeat bota, nowa aktywność)
  * i pushuje lekki sygnał — klient odświeża istniejące zapytania TanStack Query.
- * Auth przez cookie `jh_token` (EventSource z `withCredentials`); token w query
- * jako fallback dla narzędzi, które nie ustawią cookie.
+ * Auth WYŁĄCZNIE przez cookie `jh_token` (EventSource z `withCredentials`; produkcja
+ * jest same-origin za Caddym, więc cookie leci z requestem). Świadomie BEZ fallbacku
+ * `?token=` w query — 7-dniowy JWT w URL wyciekłby do logów proxy/historii.
  */
 eventsRoutes.get("/:guildId/events", async (c) => {
   const guildId = c.req.param("guildId");
-  const token = getCookie(c, "jh_token") ?? c.req.query("token") ?? "";
+  const token = getCookie(c, "jh_token") ?? "";
   const auth = await verifyToken(token);
   if (!auth) return c.json({ error: "Unauthorized" }, 401);
   if (!(await canAccessGuild(auth.accessToken, auth.userId, guildId))) {

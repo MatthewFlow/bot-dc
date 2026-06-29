@@ -47,7 +47,14 @@ export function rateLimit({ windowMs, max, key }: RateLimitOptions) {
     try {
       return getConnInfo(c).remote.address ?? "unknown";
     } catch {
-      return c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+      // Awaryjnie: ufamy XFF tylko za zaufanym proxy. Bez TRUST_PROXY zwracamy
+      // stałą (wspólny, ostrzejszy kubełek) — inaczej XFF dałby spoofowalny
+      // bypass limitu per-IP. Fail-closed.
+      if (TRUST_PROXY) {
+        const xff = c.req.header("x-forwarded-for")?.split(",")[0]?.trim();
+        if (xff) return xff;
+      }
+      return "unknown";
     }
   }
 
