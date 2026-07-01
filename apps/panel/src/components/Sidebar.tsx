@@ -6,6 +6,7 @@ import { useParams, usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { SidebarBotStatus } from "@/components/SidebarBotStatus";
+import { useT } from "@/i18n/LanguageProvider";
 import { prefetchGuildData } from "@/lib/api";
 import { NAV_GROUPS, NAV_TOP, type NavItem } from "@/lib/nav";
 
@@ -26,6 +27,7 @@ export function Sidebar({
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
+  const t = useT();
   const guildId = params.guildId as string;
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
@@ -109,11 +111,11 @@ export function Sidebar({
           <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-primary" />
         )}
         <Icon size={18} className="shrink-0" />
-        <span className="flex-1 text-left">{item.label}</span>
+        <span className="flex-1 text-left">{t.nav.items[item.key].label}</span>
         {/* „wkrótce" — pozycja klikalna, ale strona to placeholder. */}
         {item.soon && (
           <span className="rounded-full bg-white/5 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
-            wkrótce
+            {t.common.soon}
           </span>
         )}
       </button>
@@ -139,7 +141,7 @@ export function Sidebar({
         )}
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-white">{guildName}</p>
-          <p className="text-xs text-gray-400">Discord Bot</p>
+          <p className="text-xs text-gray-400">{t.common.discordBot}</p>
         </div>
       </div>
 
@@ -165,7 +167,7 @@ export function Sidebar({
                 className="mb-1 flex w-full items-center gap-2 rounded-md px-2 py-1 text-xs font-semibold uppercase tracking-wider text-gray-400 transition hover:text-gray-300 outline-none focus-visible:text-gray-300"
               >
                 <GroupIcon size={13} className="shrink-0" />
-                <span className="flex-1 text-left">{group.label}</span>
+                <span className="flex-1 text-left">{t.nav.groups[group.key]}</span>
                 <ChevronDown
                   size={14}
                   className={`shrink-0 transition-transform ${isCollapsed ? "-rotate-90" : ""}`}
@@ -190,7 +192,7 @@ export function Sidebar({
           onClick={() => navigate("/dashboard")}
           className="text-xs text-gray-400 hover:text-gray-300"
         >
-          ← Zmień serwer
+          ← {t.common.changeServer}
         </button>
       </div>
     </>
@@ -217,7 +219,7 @@ export function Sidebar({
         {/* Close button */}
         <button
           onClick={onClose}
-          aria-label="Zamknij menu"
+          aria-label={t.topbar.closeMenu}
           className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-lg text-gray-400 transition hover:bg-white/5 hover:text-white"
         >
           ✕

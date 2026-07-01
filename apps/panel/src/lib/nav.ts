@@ -22,7 +22,12 @@ import {
   Wrench,
 } from "lucide-react";
 
+import type { NavGroupKey, NavItemKey } from "@/i18n/messages/pl";
+
 export type NavItem = {
+  /** Klucz tłumaczenia (label/desc w słowniku `nav.items`). */
+  key: NavItemKey;
+  /** Domyślna (PL) etykieta — fallback dla miejsc jeszcze nieprzetłumaczonych. */
   label: string;
   /** Sufiks ścieżki po `/dashboard/[guildId]` (puste = strona przeglądu). */
   href: string;
@@ -33,7 +38,9 @@ export type NavItem = {
 };
 
 export type NavGroup = {
-  /** Etykieta sekcji (nagłówek w sidebarze / na overview). */
+  /** Klucz tłumaczenia nagłówka sekcji (słownik `nav.groups`). */
+  key: NavGroupKey;
+  /** Domyślna (PL) etykieta sekcji — fallback. */
   label: string;
   /** Stabilny identyfikator sekcji (klucz stanu zwinięcia w localStorage). */
   id: string;
@@ -43,6 +50,7 @@ export type NavGroup = {
 
 /** Strona przeglądu — zawsze na górze, poza grupami. */
 export const NAV_OVERVIEW: NavItem = {
+  key: "overview",
   label: "Dashboard",
   href: "",
   desc: "Przegląd serwera",
@@ -51,6 +59,7 @@ export const NAV_OVERVIEW: NavItem = {
 
 /** Feedback — wyróżniony na górze nawigacji, poza grupami. */
 export const NAV_FEEDBACK: NavItem = {
+  key: "feedback",
   label: "Feedback",
   href: "/feedback",
   desc: "Podziel się uwagami i sugestiami",
@@ -63,23 +72,27 @@ export const NAV_TOP: NavItem[] = [NAV_OVERVIEW, NAV_FEEDBACK];
 /** Pozycje nawigacji pogrupowane w sekcje. */
 export const NAV_GROUPS: NavGroup[] = [
   {
+    key: "onboarding",
     label: "Onboarding",
     id: "onboarding",
     icon: DoorOpen,
     items: [
       {
+        key: "welcome",
         label: "Welcome / Goodbye",
         href: "/welcome",
         desc: "Kanały i wiadomości powitalne",
         icon: DoorOpen,
       },
       {
+        key: "autorole",
         label: "Auto-role",
         href: "/autorole",
         desc: "Rola nadawana po wejściu",
         icon: UserPlus,
       },
       {
+        key: "roles",
         label: "Self-Roles",
         href: "/roles",
         desc: "Role do samodzielnego wzięcia (przyciski / reakcje)",
@@ -88,41 +101,48 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    key: "community",
     label: "Społeczność",
     id: "community",
     icon: Users,
     items: [
       {
+        key: "levels",
         label: "Levelowanie",
         href: "/levels",
         desc: "System XP, poziomów i nagród",
         icon: TrendingUp,
       },
       {
+        key: "tickets",
         label: "Tickety",
         href: "/tickets",
         desc: "Obsługa zgłoszeń użytkowników",
         icon: Ticket,
       },
       {
+        key: "announce",
         label: "Ogłoszenia",
         href: "/announce",
         desc: "Wyślij lub zaplanuj wiadomość embed",
         icon: Megaphone,
       },
       {
+        key: "sticky",
         label: "Sticky",
         href: "/sticky",
         desc: "Przypięta wiadomość trzymana na dole kanału",
         icon: Pin,
       },
       {
+        key: "autovoice",
         label: "Kanały głosowe",
         href: "/autovoice",
         desc: "Auto-kanały: wejście tworzy własny kanał głosowy",
         icon: Volume2,
       },
       {
+        key: "translation",
         label: "Tłumaczenia",
         href: "/translation",
         desc: "Auto-tłumaczenie wiadomości ze śledzonego kanału",
@@ -130,6 +150,7 @@ export const NAV_GROUPS: NavGroup[] = [
         soon: true,
       },
       {
+        key: "giveaways",
         label: "Giveawaye",
         href: "/giveaways",
         desc: "Konkursy z losowaniem nagród",
@@ -138,23 +159,27 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    key: "security",
     label: "Bezpieczeństwo",
     id: "security",
     icon: ShieldAlert,
     items: [
       {
+        key: "moderation",
         label: "Moderacja",
         href: "/moderation",
         desc: "Ostrzeżenia, bany, logi akcji",
         icon: ShieldAlert,
       },
       {
+        key: "automod",
         label: "Auto-moderacja",
         href: "/automod",
         desc: "Filtry spamu, linków i słów",
         icon: ShieldBan,
       },
       {
+        key: "serverlog",
         label: "Logi serwera",
         href: "/serverlog",
         desc: "Logi wiadomości, wejść i ról",
@@ -163,23 +188,27 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    key: "system",
     label: "System",
     id: "system",
     icon: Wrench,
     items: [
       {
+        key: "commands",
         label: "Komendy",
         href: "/commands",
         desc: "Włączanie i wyłączanie komend bota",
         icon: SlidersHorizontal,
       },
       {
+        key: "settings",
         label: "Ustawienia",
         href: "/settings",
         desc: "Rola admina i kanał logów moderacji",
         icon: Settings,
       },
       {
+        key: "gameserver",
         label: "Serwer gry",
         href: "/gameserver",
         desc: "Zarządzanie serwerem The Isle: Evrima (RCON)",

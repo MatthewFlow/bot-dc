@@ -7,8 +7,10 @@ import { useEffect, useState } from "react";
 
 import { Avatar } from "@/components/Avatar";
 import { BotStatusBadge } from "@/components/BotStatusBadge";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { NotificationBell } from "@/components/NotificationBell";
 import { Skeleton } from "@/components/Skeleton";
+import { useT } from "@/i18n/LanguageProvider";
 import type { User } from "@/lib/api";
 import { getMe, logout } from "@/lib/api";
 import { discordAvatarUrl } from "@/lib/format";
@@ -25,6 +27,7 @@ export function TopBar({
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
+  const t = useT();
   const guildId = params.guildId as string;
 
   const [user, setUser] = useState<User | null>(null);
@@ -50,7 +53,7 @@ export function TopBar({
       <nav className="flex min-w-0 items-center gap-1.5 text-sm">
         <button
           onClick={onMenuClick}
-          aria-label="Otwórz menu"
+          aria-label={t.topbar.openMenu}
           className="-ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-gray-300 outline-none transition hover:bg-white/5 hover:text-white focus-visible:ring-2 focus-visible:ring-primary/40 md:hidden"
         >
           <Menu size={18} />
@@ -67,12 +70,14 @@ export function TopBar({
               <>
                 <ChevronRight size={14} className="shrink-0 text-gray-400" />
                 <span className="hidden shrink-0 text-gray-400 sm:inline">
-                  {group.label}
+                  {t.nav.groups[group.key]}
                 </span>
               </>
             )}
             <ChevronRight size={14} className="shrink-0 text-gray-400" />
-            <span className="truncate text-primary">{section.label}</span>
+            <span className="truncate text-primary">
+              {t.nav.items[section.key].label}
+            </span>
           </>
         )}
       </nav>
@@ -82,7 +87,7 @@ export function TopBar({
         {user?.isOwner && (
           <Link
             href="/dashboard/admin"
-            title="Panel właściciela — wszystkie serwery bota"
+            title={t.topbar.ownerPanel}
             className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card/60 text-gray-300 outline-none transition hover:bg-white/5 hover:text-white focus-visible:ring-2 focus-visible:ring-primary/40"
           >
             <ServerCog size={17} />
@@ -91,12 +96,12 @@ export function TopBar({
         {/* Trigger command palette (⌘K) — odkrywalność + tap na mobile. */}
         <button
           onClick={() => window.dispatchEvent(new Event("jh:cmdk"))}
-          title="Szukaj i nawiguj (Ctrl/⌘ K)"
-          aria-label="Otwórz wyszukiwarkę poleceń"
+          title={t.topbar.searchHint}
+          aria-label={t.topbar.searchAria}
           className="flex h-9 items-center gap-2 rounded-lg border border-border bg-card/60 px-2.5 text-gray-400 outline-none transition hover:bg-white/5 hover:text-gray-200 focus-visible:ring-2 focus-visible:ring-primary/40"
         >
           <Search size={16} className="shrink-0" />
-          <span className="hidden text-xs lg:inline">Szukaj…</span>
+          <span className="hidden text-xs lg:inline">{t.common.search}</span>
           <kbd className="hidden rounded border border-border bg-background px-1.5 py-0.5 text-[10px] font-semibold text-gray-400 lg:inline">
             ⌘K
           </kbd>
@@ -105,6 +110,7 @@ export function TopBar({
         <div className="md:hidden">
           <BotStatusBadge />
         </div>
+        <LanguageSwitcher />
         <NotificationBell guildId={guildId} />
         {user ? (
           <div className="flex items-center gap-2.5 rounded-xl border border-border bg-card/60 py-1.5 pl-2.5 pr-1.5">
@@ -121,7 +127,7 @@ export function TopBar({
             </span>
             <button
               onClick={handleLogout}
-              title="Wyloguj"
+              title={t.topbar.logout}
               className="ml-0.5 flex h-8 w-8 items-center justify-center rounded-lg border-l border-border text-gray-400 outline-none transition hover:bg-white/5 hover:text-gray-200 focus-visible:ring-2 focus-visible:ring-primary/40"
             >
               <LogOut size={16} />

@@ -18,6 +18,7 @@ export {
   stickyMessageRepository,
   tempVoiceChannelRepository,
   ticketRepository,
+  userPreferencesRepository,
   warnRepository,
   xpRepository,
 } from "./providers/mongoose/providers";
@@ -100,6 +101,10 @@ export type {
   TicketCounts,
   TicketStatus,
 } from "./repositories/ticketRepository";
+export type {
+  AppLang,
+  IUserPreferencesRepository,
+} from "./repositories/userPreferencesRepository";
 export type { AddWarnOpts, Warn } from "./repositories/warnRepository";
 export type {
   AddXpResult,

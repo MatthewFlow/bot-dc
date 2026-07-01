@@ -13,6 +13,7 @@ import type { ISessionRepository } from "../../repositories/sessionRepository";
 import type { IStickyMessageRepository } from "../../repositories/stickyMessageRepository";
 import type { ITempVoiceChannelRepository } from "../../repositories/tempVoiceChannelRepository";
 import type { ITicketRepository } from "../../repositories/ticketRepository";
+import type { IUserPreferencesRepository } from "../../repositories/userPreferencesRepository";
 import type { IWarnRepository } from "../../repositories/warnRepository";
 import type { IXpRepository } from "../../repositories/xpRepository";
 import { ActivityEventProvider } from "./activityEventProvider";
@@ -30,6 +31,7 @@ import { SessionProvider } from "./sessionProvider";
 import { StickyMessageProvider } from "./stickyMessageProvider";
 import { TempVoiceChannelProvider } from "./tempVoiceChannelProvider";
 import { TicketProvider } from "./ticketProvider";
+import { UserPreferencesProvider } from "./userPreferencesProvider";
 import { WarnProvider } from "./warnProvider";
 import { XpProvider } from "./xpProvider";
 
@@ -54,3 +56,5 @@ export const stickyMessageRepository: IStickyMessageRepository =
   new StickyMessageProvider();
 export const tempVoiceChannelRepository: ITempVoiceChannelRepository =
   new TempVoiceChannelProvider();
+export const userPreferencesRepository: IUserPreferencesRepository =
+  new UserPreferencesProvider();

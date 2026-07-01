@@ -14,6 +14,7 @@ import { gameServerRoutes } from "./routes/gameServer";
 import { giveawayRoutes } from "./routes/giveaways";
 import { guildRoutes } from "./routes/guilds";
 import { jobRoutes } from "./routes/jobs";
+import { meRoutes } from "./routes/me";
 import { moderationRoutes } from "./routes/moderation";
 import { reactionRoleRoutes } from "./routes/reactionRoles";
 import { statusRoutes } from "./routes/status";
@@ -65,6 +66,7 @@ app.route("/guilds", stickyRoutes);
 app.route("/guilds", eventsRoutes);
 app.route("/feedback", feedbackRoutes);
 app.route("/bot", statusRoutes);
+app.route("/me", meRoutes);
 app.route("/admin", adminRoutes);
 
 app.get("/health", (c) => c.json({ ok: true }));

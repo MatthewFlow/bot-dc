@@ -10,6 +10,7 @@ export * from "./api/giveaways";
 export * from "./api/guilds";
 export * from "./api/jobs";
 export * from "./api/moderation";
+export * from "./api/preferences";
 export * from "./api/selfRoles";
 export * from "./api/status";
 export * from "./api/sticky";

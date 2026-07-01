@@ -6,6 +6,7 @@ import { QueryProvider } from "@/components/QueryProvider";
 import { TiltProvider } from "@/components/TiltProvider";
 import { ToastProvider } from "@/components/Toast";
 import { WebVitals } from "@/components/WebVitals";
+import { LanguageProvider } from "@/i18n/LanguageProvider";
 
 export const metadata: Metadata = {
   title: "Jurassic Haven",
@@ -30,7 +31,9 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    // lang startuje na DEFAULT_LANG; LanguageProvider aktualizuje go po montażu
+    // wg localStorage / detekcji / konta.
+    <html lang="pl">
       {/* suppressHydrationWarning: rozszerzenia przeglądarki (np. Grammarly) wstrzykują
           atrybuty na <body> przed hydracją — tłumimy tylko ten jeden poziom, realne
           mismatchy w drzewie nadal są raportowane. */}
@@ -41,7 +44,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <WebVitals />
         <TiltProvider />
         <QueryProvider>
-          <ToastProvider>{children}</ToastProvider>
+          <LanguageProvider>
+            <ToastProvider>{children}</ToastProvider>
+          </LanguageProvider>
         </QueryProvider>
       </body>
     </html>
